@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { DocumentTest } from "./components/DocumentTest";
+import { HierarchicalTest } from "./components/HierarchicalTest";
 import "./App.css";
 
 function App() {
-  const [currentView, setCurrentView] = useState<'test' | 'home'>('test');
+  const [currentView, setCurrentView] = useState<'test' | 'hierarchical' | 'home'>('hierarchical');
 
   return (
     <main className="container">
@@ -16,9 +17,15 @@ function App() {
         </button>
         <button 
           onClick={() => setCurrentView('test')}
-          style={{ backgroundColor: currentView === 'test' ? '#007acc' : '#ccc' }}
+          style={{ marginRight: '10px', backgroundColor: currentView === 'test' ? '#007acc' : '#ccc' }}
         >
-          CRUD Test
+          Document CRUD
+        </button>
+        <button 
+          onClick={() => setCurrentView('hierarchical')}
+          style={{ backgroundColor: currentView === 'hierarchical' ? '#007acc' : '#ccc' }}
+        >
+          Hierarchical Test
         </button>
       </div>
 
@@ -26,10 +33,12 @@ function App() {
         <div>
           <h1>Love Note</h1>
           <p>Electronic Lab Notebook with Tauri + React + SQLite</p>
-          <p>Switch to CRUD Test tab to test document operations.</p>
+          <p>Switch to test tabs to verify database operations.</p>
         </div>
-      ) : (
+      ) : currentView === 'test' ? (
         <DocumentTest />
+      ) : (
+        <HierarchicalTest />
       )}
     </main>
   );
