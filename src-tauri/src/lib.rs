@@ -2,9 +2,8 @@ use tauri::Manager;
 use sqlx::SqlitePool;
 mod models;
 mod database;
-use database::{DocumentService, WorkspaceService, ProjectService, ExperimentService, BlockService};
+use database::{WorkspaceService, ProjectService, ExperimentService, BlockService};
 use models::{
-    Document, CreateDocumentRequest, UpdateDocumentRequest,
     Workspace, CreateWorkspaceRequest,
     Project, CreateProjectRequest,
     Experiment, CreateExperimentRequest,
@@ -48,67 +47,6 @@ async fn setup_database(app_handle: &tauri::AppHandle) -> Result<SqlitePool, sql
     Ok(pool)
 }
 
-// Tauri command: Create document
-#[tauri::command]
-async fn create_document(
-    title: String,
-    service: tauri::State<'_, DocumentService>,
-) -> Result<Document, String> {
-    let request = CreateDocumentRequest { title };
-    service
-        .create_document(request)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-// Tauri command: Get document
-#[tauri::command]
-async fn get_document(
-    id: String,
-    service: tauri::State<'_, DocumentService>,
-) -> Result<Option<Document>, String> {
-    service
-        .get_document_by_id(&id)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-// Tauri command: List documents
-#[tauri::command]
-async fn list_documents(
-    service: tauri::State<'_, DocumentService>,
-) -> Result<Vec<Document>, String> {
-    service
-        .list_documents()
-        .await
-        .map_err(|e| e.to_string())
-}
-
-// Tauri command: Update document
-#[tauri::command]
-async fn update_document(
-    id: String,
-    title: String,
-    service: tauri::State<'_, DocumentService>,
-) -> Result<Option<Document>, String> {
-    let request = UpdateDocumentRequest { title };
-    service
-        .update_document(&id, request)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-// Tauri command: Delete document
-#[tauri::command]
-async fn delete_document(
-    id: String,
-    service: tauri::State<'_, DocumentService>,
-) -> Result<bool, String> {
-    service
-        .delete_document(&id)
-        .await
-        .map_err(|e| e.to_string())
-}
 
 // ========== Workspace Commands ==========
 
@@ -264,21 +202,19 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 match setup_database(&handle).await {
                     Ok(pool) => {
-                        // Initialize all services
-                        let document_service = DocumentService::new(pool.clone());
+                        // Initialize hierarchical services
                         let workspace_service = WorkspaceService::new(pool.clone());
                         let project_service = ProjectService::new(pool.clone());
                         let experiment_service = ExperimentService::new(pool.clone());
                         let block_service = BlockService::new(pool.clone());
                         
                         // Manage services in Tauri state
-                        handle.manage(document_service);
                         handle.manage(workspace_service);
                         handle.manage(project_service);
                         handle.manage(experiment_service);
                         handle.manage(block_service);
                         
-                        println!("Database connection and all services established successfully");
+                        println!("Database connection and hierarchical services established successfully");
                     }
                     Err(e) => {
                         eprintln!("Database connection error: {}", e);
@@ -290,13 +226,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            // Legacy document commands
-            create_document,
-            get_document,
-            list_documents,
-            update_document,
-            delete_document,
-            // New hierarchical commands
+            // Hierarchical commands
             create_workspace,
             list_workspaces,
             create_project,
