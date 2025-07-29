@@ -9,6 +9,7 @@ use sqlx::{SqlitePool, Row};
 use uuid::Uuid;
 
 // Workspace Service
+#[derive(Clone)]
 pub struct WorkspaceService {
     pool: SqlitePool,
 }
@@ -60,6 +61,7 @@ impl WorkspaceService {
 }
 
 // Project Service
+#[derive(Clone)]
 pub struct ProjectService {
     pool: SqlitePool,
 }
@@ -115,6 +117,7 @@ impl ProjectService {
 }
 
 // Experiment Service
+#[derive(Clone)]
 pub struct ExperimentService {
     pool: SqlitePool,
 }
@@ -167,6 +170,7 @@ impl ExperimentService {
 }
 
 // Block Service
+#[derive(Clone)]
 pub struct BlockService {
     pool: SqlitePool,
 }

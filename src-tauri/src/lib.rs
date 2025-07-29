@@ -2,6 +2,8 @@ use tauri::Manager;
 use sqlx::SqlitePool;
 mod models;
 mod database;
+mod graphql;
+mod loader;
 use database::{WorkspaceService, ProjectService, ExperimentService, BlockService};
 use models::{
     Workspace, CreateWorkspaceRequest,
@@ -9,8 +11,11 @@ use models::{
     Experiment, CreateExperimentRequest,
     Block, CreateBlockRequest,
 };
+use graphql::{LoveNoteSchema, create_schema_with_loaders, create_schema_for_sdl};
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 
-// Initialize database connection using app data directory
+/// Initialize database connection using app data directory
+/// and set up Tauri state management for services and GraphQL schema
 async fn setup_database(app_handle: &tauri::AppHandle) -> Result<SqlitePool, sqlx::Error> {
     // Get application data directory
     let app_data_dir = app_handle
@@ -40,15 +45,13 @@ async fn setup_database(app_handle: &tauri::AppHandle) -> Result<SqlitePool, sql
     let pool = SqlitePool::connect_with(connection_options).await?;
     
     // Run migrations
-    println!("Running database migrations...");
+    println!("💨 Running database migrations...");
     sqlx::migrate!("./migrations").run(&pool).await?;
-    println!("Database migrations completed successfully");
+    println!("✅ Database migrations completed successfully");
     
     Ok(pool)
 }
 
-
-// ========== Workspace Commands ==========
 
 #[tauri::command]
 async fn create_workspace(
@@ -72,8 +75,6 @@ async fn list_workspaces(
         .await
         .map_err(|e| e.to_string())
 }
-
-// ========== Project Commands ==========
 
 #[tauri::command]
 async fn create_project(
@@ -100,8 +101,6 @@ async fn list_projects(
         .map_err(|e| e.to_string())
 }
 
-// ========== Experiment Commands ==========
-
 #[tauri::command]
 async fn create_experiment(
     project_id: String,
@@ -125,8 +124,6 @@ async fn list_experiments(
         .await
         .map_err(|e| e.to_string())
 }
-
-// ========== Block Commands ==========
 
 #[tauri::command]
 async fn create_block(
@@ -191,6 +188,38 @@ async fn update_block(
     }
 }
 
+// ========== GraphQL Commands ==========
+
+#[tauri::command]
+async fn graphql_query(
+    query: String,
+    variables: Option<serde_json::Value>,
+    schema: tauri::State<'_, LoveNoteSchema>,
+) -> Result<String, String> {
+    use async_graphql::Variables;
+    
+    let variables = variables.unwrap_or_default();
+    let variables: Variables = serde_json::from_value(variables)
+        .map_err(|e| format!("Invalid variables: {}", e))?;
+    
+    let response = schema.execute(async_graphql::Request::new(query).variables(variables)).await;
+    
+    serde_json::to_string(&response)
+        .map_err(|e| format!("Failed to serialize response: {}", e))
+}
+
+#[tauri::command]
+async fn graphql_playground() -> Result<String, String> {
+    Ok(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
+}
+
+#[tauri::command]
+async fn export_graphql_schema() -> Result<String, String> {
+    // Create a schema without DataLoaders for SDL export
+    let schema = create_schema_for_sdl();
+    Ok(schema.sdl())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -208,11 +237,15 @@ pub fn run() {
                         let experiment_service = ExperimentService::new(pool.clone());
                         let block_service = BlockService::new(pool.clone());
                         
-                        // Manage services in Tauri state
+                        // Create GraphQL schema with DataLoaders
+                        let schema = create_schema_with_loaders(pool.clone());
+                        
+                        // Manage services and schema in Tauri state
                         handle.manage(workspace_service);
                         handle.manage(project_service);
                         handle.manage(experiment_service);
                         handle.manage(block_service);
+                        handle.manage(schema);
                         
                         println!("Database connection and hierarchical services established successfully");
                     }
@@ -226,7 +259,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            // Hierarchical commands
             create_workspace,
             list_workspaces,
             create_project,
@@ -235,7 +267,11 @@ pub fn run() {
             list_experiments,
             create_block,
             list_blocks,
-            update_block
+            update_block,
+            // GraphQL commands
+            graphql_query,
+            graphql_playground,
+            export_graphql_schema
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
