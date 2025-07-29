@@ -205,7 +205,8 @@ export function GraphQLSchemaExport() {
             backgroundColor: '#f8f9fa',
             maxHeight: '300px',
             overflow: 'auto',
-            whiteSpace: 'pre-wrap'
+            whiteSpace: 'pre-wrap',
+            textAlign: 'left'
           }}>
             {schema.substring(0, 1000)}
             {schema.length > 1000 && (
