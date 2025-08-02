@@ -135,6 +135,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bytes",
+ "chrono",
  "fast_chemail",
  "fnv",
  "futures-channel",
@@ -155,6 +156,7 @@ dependencies = [
  "static_assertions_next",
  "tempfile",
  "thiserror 1.0.69",
+ "uuid",
 ]
 
 [[package]]

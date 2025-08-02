@@ -1,48 +1,50 @@
 use serde::{Deserialize, Serialize};
 use async_graphql::{SimpleObject, InputObject};
+use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 // Hierarchical models
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Workspace {
-    pub id: String,
+    pub id: Uuid,
     pub name: String,
     pub description: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Project {
-    pub id: String,
-    pub workspace_id: String,
+    pub id: Uuid,
+    pub workspace_id: Uuid,
     pub name: String,
     pub description: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Experiment {
-    pub id: String,
-    pub project_id: String,
+    pub id: Uuid,
+    pub project_id: Uuid,
     pub title: String,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Block {
-    pub id: String,
-    pub experiment_id: String,
+    pub id: Uuid,
+    pub experiment_id: Uuid,
     pub block_type: String,
     pub content: String, // JSON serialized BlockContent
     pub order_index: i32,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 // Block content types
@@ -50,8 +52,8 @@ pub struct Block {
 #[serde(tag = "type")]
 pub enum BlockContent {
     NoteBlock { text: String },
-    SampleRefBlock { sample_id: String },
-    ProtocolRefBlock { protocol_id: String },
+    SampleRefBlock { sample_id: Uuid },
+    ProtocolRefBlock { protocol_id: Uuid },
     ImageBlock { path: String, alt: String },
     TableBlock { headers: Vec<String>, rows: Vec<Vec<String>> },
 }
@@ -60,23 +62,23 @@ pub enum BlockContent {
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Sample {
-    pub id: String,
-    pub workspace_id: String,
+    pub id: Uuid,
+    pub workspace_id: Uuid,
     pub name: String,
     pub properties: String, // JSON serialized properties
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Protocol {
-    pub id: String,
-    pub workspace_id: String,
+    pub id: Uuid,
+    pub workspace_id: Uuid,
     pub name: String,
     pub steps: String, // JSON serialized steps
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 // Request types for new models
@@ -88,20 +90,20 @@ pub struct CreateWorkspaceRequest {
 
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateProjectRequest {
-    pub workspace_id: String,
+    pub workspace_id: Uuid,
     pub name: String,
     pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateExperimentRequest {
-    pub project_id: String,
+    pub project_id: Uuid,
     pub title: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateBlockRequest {
-    pub experiment_id: String,
+    pub experiment_id: Uuid,
     pub block_type: String,
     pub content: BlockContent,
     pub order_index: i32,
@@ -115,14 +117,14 @@ pub struct UpdateBlockRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSampleRequest {
-    pub workspace_id: String,
+    pub workspace_id: Uuid,
     pub name: String,
     pub properties: serde_json::Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateProtocolRequest {
-    pub workspace_id: String,
+    pub workspace_id: Uuid,
     pub name: String,
     pub steps: Vec<String>,
 }
@@ -130,7 +132,7 @@ pub struct CreateProtocolRequest {
 // GraphQL-specific input types for complex cases
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateBlockInput {
-    pub experiment_id: String,
+    pub experiment_id: Uuid,
     pub block_type: String,
     pub content: String, // JSON string representation of BlockContent
     pub order_index: i32,

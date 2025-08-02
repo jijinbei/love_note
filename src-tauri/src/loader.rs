@@ -4,6 +4,7 @@ use async_graphql::{
 };
 use std::collections::HashMap;
 use sqlx::SqlitePool;
+use uuid::Uuid;
 use crate::models::{Workspace, Project, Experiment, Block};
 
 
@@ -41,11 +42,11 @@ impl ProjectLoader {
     }
 }
 
-impl Loader<String> for ProjectLoader {
+impl Loader<Uuid> for ProjectLoader {
     type Value = Vec<Project>;
     type Error = FieldError;
 
-    async fn load(&self, workspace_ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, workspace_ids: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
         let mut projects_map = HashMap::new();
         
         for workspace_id in workspace_ids {
@@ -56,7 +57,7 @@ impl Loader<String> for ProjectLoader {
             .fetch_all(&self.0)
             .await?;
             
-            projects_map.insert(workspace_id.clone(), projects);
+            projects_map.insert(*workspace_id, projects);
         }
         
         Ok(projects_map)
@@ -72,11 +73,11 @@ impl ExperimentLoader {
     }
 }
 
-impl Loader<String> for ExperimentLoader {
+impl Loader<Uuid> for ExperimentLoader {
     type Value = Vec<Experiment>;
     type Error = FieldError;
 
-    async fn load(&self, project_ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, project_ids: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
         let mut experiments_map = HashMap::new();
         
         for project_id in project_ids {
@@ -87,7 +88,7 @@ impl Loader<String> for ExperimentLoader {
             .fetch_all(&self.0)
             .await?;
             
-            experiments_map.insert(project_id.clone(), experiments);
+            experiments_map.insert(*project_id, experiments);
         }
         
         Ok(experiments_map)
@@ -103,11 +104,11 @@ impl BlockLoader {
     }
 }
 
-impl Loader<String> for BlockLoader {
+impl Loader<Uuid> for BlockLoader {
     type Value = Vec<Block>;
     type Error = FieldError;
 
-    async fn load(&self, experiment_ids: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, experiment_ids: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
         let mut blocks_map = HashMap::new();
         
         for experiment_id in experiment_ids {
@@ -118,7 +119,7 @@ impl Loader<String> for BlockLoader {
             .fetch_all(&self.0)
             .await?;
             
-            blocks_map.insert(experiment_id.clone(), blocks);
+            blocks_map.insert(*experiment_id, blocks);
         }
         
         Ok(blocks_map)

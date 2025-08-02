@@ -20,21 +20,21 @@ impl Query {
         Ok(workspaces)
     }
 
-    async fn projects(&self, ctx: &Context<'_>, workspace_id: String) -> Result<Vec<Project>> {
+    async fn projects(&self, ctx: &Context<'_>, workspace_id: Uuid) -> Result<Vec<Project>> {
         let loader = ctx.data::<DataLoader<ProjectLoader>>()?;
         let projects = loader.load_one(workspace_id).await?
             .unwrap_or_default();
         Ok(projects)
     }
 
-    async fn experiments(&self, ctx: &Context<'_>, project_id: String) -> Result<Vec<Experiment>> {
+    async fn experiments(&self, ctx: &Context<'_>, project_id: Uuid) -> Result<Vec<Experiment>> {
         let loader = ctx.data::<DataLoader<ExperimentLoader>>()?;
         let experiments = loader.load_one(project_id).await?
             .unwrap_or_default();
         Ok(experiments)
     }
 
-    async fn blocks(&self, ctx: &Context<'_>, experiment_id: String) -> Result<Vec<Block>> {
+    async fn blocks(&self, ctx: &Context<'_>, experiment_id: Uuid) -> Result<Vec<Block>> {
         let loader = ctx.data::<DataLoader<BlockLoader>>()?;
         let blocks = loader.load_one(experiment_id).await?
             .unwrap_or_default();
@@ -49,15 +49,15 @@ pub struct Mutation;
 impl Mutation {
     async fn create_workspace(&self, ctx: &Context<'_>, input: CreateWorkspaceRequest) -> Result<Workspace> {
         let pool = ctx.data::<SqlitePool>()?;
-        let id = Uuid::new_v4().to_string();
-        let now = Utc::now().to_rfc3339();
+        let id = Uuid::new_v4();
+        let now = Utc::now();
 
         let workspace = Workspace {
-            id: id.clone(),
+            id: id,
             name: input.name.clone(),
             description: input.description.clone(),
-            created_at: now.clone(),
-            updated_at: now.clone(),
+            created_at: now,
+            updated_at: now,
         };
 
         sqlx::query("INSERT INTO workspaces (id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
@@ -75,16 +75,16 @@ impl Mutation {
 
     async fn create_project(&self, ctx: &Context<'_>, input: CreateProjectRequest) -> Result<Project> {
         let pool = ctx.data::<SqlitePool>()?;
-        let id = Uuid::new_v4().to_string();
-        let now = Utc::now().to_rfc3339();
+        let id = Uuid::new_v4();
+        let now = Utc::now();
 
         let project = Project {
-            id: id.clone(),
-            workspace_id: input.workspace_id.clone(),
+            id: id,
+            workspace_id: input.workspace_id,
             name: input.name.clone(),
             description: input.description.clone(),
-            created_at: now.clone(),
-            updated_at: now.clone(),
+            created_at: now,
+            updated_at: now,
         };
 
         sqlx::query("INSERT INTO projects (id, workspace_id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
@@ -103,15 +103,15 @@ impl Mutation {
 
     async fn create_experiment(&self, ctx: &Context<'_>, input: CreateExperimentRequest) -> Result<Experiment> {
         let pool = ctx.data::<SqlitePool>()?;
-        let id = Uuid::new_v4().to_string();
-        let now = Utc::now().to_rfc3339();
+        let id = Uuid::new_v4();
+        let now = Utc::now();
 
         let experiment = Experiment {
-            id: id.clone(),
-            project_id: input.project_id.clone(),
+            id: id,
+            project_id: input.project_id,
             title: input.title.clone(),
-            created_at: now.clone(),
-            updated_at: now.clone(),
+            created_at: now,
+            updated_at: now,
         };
 
         sqlx::query("INSERT INTO experiments (id, project_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
@@ -129,8 +129,8 @@ impl Mutation {
 
     async fn create_block(&self, ctx: &Context<'_>, input: CreateBlockInput) -> Result<Block> {
         let pool = ctx.data::<SqlitePool>()?;
-        let id = Uuid::new_v4().to_string();
-        let now = Utc::now().to_rfc3339();
+        let id = Uuid::new_v4();
+        let now = Utc::now();
 
         let request = input.to_request()
             .map_err(|e| async_graphql::Error::new(format!("Invalid block content: {}", e)))?;
@@ -139,13 +139,13 @@ impl Mutation {
             .map_err(|e| async_graphql::Error::new(format!("Content serialization error: {}", e)))?;
 
         let block = Block {
-            id: id.clone(),
-            experiment_id: request.experiment_id.clone(),
+            id: id,
+            experiment_id: request.experiment_id,
             block_type: request.block_type.clone(),
             content: content_json.clone(),
             order_index: request.order_index,
-            created_at: now.clone(),
-            updated_at: now.clone(),
+            created_at: now,
+            updated_at: now,
         };
 
         sqlx::query("INSERT INTO blocks (id, experiment_id, block_type, content, order_index, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
