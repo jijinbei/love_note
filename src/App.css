@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom button styles */
+@layer components {
+  .btn-nav {
+    @apply px-4 py-2 rounded mr-2.5;
+  }
+  
+  .btn-nav-active {
+    @apply bg-blue-600 text-white;
+  }
+  
+  .btn-nav-inactive {
+    @apply bg-gray-300 text-gray-800 hover:bg-gray-400;
+  }
+  
+  .nav-container {
+    @apply mb-5;
+  }
+}
+
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }

@@ -7,16 +7,16 @@ function App() {
 
   return (
     <main className="container">
-      <div style={{ marginBottom: '20px' }}>
+      <div className="nav-container">
         <button 
           onClick={() => setCurrentView('home')}
-          style={{ marginRight: '10px', backgroundColor: currentView === 'home' ? '#007acc' : '#ccc' }}
+          className={`btn-nav ${currentView === 'home' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
         >
           Home
         </button>
         <button 
           onClick={() => setCurrentView('hierarchical')}
-          style={{ backgroundColor: currentView === 'hierarchical' ? '#007acc' : '#ccc' }}
+          className={`btn-nav ${currentView === 'hierarchical' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
         >
           Hierarchical Test
         </button>
