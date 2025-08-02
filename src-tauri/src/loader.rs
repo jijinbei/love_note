@@ -5,8 +5,31 @@ use async_graphql::{
 use std::collections::HashMap;
 use sqlx::SqlitePool;
 use uuid::Uuid;
-use crate::models::{Workspace, Project, Experiment, Block};
+use crate::models::{User, Workspace, Project, Experiment, Block};
 
+/// UserLoader - loads all users or specific ones by ID
+pub struct UserLoader(SqlitePool);
+
+impl UserLoader {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self(pool)
+    }
+}
+
+impl Loader<()> for UserLoader {
+    type Value = Vec<User>;
+    type Error = FieldError;
+
+    async fn load(&self, _keys: &[()]) -> Result<HashMap<(), Self::Value>, Self::Error> {
+        let users = sqlx::query_as::<_, User>("SELECT * FROM users ORDER BY created_at DESC")
+            .fetch_all(&self.0)
+            .await?;
+        
+        let mut result = HashMap::new();
+        result.insert((), users);
+        Ok(result)
+    }
+}
 
 
 /// WorkspaceLoader - loads all workspaces or specific ones by ID

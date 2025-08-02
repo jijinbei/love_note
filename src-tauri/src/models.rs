@@ -3,6 +3,18 @@ use async_graphql::{SimpleObject, InputObject};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+// User model
+#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
+#[graphql(rename_fields = "camelCase")]
+pub struct User {
+    pub id: Uuid,
+    pub username: String,
+    pub email: String,
+    pub display_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 // Hierarchical models
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase")]
@@ -82,6 +94,13 @@ pub struct Protocol {
 }
 
 // Request types for new models
+#[derive(Debug, Serialize, Deserialize, InputObject)]
+pub struct CreateUserRequest {
+    pub username: String,
+    pub email: String,
+    pub display_name: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateWorkspaceRequest {
     pub name: String,

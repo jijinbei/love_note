@@ -3,16 +3,23 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 use chrono::Utc;
 use crate::models::{
-    Workspace, Project, Experiment, Block,
-    CreateWorkspaceRequest, CreateProjectRequest, CreateExperimentRequest, CreateBlockInput
+    User, Workspace, Project, Experiment, Block,
+    CreateUserRequest, CreateWorkspaceRequest, CreateProjectRequest, CreateExperimentRequest, CreateBlockInput
 };
-use crate::loader::{WorkspaceLoader, ProjectLoader, ExperimentLoader, BlockLoader};
+use crate::loader::{UserLoader, WorkspaceLoader, ProjectLoader, ExperimentLoader, BlockLoader};
 
 // GraphQL Query resolver
 pub struct Query;
 
 #[Object]
 impl Query {
+    async fn users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
+        let loader = ctx.data::<DataLoader<UserLoader>>()?;
+        let users = loader.load_one(()).await?
+            .unwrap_or_default();
+        Ok(users)
+    }
+
     async fn workspaces(&self, ctx: &Context<'_>) -> Result<Vec<Workspace>> {
         let loader = ctx.data::<DataLoader<WorkspaceLoader>>()?;
         let workspaces = loader.load_one(()).await?
@@ -47,6 +54,34 @@ pub struct Mutation;
 
 #[Object]
 impl Mutation {
+    async fn create_user(&self, ctx: &Context<'_>, input: CreateUserRequest) -> Result<User> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let id = Uuid::new_v4();
+        let now = Utc::now();
+
+        let user = User {
+            id: id,
+            username: input.username.clone(),
+            email: input.email.clone(),
+            display_name: input.display_name.clone(),
+            created_at: now,
+            updated_at: now,
+        };
+
+        sqlx::query("INSERT INTO users (id, username, email, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+            .bind(&user.id)
+            .bind(&user.username)
+            .bind(&user.email)
+            .bind(&user.display_name)
+            .bind(&user.created_at)
+            .bind(&user.updated_at)
+            .execute(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        Ok(user)
+    }
+
     async fn create_workspace(&self, ctx: &Context<'_>, input: CreateWorkspaceRequest) -> Result<Workspace> {
         let pool = ctx.data::<SqlitePool>()?;
         let id = Uuid::new_v4();
@@ -170,6 +205,10 @@ pub type LoveNoteSchema = Schema<Query, Mutation, async_graphql::EmptySubscripti
 // Schema builder function with DataLoaders and SqlitePool
 pub fn create_schema_with_loaders(pool: SqlitePool) -> LoveNoteSchema {
     Schema::build(Query, Mutation, async_graphql::EmptySubscription)
+        .data(DataLoader::new(
+            UserLoader::new(pool.clone()),
+            tokio::spawn,
+        ))
         .data(DataLoader::new(
             WorkspaceLoader::new(pool.clone()),
             tokio::spawn,

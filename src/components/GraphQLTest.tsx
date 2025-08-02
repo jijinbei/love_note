@@ -50,6 +50,60 @@ export function GraphQLTest() {
 
   const runSampleQueries = () => {
     const samples = [
+      // User Queries
+      {
+        name: 'Get All Users',
+        query: `query GetUsers {
+  users {
+    id
+    username
+    email
+    displayName
+    createdAt
+    updatedAt
+  }
+}`,
+        variables: '{}'
+      },
+      {
+        name: 'Create User - Full',
+        query: `mutation CreateUser($input: CreateUserRequest!) {
+  createUser(input: $input) {
+    id
+    username
+    email
+    displayName
+    createdAt
+    updatedAt
+  }
+}`,
+        variables: JSON.stringify({
+          input: {
+            username: "testuser",
+            email: "test@example.com",
+            displayName: "Test User"
+          }
+        }, null, 2)
+      },
+      {
+        name: 'Create User - Minimal',
+        query: `mutation CreateUser($input: CreateUserRequest!) {
+  createUser(input: $input) {
+    id
+    username
+    email
+    displayName
+    createdAt
+  }
+}`,
+        variables: JSON.stringify({
+          input: {
+            username: "minimaluser",
+            email: "minimal@example.com"
+          }
+        }, null, 2)
+      },
+
       // Workspace Queries
       {
         name: 'Get All Workspaces',
@@ -339,6 +393,25 @@ export function GraphQLTest() {
         variables: '{}'
       },
 
+      // User Introspection
+      {
+        name: 'Schema Introspection - User Type',
+        query: `query IntrospectUser {
+  __type(name: "User") {
+    name
+    kind
+    fields {
+      name
+      type {
+        name
+        kind
+      }
+    }
+  }
+}`,
+        variables: '{}'
+      },
+
       // Introspection Queries
       {
         name: 'Schema Introspection - Types',
@@ -372,6 +445,38 @@ export function GraphQLTest() {
       },
 
       // Error Testing Queries
+      {
+        name: 'Invalid User Email Test',
+        query: `mutation CreateUser($input: CreateUserRequest!) {
+  createUser(input: $input) {
+    id
+    username
+    email
+  }
+}`,
+        variables: JSON.stringify({
+          input: {
+            username: "testuser",
+            email: "invalid-email-format" // Invalid email format
+          }
+        }, null, 2)
+      },
+      {
+        name: 'Duplicate Username Test',
+        query: `mutation CreateUser($input: CreateUserRequest!) {
+  createUser(input: $input) {
+    id
+    username
+    email
+  }
+}`,
+        variables: JSON.stringify({
+          input: {
+            username: "testuser", // Same as previous user
+            email: "another@example.com"
+          }
+        }, null, 2)
+      },
       {
         name: 'Invalid Field Test',
         query: `query InvalidFieldTest {
@@ -420,28 +525,6 @@ export function GraphQLTest() {
   const loadSampleQuery = (sample: { query: string, variables: string }) => {
     setQuery(sample.query);
     setVariables(sample.variables);
-  };
-
-  const exportSchema = async () => {
-    try {
-      const schemaSDL = await invoke<string>('export_graphql_schema');
-      
-      // Create a downloadable file
-      const blob = new Blob([schemaSDL], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'love_note_graphql_schema.graphql';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      // Also show in response area
-      setResponse(`# GraphQL Schema Exported Successfully!\n# You can use this schema with GraphQL Editor (https://graphqleditor.com/)\n\n${schemaSDL}`);
-    } catch (error) {
-      setResponse(`Failed to export schema: ${error}`);
-    }
   };
 
   return (
@@ -540,21 +623,6 @@ export function GraphQLTest() {
         >
           🗑️ Clear All
         </button>
-        
-        <button
-          onClick={exportSchema}
-          style={{
-            padding: '10px 20px',
-            fontSize: '14px',
-            backgroundColor: '#17a2b8',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          📤 Export Schema
-        </button>
       </div>
 
       {/* Sample Queries */}
@@ -567,14 +635,16 @@ export function GraphQLTest() {
           marginBottom: '10px' 
         }}>
           {runSampleQueries().map((sample, index) => {
-            const category = sample.name.includes('Workspace') ? 'workspace' :
+            const category = sample.name.includes('User') ? 'user' :
+                           sample.name.includes('Workspace') ? 'workspace' :
                            sample.name.includes('Project') ? 'project' :
                            sample.name.includes('Experiment') ? 'experiment' :
                            sample.name.includes('Block') ? 'block' :
                            sample.name.includes('Introspection') ? 'introspect' :
-                           sample.name.includes('Invalid') || sample.name.includes('Missing') ? 'error' : 'other';
+                           sample.name.includes('Invalid') || sample.name.includes('Missing') || sample.name.includes('Duplicate') ? 'error' : 'other';
             
             const colors = {
+              user: '#e83e8c',
               workspace: '#28a745',
               project: '#007bff', 
               experiment: '#fd7e14',
@@ -611,6 +681,7 @@ export function GraphQLTest() {
         
         <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '10px' }}>
           <strong>カテゴリ別色分け:</strong>{' '}
+          <span style={{ color: '#e83e8c' }}>●</span> User{' '}
           <span style={{ color: '#28a745' }}>●</span> Workspace{' '}
           <span style={{ color: '#007bff' }}>●</span> Project{' '}
           <span style={{ color: '#fd7e14' }}>●</span> Experiment{' '}
