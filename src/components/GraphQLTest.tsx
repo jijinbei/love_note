@@ -498,7 +498,8 @@ export function GraphQLTest() {
             margin: 0,
             textAlign: 'left',
             whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            color: '#212529' // dark text for visibility
           }}>
             {response || 'Execute a query to see results...'}
           </pre>
