@@ -1,10 +1,8 @@
 use tauri::Manager;
 use sqlx::SqlitePool;
 mod models;
-mod database;
 mod graphql;
 mod loader;
-use database::{WorkspaceService, ProjectService, ExperimentService, BlockService};
 use graphql::{LoveNoteSchema, create_schema_with_loaders, create_schema_for_sdl};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 
@@ -88,20 +86,10 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 match setup_database(&handle).await {
                     Ok(pool) => {
-                        // Initialize hierarchical services
-                        let workspace_service = WorkspaceService::new(pool.clone());
-                        let project_service = ProjectService::new(pool.clone());
-                        let experiment_service = ExperimentService::new(pool.clone());
-                        let block_service = BlockService::new(pool.clone());
-                        
                         // Create GraphQL schema with DataLoaders
                         let schema = create_schema_with_loaders(pool.clone());
                         
-                        // Manage services and schema in Tauri state
-                        handle.manage(workspace_service);
-                        handle.manage(project_service);
-                        handle.manage(experiment_service);
-                        handle.manage(block_service);
+                        // Manage schema in Tauri state
                         handle.manage(schema);
                         
                         println!("Database connection and hierarchical services established successfully");
