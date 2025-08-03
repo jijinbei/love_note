@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { HierarchicalTest } from "./components/HierarchicalTest";
+import { GraphQLTest } from "./components/GraphQLTest";
+import { GraphQLSchemaExport } from "./components/GraphQLSchemaExport";
 import "./App.css";
 
 function App() {
-  const [currentView, setCurrentView] = useState<'hierarchical' | 'home'>('hierarchical');
+  const [currentView, setCurrentView] = useState<'graphql' | 'schema' | 'home'>('home');
 
   return (
     <main className="container">
@@ -15,10 +16,16 @@ function App() {
           Home
         </button>
         <button 
-          onClick={() => setCurrentView('hierarchical')}
-          className={`btn-nav ${currentView === 'hierarchical' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
+          onClick={() => setCurrentView('graphql')}
+          className={`btn-nav ${currentView === 'graphql' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
         >
-          Hierarchical Test
+          GraphQL Test
+        </button>
+        <button 
+          onClick={() => setCurrentView('schema')}
+          className={`btn-nav ${currentView === 'schema' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
+        >
+          Schema Export
         </button>
       </div>
 
@@ -26,10 +33,12 @@ function App() {
         <div>
           <h1>Love Note</h1>
           <p>Electronic Lab Notebook with Tauri + React + SQLite</p>
-          <p>Switch to Hierarchical Test to verify database operations.</p>
+          <p>Switch to GraphQL Test to verify database operations.</p>
         </div>
+      ) : currentView === 'graphql' ? (
+        <GraphQLTest />
       ) : (
-        <HierarchicalTest />
+        <GraphQLSchemaExport />
       )}
     </main>
   );

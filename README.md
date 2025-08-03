@@ -51,7 +51,7 @@ bun run tauri dev
 - Database is automatically created in application data directory
 - Migrations run automatically on application startup
 - Database location: Tauri data directory (platform-specific)
-  - Linux: `.local/share/com.jijinbei.love-note/love_note.db`
+  - Linux: `.local/share/com.xxxxxxx.love-note/love_note.db`
 - To reset database: Delete the database file and restart the application
 
 ### Build
