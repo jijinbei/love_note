@@ -239,13 +239,12 @@ export function GraphQLSchemaExport() {
         </h3>
         <ul style={{ 
           margin: '0',
-          paddingLeft: '20px',
+          paddingLeft: '0',
           color: '#4a5568',
           lineHeight: '1.6'
         }}>
           <li><strong>GraphQL Voyager:</strong> <code>https://graphql-kit.com/graphql-voyager/</code></li>
           <li><strong>GraphQL Editor:</strong> <code>https://app.graphqleditor.com/</code></li>
-          <li><strong>Insomnia:</strong> Import schema for API testing</li>
           <li><strong>GraphiQL:</strong> Interactive query interface</li>
         </ul>
         
