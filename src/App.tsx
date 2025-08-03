@@ -8,22 +8,22 @@ function App() {
 
   return (
     <main className="container">
-      <div style={{ marginBottom: '20px' }}>
+      <div className="nav-container">
         <button 
           onClick={() => setCurrentView('home')}
-          style={{ marginRight: '10px', backgroundColor: currentView === 'home' ? '#007acc' : '#ccc' }}
+          className={`btn-nav ${currentView === 'home' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
         >
           Home
         </button>
         <button 
           onClick={() => setCurrentView('graphql')}
-          style={{ marginLeft: '10px', backgroundColor: currentView === 'graphql' ? '#007acc' : '#ccc' }}
+          className={`btn-nav ${currentView === 'graphql' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
         >
           GraphQL Test
         </button>
         <button 
           onClick={() => setCurrentView('schema')}
-          style={{ marginLeft: '10px', backgroundColor: currentView === 'schema' ? '#007acc' : '#ccc' }}
+          className={`btn-nav ${currentView === 'schema' ? 'btn-nav-active' : 'btn-nav-inactive'}`}
         >
           Schema Export
         </button>
