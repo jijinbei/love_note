@@ -72,7 +72,9 @@ export function GraphQLTest() {
               fontSize: '12px',
               padding: '10px',
               border: '1px solid #ccc',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              backgroundColor: '#ffffff',
+              color: '#212529'
             }}
             placeholder="Enter your GraphQL query here..."
           />
@@ -88,7 +90,9 @@ export function GraphQLTest() {
               fontSize: '12px',
               padding: '10px',
               border: '1px solid #ccc',
-              borderRadius: '4px'
+              borderRadius: '4px',
+              backgroundColor: '#ffffff',
+              color: '#212529'
             }}
             placeholder='{"key": "value"}'
           />
