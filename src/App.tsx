@@ -22,7 +22,7 @@ function App() {
             onClick: () => setCurrentView("home"),
           },
           {
-            icon: "�",
+            icon: "🔍",
             label: "GraphQL Test",
             onClick: () => setCurrentView("graphql"),
           },
