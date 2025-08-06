@@ -10,11 +10,17 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@automerge/automerge": "^3.1.1",
+    "@automerge/automerge-repo": "^2.2.0",
+    "@automerge/automerge-repo-network-websocket": "^2.2.0",
+    "@automerge/automerge-repo-react-hooks": "^2.2.0",
+    "@automerge/automerge-repo-storage-indexeddb": "^2.2.0",
     "@monaco-editor/react": "^4.7.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@wasmer/wasi": "^1.2.2",
     "framer-motion": "^12.23.12",
     "monaco-editor": "^0.52.2",
     "react": "^19.1.0",
@@ -30,8 +36,10 @@
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
     "typescript": "~5.6.2",
-    "vite": "^7.0.4",
+    "vite": "4",
+    "vite-plugin-wasm": "^3.5.0",
     "vitest": "^3.2.4"
   }
 }
