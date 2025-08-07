@@ -154,15 +154,15 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange }) => {
                   {directories.map((dir, index) => (
                     <li
                       key={index}
-                      className="flex flex-col w-full px-2 py-2 rounded hover:bg-gray-100"
+                      className="group flex flex-col w-full px-2 py-2 rounded hover:bg-gray-100"
                     >
-                      <div className="flex items-center">
-                        {/* 折りたたみボタン */}
-                        <button
-                          className="p-1 rounded hover:bg-gray-100 transition text-gray-400"
-                          title={`${dir.name} を折りたたむ/展開`}
-                          onClick={() => toggleDirectoryCollapse(dir.name)}
-                        >
+                      <div 
+                        className="flex items-center cursor-pointer"
+                        onClick={() => toggleDirectoryCollapse(dir.name)}
+                        title={`${dir.name} を折りたたむ/展開`}
+                      >
+                        {/* 折りたたみアイコン */}
+                        <div className="p-1 text-gray-400">
                           <svg
                             width="16"
                             height="16"
@@ -172,24 +172,27 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange }) => {
                             viewBox="0 0 24 24"
                           >
                             {collapsedDirectories.includes(dir.name) ? (
-                              // 下向き矢印アイコン（展開状態）
-                              <polyline points="6 9 12 15 18 9" stroke="currentColor" fill="none" />
-                            ) : (
                               // 右向き矢印アイコン（折りたたみ状態）
                               <polyline points="9 6 15 12 9 18" stroke="currentColor" fill="none" />
+                            ) : (
+                              // 下向き矢印アイコン（展開状態）
+                              <polyline points="6 9 12 15 18 9" stroke="currentColor" fill="none" />
                             )}
                           </svg>
-                        </button>
+                        </div>
 
                         {/* フォルダ名 */}
                         <span className="mr-3 text-lg">📁</span>
                         <span className="flex-1 truncate text-left">{dir.name}</span>
 
-                        {/* ファイル追加ボタン */}
+                        {/* ファイル追加ボタン - ホバー時のみ表示 */}
                         <button
-                          className="p-1 rounded hover:bg-gray-100 transition text-gray-400"
+                          className="p-1 rounded hover:bg-gray-200 transition text-gray-400 opacity-0 group-hover:opacity-100"
                           title={`${dir.name} にファイルを追加`}
-                          onClick={() => handleCreateFile(dir.name)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCreateFile(dir.name);
+                          }}
                         >
                           <svg
                             width="16"
@@ -209,8 +212,9 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange }) => {
                       {!collapsedDirectories.includes(dir.name) && (
                         <ul className="pl-6 space-y-1 mt-1">
                           {dir.files.map((file, fileIndex) => (
-                            <li key={fileIndex} className="text-sm text-gray-600">
-                              📄 {file}
+                            <li key={fileIndex} className="text-sm text-gray-600 flex items-center">
+                              <span className="mr-3 text-lg">📄</span>
+                              <span>{file}</span>
                             </li>
                           ))}
                         </ul>
