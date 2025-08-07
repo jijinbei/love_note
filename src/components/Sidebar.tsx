@@ -183,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange }) => {
 
                         {/* フォルダ名 */}
                         <span className="mr-3 text-lg">📁</span>
-                        <span className="flex-1 truncate text-center">{dir.name}</span>
+                        <span className="flex-1 truncate text-left">{dir.name}</span>
 
                         {/* ファイル追加ボタン */}
                         <button
