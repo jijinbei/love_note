@@ -19,7 +19,6 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [wsUrl, setWsUrl] = useState<string>("");
   const [serverName, setServerName] = useState<string>("");
-  // const connected = !!wsUrl;
   const connected = isConnected;
 
   return (
@@ -138,23 +137,6 @@ function App() {
           setCurrentView("server");
         }}
       />
-
-      {/* {wsUrl && (
-        <WebSocketClient
-          url={wsUrl}
-          onStatusChange={(connected) => setIsConnected(connected)}
-          onDisconnect={(reason) => {
-            if (reason === "manual") {
-              setIsConnected(false);
-              setWsUrl("");
-              setServerName("");
-              setCurrentView("graphql");
-            } else {
-              setIsConnected(true);
-            }
-          }}
-        />
-      )} */}
     </div>
   );
 }
