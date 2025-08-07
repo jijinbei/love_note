@@ -135,7 +135,7 @@ function App() {
           setServerName(name);
           setIsConnected(true);
           setConnectOpen(false);
-          setCurrentView("graphql"); // 接続成功後に切り替える
+          setCurrentView("server");
         }}
       />
 
