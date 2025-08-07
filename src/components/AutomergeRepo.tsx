@@ -33,7 +33,8 @@ export function AutomergeProvider({
   wsUrl,
   roomName,
   children,
-}: PropsWithChildren<{ wsUrl: string; roomName: string }>) {
+  onStatusChange,
+}: PropsWithChildren<{ wsUrl: string; roomName: string; onStatusChange?: (status: SyncStatus) => void }>) {
   const [doc, setDoc] = useState<A.Doc<DocType>>(() => A.from<DocType>({ notes: [] }));
   const prevDocRef = useRef<A.Doc<DocType>>(doc);
 
@@ -44,11 +45,13 @@ export function AutomergeProvider({
   useEffect(() => {
     if (!wsUrl || !roomName) {
       setStatus("disconnected");
+      onStatusChange?.("disconnected");
       return;
     }
 
     setStatus("connecting");
-    const ws = new WebSocket(wsUrl);
+    onStatusChange?.("connecting");
+    const ws = new WebSocket(`${wsUrl}?room=${roomName}`);
     wsRef.current = ws;
 
     ws.onopen = () => {

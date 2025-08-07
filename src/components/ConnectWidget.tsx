@@ -57,7 +57,7 @@ export default function ConnectWidget({ open, onCancel, onConnect }: Props) {
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="ws://127.0.0.1:8080/ws"
+          placeholder=""
           style={{
             width: "100%",
             border: "1px solid #ddd",
@@ -73,7 +73,7 @@ export default function ConnectWidget({ open, onCancel, onConnect }: Props) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="demo-room"
+          placeholder=""
           style={{
             width: "100%",
             border: "1px solid #ddd",
