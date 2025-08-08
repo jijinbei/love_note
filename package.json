@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "codegen": "cd src-tauri && cargo run --bin export_schema && cd .. && ./node_modules/.bin/graphql-codegen --config codegen.ts",
+    "codegen:watch": "bun run codegen && ./node_modules/.bin/graphql-codegen --config codegen.ts --watch"
   },
   "dependencies": {
     "@automerge/automerge": "^3.1.1",
@@ -27,19 +29,27 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/typescript": "^4.1.6",
+    "@graphql-codegen/typescript-operations": "^4.6.1",
     "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "5.0.0",
     "autoprefixer": "^10.4.21",
+    "graphql": "^16.11.0",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "~5.6.2",
     "vite": "^7.1.0",
     "vite-plugin-wasm": "^3.5.0",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "graphql": "^16.11.0"
   }
 }

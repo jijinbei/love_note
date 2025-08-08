@@ -1,7 +1,7 @@
 use tauri::Manager;
 use sqlx::SqlitePool;
 mod models;
-mod graphql;
+pub mod graphql;
 mod loader;
 use graphql::{LoveNoteSchema, create_schema_with_loaders, create_schema_for_sdl};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
