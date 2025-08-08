@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure white background for the entire app */
+html, body, #root {
+  background-color: #ffffff;
+  color: #333333;
+}
+
 /* Custom button styles */
 @layer components {
   .btn-nav {
@@ -35,7 +41,7 @@
   font-weight: 400;
 
   color: #0f0f0f;
-  background-color: #f6f6f6;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
