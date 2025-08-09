@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { 
-  GetWorkspacesDocument,
   GetUsersDocument,
-  GetProjectsDocument,
-  GetExperimentsDocument,
   GetBlocksDocument,
-  CreateWorkspaceDocument,
   CreateUserDocument,
-  CreateProjectDocument,
-  CreateExperimentDocument,
   CreateBlockDocument
 } from '../../generated/graphql';
 import type { 
-  Workspace, 
   User, 
+  Workspace, 
   Project,
   Experiment,
   Block
@@ -22,6 +16,7 @@ import type {
 import { getQueryString } from '../../utils/graphql';
 import type { GraphQLResponse } from '../../utils/graphql';
 import { FormType } from '../../utils/constants';
+import { useGraphQL } from '../../hooks/useGraphQL';
 
 interface FormField {
   name: string;
@@ -73,9 +68,20 @@ export function GraphQLTest() {
   const [activeTab, setActiveTab] = useState<'query' | 'create'>('query');
   const [selectedCreateType, setSelectedCreateType] = useState<FormType>('user');
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string>('');
+  
+  // Use shared GraphQL hook
+  const { 
+    isLoading, 
+    error, 
+    setError, 
+    loadWorkspaces, 
+    loadProjects, 
+    loadExperiments, 
+    createWorkspace, 
+    createProject, 
+    createExperiment 
+  } = useGraphQL();
   
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -109,24 +115,22 @@ export function GraphQLTest() {
   }, []);
 
   const loadInitialData = async () => {
-    setIsLoading(true);
     setError('');
     try {
       // Load users and workspaces in parallel
-      const [usersResult, workspacesResult] = await Promise.all([
+      const [usersResult, workspacesData] = await Promise.all([
         invoke<string>('graphql_query', { query: getQueryString(GetUsersDocument), variables: null }),
-        invoke<string>('graphql_query', { query: getQueryString(GetWorkspacesDocument), variables: null })
+        loadWorkspaces()
       ]);
 
       const usersData: GraphQLResponse<{users: User[]}> = JSON.parse(usersResult);
-      const workspacesData: GraphQLResponse<{workspaces: Workspace[]}> = JSON.parse(workspacesResult);
 
-      if (usersData.errors || workspacesData.errors) {
-        throw new Error(usersData.errors?.[0]?.message || workspacesData.errors?.[0]?.message);
+      if (usersData.errors) {
+        throw new Error(usersData.errors[0]?.message);
       }
 
       setUsers(usersData.data?.users || []);
-      setWorkspaces(workspacesData.data?.workspaces || []);
+      setWorkspaces(workspacesData);
       
       // Clear all cached data to force refresh
       setWorkspaceProjects({});
@@ -134,13 +138,10 @@ export function GraphQLTest() {
       setExperimentBlocks({});
       
       // Load all projects and experiments for select options
-      await loadAllProjectsAndExperiments(workspacesData.data?.workspaces || []);
+      await loadAllProjectsAndExperiments(workspacesData);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
       console.error('Error loading initial data:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -151,24 +152,12 @@ export function GraphQLTest() {
       const experiments: Experiment[] = [];
 
       for (const workspace of workspaceList) {
-        const projectsResult = await invoke<string>('graphql_query', {
-          query: getQueryString(GetProjectsDocument),
-          variables: { workspaceId: workspace.id }
-        });
-        const projectsData: GraphQLResponse<{projects: Project[]}> = JSON.parse(projectsResult);
-        if (!projectsData.errors && projectsData.data?.projects) {
-          projects.push(...projectsData.data.projects);
-          
-          for (const project of projectsData.data.projects) {
-            const experimentsResult = await invoke<string>('graphql_query', {
-              query: getQueryString(GetExperimentsDocument),
-              variables: { projectId: project.id }
-            });
-            const experimentsData: GraphQLResponse<{experiments: Experiment[]}> = JSON.parse(experimentsResult);
-            if (!experimentsData.errors && experimentsData.data?.experiments) {
-              experiments.push(...experimentsData.data.experiments);
-            }
-          }
+        const projectsData = await loadProjects(workspace.id);
+        projects.push(...projectsData);
+        
+        for (const project of projectsData) {
+          const experimentsData = await loadExperiments(project.id);
+          experiments.push(...experimentsData);
         }
       }
 
@@ -183,7 +172,7 @@ export function GraphQLTest() {
   const useProjects = (workspaceId: string, enabled: boolean) => {
     useEffect(() => {
       if (enabled) {
-        loadProjects(workspaceId, false); // 初回はキャッシュを使用
+        loadProjectsForCache(workspaceId); // 初回はキャッシュを使用
       }
     }, [workspaceId, enabled]);
 
@@ -197,7 +186,7 @@ export function GraphQLTest() {
   const useExperiments = (projectId: string, enabled: boolean) => {
     useEffect(() => {
       if (enabled) {
-        loadExperiments(projectId, false); // 初回はキャッシュを使用
+        loadExperimentsForCache(projectId); // 初回はキャッシュを使用
       }
     }, [projectId, enabled]);
 
@@ -211,7 +200,7 @@ export function GraphQLTest() {
   const useBlocks = (experimentId: string, enabled: boolean) => {
     useEffect(() => {
       if (enabled) {
-        loadBlocks(experimentId, false); // 初回はキャッシュを使用
+        loadBlocksForCache(experimentId); // 初回はキャッシュを使用
       }
     }, [experimentId, enabled]);
 
@@ -221,52 +210,37 @@ export function GraphQLTest() {
     };
   };
 
-  const loadProjects = async (workspaceId: string, forceRefresh: boolean = false) => {
+  const loadProjectsForCache = async (workspaceId: string) => {
     try {
-      // Force refresh or load if not cached
-      if (forceRefresh || !workspaceProjects[workspaceId]) {
-        const result = await invoke<string>('graphql_query', {
-          query: getQueryString(GetProjectsDocument),
-          variables: { workspaceId }
-        });
-        const projectsData: GraphQLResponse<{projects: Project[]}> = JSON.parse(result);
-        if (!projectsData.errors) {
-          setWorkspaceProjects(prev => ({
-            ...prev,
-            [workspaceId]: projectsData.data?.projects || []
-          }));
-        }
+      if (!workspaceProjects[workspaceId]) {
+        const projectsData = await loadProjects(workspaceId);
+        setWorkspaceProjects(prev => ({
+          ...prev,
+          [workspaceId]: projectsData
+        }));
       }
     } catch (error) {
       console.error('Failed to load projects:', error);
     }
   };
 
-  const loadExperiments = async (projectId: string, forceRefresh: boolean = false) => {
+  const loadExperimentsForCache = async (projectId: string) => {
     try {
-      // Force refresh or load if not cached
-      if (forceRefresh || !projectExperiments[projectId]) {
-        const result = await invoke<string>('graphql_query', {
-          query: getQueryString(GetExperimentsDocument),
-          variables: { projectId }
-        });
-        const experimentsData: GraphQLResponse<{experiments: Experiment[]}> = JSON.parse(result);
-        if (!experimentsData.errors) {
-          setProjectExperiments(prev => ({
-            ...prev,
-            [projectId]: experimentsData.data?.experiments || []
-          }));
-        }
+      if (!projectExperiments[projectId]) {
+        const experimentsData = await loadExperiments(projectId);
+        setProjectExperiments(prev => ({
+          ...prev,
+          [projectId]: experimentsData
+        }));
       }
     } catch (error) {
       console.error('Failed to load experiments:', error);
     }
   };
 
-  const loadBlocks = async (experimentId: string, forceRefresh: boolean = false) => {
+  const loadBlocksForCache = async (experimentId: string) => {
     try {
-      // Force refresh or load if not cached
-      if (forceRefresh || !experimentBlocks[experimentId]) {
+      if (!experimentBlocks[experimentId]) {
         const result = await invoke<string>('graphql_query', {
           query: getQueryString(GetBlocksDocument),
           variables: { experimentId }
@@ -301,24 +275,29 @@ export function GraphQLTest() {
         }
       });
 
-      let mutationDocument;
-      let variables: any = { input };
-
       switch (selectedCreateType) {
         case 'user':
-          mutationDocument = CreateUserDocument;
+          // User creation uses direct invoke as it's not in useGraphQL hook
+          const userResult = await invoke<string>('graphql_query', {
+            query: getQueryString(CreateUserDocument),
+            variables: { input }
+          });
+          const userResponse: GraphQLResponse = JSON.parse(userResult);
+          if (userResponse.errors) {
+            throw new Error(userResponse.errors[0].message);
+          }
           break;
         case 'workspace':
-          mutationDocument = CreateWorkspaceDocument;
+          await createWorkspace(input.name, input.description);
           break;
         case 'project':
-          mutationDocument = CreateProjectDocument;
+          await createProject(input.workspaceId, input.name, input.description);
           break;
         case 'experiment':
-          mutationDocument = CreateExperimentDocument;
+          await createExperiment(input.projectId, input.title);
           break;
         case 'block':
-          // Transform content to proper BlockContent format
+          // Block creation uses direct invoke as it's not in useGraphQL hook
           if (input.content && typeof input.content === 'string') {
             if (input.blockType === 'text') {
               input.content = JSON.stringify({
@@ -326,28 +305,23 @@ export function GraphQLTest() {
                 text: input.content
               });
             } else {
-              // For other block types, keep as is for now
               input.content = JSON.stringify({
                 type: 'NoteBlock',
                 text: input.content
               });
             }
           }
-          mutationDocument = CreateBlockDocument;
+          const blockResult = await invoke<string>('graphql_query', {
+            query: getQueryString(CreateBlockDocument),
+            variables: { input }
+          });
+          const blockResponse: GraphQLResponse = JSON.parse(blockResult);
+          if (blockResponse.errors) {
+            throw new Error(blockResponse.errors[0].message);
+          }
           break;
         default:
           throw new Error(`Unknown create type: ${selectedCreateType}`);
-      }
-
-      const result = await invoke<string>('graphql_query', {
-        query: getQueryString(mutationDocument),
-        variables
-      });
-
-      const response: GraphQLResponse = JSON.parse(result);
-      
-      if (response.errors) {
-        throw new Error(response.errors[0].message);
       }
 
       // フォームをリセット
