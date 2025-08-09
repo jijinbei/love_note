@@ -200,3 +200,14 @@ button {
   border-radius: 4px;
   font-family: "Courier New", Courier, monospace;
 }
+
+/* Ordered list (ol) のスタイル */
+.markdown-preview ol {
+  list-style-type: decimal; /* 数字のリストスタイル */
+  margin-left: 1.5rem; /* 左側の余白 */
+  margin-bottom: 1rem; /* 下部の余白 */
+}
+
+.markdown-preview ol li {
+  margin-bottom: 0.5rem; /* 各リスト項目の間隔 */
+}
