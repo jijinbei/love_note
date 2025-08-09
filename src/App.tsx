@@ -80,10 +80,11 @@ function App() {
       />
 
       <div
-        className={`flex-1 p-4 overflow-auto transition-all duration-300`}
-        style={sidebarFixed ? { marginLeft: SIDEBAR_WIDTH } : {}}
+        className={`flex-1 p-4 overflow-auto transition-all duration-300 ${
+          sidebarFixed ? "ml-[260px]" : ""
+        }`}
       >
-        <div style={!sidebarFixed ? { width: "90vw", maxWidth: "90%" } : { width: "100%" }}>
+        <div className={`${!sidebarFixed ? "w-[90vw] max-w-[90%]" : "w-full"}`}>
           {/* ★ ここでのみ状態変化のバナーを出す（右上の常時表示は撤去） */}
           <ConnectionStatus
             show={banner.show}
@@ -111,9 +112,7 @@ function App() {
                 statusVal === "closed" ||
                 statusVal === false;
 
-              const isErr =
-                statusVal === "error" ||
-                statusVal === "failed";
+              const isErr = statusVal === "error" || statusVal === "failed";
 
               if (isUp) {
                 setIsConnected(true);
@@ -127,7 +126,11 @@ function App() {
               }
               if (isErr) {
                 setIsConnected(false);
-                setBanner({ show: true, kind: "error", message: "接続エラーが発生しました" });
+                setBanner({
+                  show: true,
+                  kind: "error",
+                  message: "接続エラーが発生しました",
+                });
                 return;
               }
 
@@ -142,7 +145,9 @@ function App() {
                     <div className="text-center">
                       <h1 className="text-2xl font-bold mb-4">Love Note</h1>
                       <p>Electronic Lab Notebook with Tauri + React + SQLite</p>
-                      <p>Switch to GraphQL Test to verify database operations.</p>
+                      <p>
+                        Switch to GraphQL Test to verify database operations.
+                      </p>
                     </div>
                   );
 
@@ -172,7 +177,9 @@ function App() {
                       {!isConnected && (
                         <div className="text-gray-500 text-center mb-4">
                           <p>WebSocket 未接続です</p>
-                          <p>サーバが起動して接続が確立されると、ここにリアルタイム画面が表示されます。</p>
+                          <p>
+                            サーバが起動して接続が確立されると、ここにリアルタイム画面が表示されます。
+                          </p>
                         </div>
                       )}
 
@@ -187,10 +194,18 @@ function App() {
                             setIsConnected(false);
                             setWsUrl("");
                             setServerName("");
-                            setBanner({ show: true, kind: "disconnected", message: "手動で切断しました。" });
+                            setBanner({
+                              show: true,
+                              kind: "disconnected",
+                              message: "手動で切断しました。",
+                            });
                           } else {
                             setIsConnected(false);
-                            setBanner({ show: true, kind: "disconnected", message: "接続が切断されました。" });
+                            setBanner({
+                              show: true,
+                              kind: "disconnected",
+                              message: "接続が切断されました。",
+                            });
                           }
                         }}
                       />

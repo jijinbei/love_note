@@ -6,14 +6,7 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const MarkdownViewer: React.FC<{ content: string }> = ({ content }) => {
   return (
-    <div
-      style={{
-        padding: "1rem",
-        backgroundColor: "#f9f9f9",
-        borderRadius: "8px",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <div className="p-4 bg-gray-100 rounded-lg font-sans">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
