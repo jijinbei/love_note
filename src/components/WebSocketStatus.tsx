@@ -14,24 +14,23 @@ export function WebSocketClient({
   const [wsState, setWsState] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  const append = (message: string) => setLog((prev) => [...prev, message]);
+  // ★ 手動切断時だけ close するためのフラグ
+  const manualCloseRef = useRef(false);
 
-  const notifyStatus = (connected: boolean) => {
-    onStatusChange?.(connected);
-  };
+  const append = (message: string) => setLog((prev) => [...prev, message]);
+  const notifyStatus = (connected: boolean) => onStatusChange?.(connected);
 
   const disconnect = () => {
+    manualCloseRef.current = true;
     if (wsRef.current) {
-      wsRef.current.close(1000, "bye");
+      wsRef.current.close(1000, "manual");
       notifyStatus(false);
-      console.log("aaaa");
-      onDisconnect?.("manual"); // 手動切断として通知
+      onDisconnect?.("manual");
     }
   };
 
   const send = () => {
     const ws = wsRef.current;
-    console.log("WebSocket readyState:", ws?.readyState, wsState, wsRef.current?.readyState);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(input);
       append(`📤 送信: ${input}`);
@@ -44,24 +43,18 @@ export function WebSocketClient({
   useEffect(() => {
     if (!url) return;
 
+    // 既存接続があり URL が変わる場合だけ閉じる
     if (wsRef.current) {
-      // すでに同じURLに接続しているなら再接続しない
       if (wsRef.current.url === url && wsRef.current.readyState === WebSocket.OPEN) {
-        console.log("既に接続済み");
+        append("✅ 既に接続済み");
         return;
       }
-  
-      // 古い接続を明示的に閉じる
       wsRef.current.close(1000, "reconnect");
     }
 
-    // disconnect(); // URL変更時に既存接続を閉じる
-
     const ws = new WebSocket(url);
-    console.log(ws);
     wsRef.current = ws;
     setWsState(ws.readyState);
-    console.log(wsRef?.current)
 
     ws.onopen = () => {
       append(`✅ 接続: ${url}`);
@@ -76,23 +69,25 @@ export function WebSocketClient({
       append(`🔌 切断: code=${e.code}`);
       setWsState(ws.readyState);
       notifyStatus(false);
-      onDisconnect?.("closed"); // 自然切断
+      // アンマウント由来では呼ばれない（アンマウントで close しないため）
+      onDisconnect?.("closed");
     };
 
     ws.onerror = () => {
       append("❌ エラーが発生しました");
       setWsState(ws.readyState);
       notifyStatus(false);
-      onDisconnect?.("error"); // エラー切断
+      onDisconnect?.("error");
     };
 
     return () => {
-      if (wsRef.current) {
-        // wsRef.current.close(1000, "bye");
-        // setWsState(WebSocket.CLOSING);
-        console.log("useEffectクリーンアップ: WebSocket close()");
-        ws.close(1000, "cleanup");
+      // ★ アンマウント時は close しない（表示を離れても接続維持）
+      // 手動切断の後にアンマウントされた場合のみ後追いで close（保険）
+      if (manualCloseRef.current && ws.readyState === WebSocket.OPEN) {
+        ws.close(1000, "cleanup-after-manual");
       }
+      // ハンドラだけ外してリーク防止
+      ws.onopen = ws.onclose = ws.onerror = ws.onmessage = null;
     };
   }, [url]);
 
@@ -130,15 +125,10 @@ export function WebSocketClient({
 
 function getReadyStateString(state: number): string {
   switch (state) {
-    case 0:
-      return "CONNECTING";
-    case 1:
-      return "OPEN";
-    case 2:
-      return "CLOSING";
-    case 3:
-      return "CLOSED";
-    default:
-      return "UNKNOWN";
+    case 0: return "CONNECTING";
+    case 1: return "OPEN";
+    case 2: return "CLOSING";
+    case 3: return "CLOSED";
+    default: return "UNKNOWN";
   }
 }
