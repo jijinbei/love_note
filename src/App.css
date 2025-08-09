@@ -178,19 +178,24 @@ button {
 /* コードブロックのスタイル */
 .markdown-preview pre {
   background-color: #dcdcdc; /* コードブロックの背景色 */
-  color: black; /* コードブロックのテキスト色 */
+  color: black; /* コードブロック全体のテキスト色 */
   padding: 1rem;
   border-radius: 8px;
   overflow-x: auto;
   font-family: "Courier New", Courier, monospace;
-  white-space: pre-wrap; /* 長いコードを折り返し */
-  word-wrap: break-word; /* 長い単語を折り返し */
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
-/* インラインコードのスタイル */
-.markdown-preview code {
-  background-color: #dcdcdc; /* インラインコードの背景色 */
-  color: red; /* インラインコードのテキスト色 */
+/* コードブロック内の <code> の文字色も黒にする */
+.markdown-preview pre code {
+  color: black;
+}
+
+/* インラインコード（preの中にないcode）だけ赤にする */
+.markdown-preview :not(pre) > code {
+  background-color: #dcdcdc;
+  color: red;
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-family: "Courier New", Courier, monospace;
