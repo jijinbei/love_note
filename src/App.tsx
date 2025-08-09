@@ -15,7 +15,6 @@ function App() {
   >("home"); // "markdown" を追加
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
-
   const [isConnected, setIsConnected] = useState(false);
   const [wsUrl, setWsUrl] = useState<string>("");
   const [serverName, setServerName] = useState<string>("");
@@ -77,6 +76,7 @@ function App() {
           },
         ]}
         onFixedChange={setSidebarFixed}
+        setCurrentView={setCurrentView}
       />
 
       <div
