@@ -1,116 +1,111 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 type Props = {
-  open: boolean;
-  onCancel: () => void;
+  connected: boolean;
+  show: boolean;
+  serverName: string;
+  wsUrl: string;
   onConnect: (payload: { url: string; name: string }) => void;
+  onHide: () => void;
+  onShow: () => void;
 };
 
-export default function ConnectWidget({ open, onCancel, onConnect }: Props) {
-  const [url, setUrl] = useState("ws://127.0.0.1:8080/ws");
-  const [name, setName] = useState("demo-room");
+export default function ConnectWidget({
+  connected,
+  show,
+  serverName,
+  wsUrl,
+  onConnect,
+  onHide,
+  onShow,
+}: Props) {
+  const [name, setName] = useState(serverName || "");
+  const [url, setUrl] = useState(wsUrl || "");
 
+  // 接続状態が変わったらフォーム初期値を追従
   useEffect(() => {
-    if (open) {
-      // setUrl("ws://127.0.0.1:8080/ws");
-      // setName("demo-room");
+    if (!connected) {
+      setName(serverName || "");
+      setUrl(wsUrl || "");
     }
-  }, [open]);
+  }, [connected, serverName, wsUrl]);
 
-  if (!open) return null;
+  if (!show) {
+    return (
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={onShow}
+          className="text-gray-600 hover:text-gray-800 border border-gray-300 hover:border-gray-400 rounded px-2 py-1 text-sm"
+        >
+          バナーを表示
+        </button>
+      </div>
+    );
+  }
 
-  const canConnect = url.trim().length > 0 && name.trim().length > 0;
+  if (connected) {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded mb-4 flex items-center gap-3">
+        <span className="font-semibold">Connected</span>
+        <span className="text-sm break-all">
+          Server: <b>{serverName || "(unnamed)"}</b>
+        </span>
+        <span className="text-sm break-all">
+          URL: <b>{wsUrl}</b>
+        </span>
+        <div className="flex-1" />
+        <button
+          onClick={onHide}
+          className="text-emerald-700 hover:text-emerald-900 border border-emerald-300 hover:border-emerald-400 rounded px-2 py-1 text-sm"
+          title="バナーを隠す"
+        >
+          非表示
+        </button>
+      </div>
+    );
+  }
 
+  // 未接続時：入力＋接続ボタン
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.35)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-      onClick={onCancel}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 420,
-          background: "white",
-          borderRadius: 12,
-          boxShadow: "0 6px 24px rgba(0,0,0,0.2)",
-          padding: 20,
-        }}
-      >
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-          Connect to Collaboration Server
-        </h2>
-        <p style={{ color: "#666", marginBottom: 16 }}>
-          WebSocket のエンドポイントとサーバ名（部屋名）を入力してください。
-        </p>
-
-        <label style={{ display: "block", fontSize: 12, color: "#555" }}>
-          Server URL
+    <div className="bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded mb-4">
+      <div className="flex items-center gap-3">
+        <span className="font-semibold">Not connected</span>
+        <div className="flex-1" />
+        <button
+          onClick={onHide}
+          className="text-amber-700 hover:text-amber-900 border border-amber-300 hover:border-amber-400 rounded px-2 py-1 text-sm"
+          title="バナーを隠す"
+        >
+          非表示
+        </button>
+      </div>
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+        <label className="text-sm text-gray-700">
+          Server Name
+          <input
+            className="mt-1 w-full border border-gray-300 rounded px-2 py-1"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="my-collab-room"
+          />
         </label>
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder=""
-          style={{
-            width: "100%",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            padding: "10px 12px",
-            margin: "6px 0 14px",
-          }}
-        />
-
-        <label style={{ display: "block", fontSize: 12, color: "#555" }}>
-          Server Name (Room)
+        <label className="text-sm text-gray-700 md:col-span-2">
+          WebSocket URL
+          <input
+            className="mt-1 w-full border border-gray-300 rounded px-2 py-1"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="ws://127.0.0.1:8080/ws"
+          />
         </label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder=""
-          style={{
-            width: "100%",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            padding: "10px 12px",
-            margin: "6px 0 20px",
-          }}
-        />
-
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button
-            onClick={onCancel}
-            style={{
-              border: "1px solid #ddd",
-              background: "#fff",
-              borderRadius: 8,
-              padding: "8px 14px",
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            disabled={!canConnect}
-            onClick={() => onConnect({ url: url.trim(), name: name.trim() })}
-            style={{
-              border: "none",
-              background: canConnect ? "#2563EB" : "#9CA3AF",
-              color: "white",
-              borderRadius: 8,
-              padding: "8px 14px",
-              cursor: canConnect ? "pointer" : "not-allowed",
-            }}
-          >
-            Connect
-          </button>
-        </div>
+      </div>
+      <div className="mt-3 flex justify-end">
+        <button
+          onClick={() => onConnect({ url, name })}
+          className="bg-emerald-600 text-white rounded px-3 py-1 text-sm hover:bg-emerald-700"
+        >
+          接続
+        </button>
       </div>
     </div>
   );
