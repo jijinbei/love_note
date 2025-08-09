@@ -8,8 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "codegen": "cd src-tauri && cargo run --bin export_schema && cd .. && ./node_modules/.bin/graphql-codegen --config codegen.ts",
-    "codegen:watch": "bun run codegen && ./node_modules/.bin/graphql-codegen --config codegen.ts --watch"
+    "codegen": "cd src-tauri && cargo run --bin export_schema && cd .. && bunx graphql-codegen --config codegen.ts",
+    "codegen:watch": "bun run codegen && bunx graphql-codegen --config codegen.ts --watch"
   },
   "dependencies": {
     "@automerge/automerge": "^3.1.1",
@@ -30,8 +30,11 @@
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/client-preset": "^4.8.3",
+    "@graphql-codegen/typed-document-node": "^5.1.2",
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-operations": "^4.6.1",
+    "@parcel/watcher": "^2.5.1",
     "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

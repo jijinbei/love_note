@@ -1,0 +1,107 @@
+query GetWorkspaces {
+  workspaces {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+  }
+}
+
+query GetUsers {
+  users {
+    id
+    username
+    email
+    displayName
+    createdAt
+    updatedAt
+  }
+}
+
+query GetProjects($workspaceId: UUID!) {
+  projects(workspaceId: $workspaceId) {
+    id
+    name
+    description
+    workspaceId
+    createdAt
+    updatedAt
+  }
+}
+
+query GetExperiments($projectId: UUID!) {
+  experiments(projectId: $projectId) {
+    id
+    title
+    projectId
+    createdAt
+    updatedAt
+  }
+}
+
+query GetBlocks($experimentId: UUID!) {
+  blocks(experimentId: $experimentId) {
+    id
+    blockType
+    content
+    orderIndex
+    experimentId
+    createdAt
+    updatedAt
+  }
+}
+
+mutation CreateWorkspace($input: CreateWorkspaceRequest!) {
+  createWorkspace(input: $input) {
+    id
+    name
+    description
+    createdAt
+    updatedAt
+  }
+}
+
+mutation CreateUser($input: CreateUserRequest!) {
+  createUser(input: $input) {
+    id
+    username
+    email
+    displayName
+    createdAt
+    updatedAt
+  }
+}
+
+mutation CreateProject($input: CreateProjectRequest!) {
+  createProject(input: $input) {
+    id
+    name
+    description
+    workspaceId
+    createdAt
+    updatedAt
+  }
+}
+
+mutation CreateExperiment($input: CreateExperimentRequest!) {
+  createExperiment(input: $input) {
+    id
+    title
+    projectId
+    createdAt
+    updatedAt
+  }
+}
+
+mutation CreateBlock($input: CreateBlockInput!) {
+  createBlock(input: $input) {
+    id
+    blockType
+    content
+    orderIndex
+    experimentId
+    createdAt
+    updatedAt
+  }
+}

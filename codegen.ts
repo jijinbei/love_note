@@ -2,18 +2,15 @@ import { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
   schema: "./src-tauri/schema.graphql",
+  documents: ["src/**/*.{ts,tsx}", "src/**/*.graphql"],
+  ignoreNoDocuments: true,
   generates: {
-    "./src/generated/graphql.ts": {
-      plugins: ["typescript", "typescript-operations"],
+    "./src/generated/": {
+      preset: "client",
       config: {
-        useIndexSignature: true,
-        mappers: {
-          DateTime: "string",
-          UUID: "string",
-        },
         scalars: {
-          DateTime: "string",
           UUID: "string",
+          DateTime: "string",
         },
       },
     },
@@ -24,3 +21,4 @@ const config: CodegenConfig = {
 };
 
 export default config;
+

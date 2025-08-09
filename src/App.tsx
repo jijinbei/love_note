@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraphQLTest } from "./components/GraphQLTest";
+import { GraphQLTest } from "./components/debug/GraphQLTest";
 import { GraphQLSchemaExport } from "./components/GraphQLSchemaExport";
 import { WebSocketClient } from "./components/WebSocketStatus";
 import ConnectWidget from "./components/ConnectWidget";
