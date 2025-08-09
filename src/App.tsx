@@ -6,11 +6,13 @@ import ConnectWidget from "./components/ConnectWidget";
 import ConnectionStatus from "./components/ConnectionStatus";
 import Sidebar from "./components/Sidebar";
 import { AutomergeProvider } from "./components/AutomergeRepo";
+import MarkdownEditor from "./components/MarkdownEditor"; // MarkdownEditorをインポート
 import "./App.css";
 
 function App() {
-  const [currentView, setCurrentView] =
-    useState<"graphql" | "schema" | "server" | "home">("home");
+  const [currentView, setCurrentView] = useState<
+    "graphql" | "schema" | "server" | "home" | "markdown"
+  >("home"); // "markdown" を追加
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
 
@@ -67,6 +69,11 @@ function App() {
             icon: "鯖",
             label: "Collaborative Editing Mode",
             onClick: () => setCurrentView("server"),
+          },
+          {
+            icon: "📝", // Markdown Editorのアイコン
+            label: "Markdown Editor",
+            onClick: () => setCurrentView("markdown"), // "markdown" に遷移
           },
         ]}
         onFixedChange={setSidebarFixed}
@@ -127,7 +134,6 @@ function App() {
               console.warn("Unknown status from AutomergeProvider:", status);
             }}
           >
-
             {/* 表示コンテンツを条件分岐 */}
             {(() => {
               switch (currentView) {
@@ -192,8 +198,13 @@ function App() {
                   );
 
                 case "schema":
-                default:
                   return <GraphQLSchemaExport />;
+
+                case "markdown": // Markdown Editorを表示
+                  return <MarkdownEditor />;
+
+                default:
+                  return null;
               }
             })()}
           </AutomergeProvider>

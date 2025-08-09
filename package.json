@@ -26,7 +26,13 @@
     "framer-motion": "^12.23.12",
     "monaco-editor": "^0.52.2",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-html": "^16.0.1",
+    "showdown": "^2.1.0"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.7",
@@ -39,6 +45,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "5.0.0",
     "autoprefixer": "^10.4.21",
     "graphql": "^16.11.0",
