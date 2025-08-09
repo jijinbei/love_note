@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Ensure white background for the entire app */
+/* Ensure white background for the entire app
 html, body, #root {
   background-color: #ffffff;
   color: #333333;
 }
 
 /* Custom button styles */
-@layer components {
+/* @layer components {
   .btn-nav {
     @apply px-4 py-2 rounded mr-2.5;
   }
@@ -142,4 +142,56 @@ button {
   button:active {
     background-color: #0f0f0f69;
   }
+} /* */
+
+.markdown-preview h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.markdown-preview h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-preview h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-preview ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+}
+
+.markdown-preview li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-preview p {
+  margin-bottom: 1rem;
+}
+
+/* コードブロックのスタイル */
+.markdown-preview pre {
+  background-color: #dcdcdc; /* コードブロックの背景色 */
+  color: black; /* コードブロックのテキスト色 */
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: "Courier New", Courier, monospace;
+  white-space: pre-wrap; /* 長いコードを折り返し */
+  word-wrap: break-word; /* 長い単語を折り返し */
+}
+
+/* インラインコードのスタイル */
+.markdown-preview code {
+  background-color: #dcdcdc; /* インラインコードの背景色 */
+  color: red; /* インラインコードのテキスト色 */
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", Courier, monospace;
 }

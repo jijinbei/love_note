@@ -6,12 +6,13 @@ import ConnectWidget from "./components/ConnectWidget";
 import ConnectionStatus from "./components/ConnectionStatus";
 import Sidebar from "./components/Sidebar";
 import { AutomergeProvider } from "./components/AutomergeRepo";
+import MarkdownEditor from "./components/MarkdownEditor"; // MarkdownEditorをインポート
 import "./App.css";
 
 function App() {
-  const [currentView, setCurrentView] = useState<"graphql" | "schema" | "server" | "home">(
-    "home"
-  );
+  const [currentView, setCurrentView] = useState<
+    "graphql" | "schema" | "server" | "home" | "markdown"
+  >("home"); // "markdown" を追加
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
 
@@ -46,19 +47,25 @@ function App() {
             label: "Collaborative Editing Mode",
             onClick: () => {
               setCurrentView("server");
-              setConnectOpen(true); 
+              setConnectOpen(true);
+            },
           },
-        },
-      ]}
-      onFixedChange={setSidebarFixed}
+          {
+            icon: "📝", // Markdown Editorのアイコン
+            label: "Markdown Editor",
+            onClick: () => setCurrentView("markdown"), // "markdown" に遷移
+          },
+        ]}
+        onFixedChange={setSidebarFixed}
       />
 
       <div
-        className={`flex-1 p-4 overflow-auto transition-all duration-300 ${!sidebarFixed ? "flex justify-end" : ""}`}
+        className={`flex-1 p-4 overflow-auto transition-all duration-300 ${
+          !sidebarFixed ? "flex justify-end" : ""
+        }`}
         style={sidebarFixed ? { marginLeft: SIDEBAR_WIDTH } : {}}
       >
         <div style={!sidebarFixed ? { width: "90vw", maxWidth: "90%" } : { width: "100%" }}>
-          
           {/* 接続状態 */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
             <ConnectionStatus connected={connected} serverName={serverName} url={wsUrl} />
@@ -66,16 +73,16 @@ function App() {
 
           {/* Automerge Provider ラップ */}
           <AutomergeProvider
-              wsUrl={wsUrl}
-              roomName={serverName || "default"}
-              onStatusChange={(status) => {
-                if (status === "connected") {
-                  setIsConnected(true);
-                } else if (status === "disconnected" || status === "error") {
-                  setIsConnected(false);
-                }
-              }}
-            >
+            wsUrl={wsUrl}
+            roomName={serverName || "default"}
+            onStatusChange={(status) => {
+              if (status === "connected") {
+                setIsConnected(true);
+              } else if (status === "disconnected" || status === "error") {
+                setIsConnected(false);
+              }
+            }}
+          >
             {/* 表示コンテンツを条件分岐 */}
             {(() => {
               switch (currentView) {
@@ -118,8 +125,13 @@ function App() {
                   );
 
                 case "schema":
-                default:
                   return <GraphQLSchemaExport />;
+
+                case "markdown": // Markdown Editorを表示
+                  return <MarkdownEditor />;
+
+                default:
+                  return null;
               }
             })()}
           </AutomergeProvider>
