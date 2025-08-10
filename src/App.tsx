@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { GraphQLTest } from "./components/debug/GraphQLTest";
-import { ImageUploadTest } from "./components/debug/ImageUploadTest";
 import { GraphQLSchemaExport } from "./components/GraphQLSchemaExport";
 import { WebSocketClient } from "./components/WebSocketStatus";
 import ConnectWidget from "./components/ConnectWidget";
@@ -9,25 +8,22 @@ import Sidebar from "./components/Sidebar";
 import Home from "./components/Home";
 import { AutomergeProvider } from "./components/AutomergeRepo";
 import type { Workspace } from "./generated/graphql";
-import { useGraphQL } from "./hooks/useGraphQL"; // GraphQLフックをインポート
-import MarkdownEditor from "./components/MarkdownEditor"; // MarkdownEditorをインポート
+import { useGraphQL } from "./hooks/useGraphQL";
+import MarkdownEditor from "./components/MarkdownEditor";
+import MarkdownPage from "./components/MarkdownPage";
 import "./App.css";
 
 function App() {
-  const [currentView, setCurrentView] = useState<
-    "graphql" | "schema" | "server" | "home" | "markdown" | "image"
-  >("home");
+  const [currentView, setCurrentView] = useState<string>("home");
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
   const [isConnected, setIsConnected] = useState(false);
   const [wsUrl, setWsUrl] = useState<string>("");
   const [serverName, setServerName] = useState<string>("");
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
-    null
-  );
-  const { isLoading, error, setError, loadWorkspaces, createWorkspace } =
-    useGraphQL();
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const { isLoading, error, setError, loadWorkspaces, createWorkspace } = useGraphQL();
+  const [selectedExperimentId, setSelectedExperimentId] = useState<string | null>(null);
 
   // 状態変化バナー
   const [banner, setBanner] = useState<{
@@ -55,17 +51,20 @@ function App() {
     if (currentView === "server") setShowConnectBanner(true);
   }, [currentView]);
 
+  // エクスペリメントクリック時の処理
+  const handleExperimentClick = (experimentId: string) => {
+    console.log("Experiment clicked from sidebar:", experimentId);
+    setSelectedExperimentId(experimentId);
+    setCurrentView("markdownPage");
+  };
   // ワークスペースを作成する関数
   const handleCreateWorkspace = async () => {
     const workspaceName = prompt("新しいワークスペース名を入力してください:");
     if (!workspaceName?.trim()) return;
 
     try {
-      // ワークスペース作成ロジック（例: API呼び出し）
-      await createWorkspace(workspaceName); // createWorkspace関数は適切にインポートされている必要があります
-
-      // 作成後にワークスペースを再読み込み
-      const workspacesData = await loadWorkspaces(); // loadWorkspaces関数もインポートされている必要があります
+      await createWorkspace(workspaceName);
+      const workspacesData = await loadWorkspaces();
       setWorkspaces(workspacesData);
     } catch (error) {
       console.error("Error creating workspace:", error);
@@ -97,23 +96,14 @@ function App() {
             onClick: () => setCurrentView("server"),
           },
           {
-            icon: "📝", // Markdown Editorのアイコン
+            icon: "📝",
             label: "Markdown Editor",
-            onClick: () => setCurrentView("markdown"), // "markdown" に遷移
-          },
-          {
-            icon: "🖼️",
-            label: "Image Upload",
-            onClick: () => setCurrentView("image"),
-          },
-          {
-            icon: "🖼️",
-            label: "Image Upload",
-            onClick: () => setCurrentView("image"),
+            onClick: () => setCurrentView("markdown"),
           },
         ]}
         onFixedChange={setSidebarFixed}
         setCurrentView={setCurrentView}
+        onExperimentClick={handleExperimentClick}
       />
 
       <div
@@ -122,7 +112,6 @@ function App() {
         }`}
       >
         <div className={`${!sidebarFixed ? "w-[90vw] max-w-[90%]" : "w-full"}`}>
-          {/* ★ ここでのみ状態変化のバナーを出す（右上の常時表示は撤去） */}
           <ConnectionStatus
             show={banner.show}
             kind={banner.kind}
@@ -185,15 +174,20 @@ function App() {
                       isLoading={isLoading}
                       setSelectedWorkspace={setSelectedWorkspace}
                       handleCreateWorkspace={handleCreateWorkspace}
+                      setCurrentView={setCurrentView}
                     />
                   );
+
+                case "markdownPage":
+                  return <MarkdownPage experimentId={selectedExperimentId} />;
+
                 case "graphql":
                   return <GraphQLTest />;
 
                 case "server":
                   return (
                     <>
-                      {/* Server画面の上部にだけ“接続バナー”を出す */}
+                      {/* Server画面の上部にだけ"接続バナー"を出す */}
                       {!isConnected && (
                         <ConnectWidget
                           connected={false}
@@ -203,7 +197,6 @@ function App() {
                           onConnect={({ url, name }) => {
                             setWsUrl(url);
                             setServerName(name);
-                            // 実接続は WebSocketClient/AutomergeProvider が確立
                           }}
                           onHide={() => setShowConnectBanner(false)}
                           onShow={() => setShowConnectBanner(true)}
@@ -251,11 +244,8 @@ function App() {
                 case "schema":
                   return <GraphQLSchemaExport />;
 
-                case "markdown": // Markdown Editorを表示
+                case "markdown":
                   return <MarkdownEditor />;
-
-                case "image":
-                  return <ImageUploadTest />;
 
                 default:
                   return null;

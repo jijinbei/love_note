@@ -8,6 +8,7 @@ interface ProjectItemProps {
   isLoading: boolean;
   onToggle: (projectId: string) => void;
   onCreateExperiment: (projectId: string) => void;
+  onExperimentClick?: (experimentId: string) => void; // 新しく追加
 }
 
 export const ProjectItem: React.FC<ProjectItemProps> = ({
@@ -17,6 +18,7 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
   isLoading,
   onToggle,
   onCreateExperiment,
+  onExperimentClick, // 新しく追加
 }) => {
   return (
     <li className="mb-1">
@@ -76,9 +78,14 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
         {isExpanded && experiments.length > 0 && (
           <ul className="pl-6 space-y-1 mt-1">
             {experiments.map((experiment) => (
-              <li key={experiment.id} className="text-sm text-gray-600 flex items-center p-1 rounded hover:bg-yellow-50">
+              <li 
+                key={experiment.id} 
+                className="text-sm text-gray-600 flex items-center p-1 rounded hover:bg-yellow-50 cursor-pointer"
+                onClick={() => onExperimentClick?.(experiment.id)} // クリックイベントを追加
+                title={`${experiment.title} を開く`}
+              >
                 <span className="mr-2 text-sm">🧪</span>
-                <span className="text-xs">{experiment.title}</span>
+                <span className="text-xs truncate">{experiment.title}</span>
               </li>
             ))}
           </ul>

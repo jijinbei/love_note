@@ -16,10 +16,16 @@ export type SidebarItem = {
 type SidebarProps = {
   items: SidebarItem[];
   onFixedChange?: (fixed: boolean) => void;
-  setCurrentView: (view: "graphql" | "schema" | "server" | "home" | "markdown") => void;
+  setCurrentView: (view: string) => void;
+  onExperimentClick?: (experimentId: string) => void; // 新しく追加
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange, setCurrentView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  items, 
+  onFixedChange, 
+  setCurrentView, 
+  onExperimentClick // 新しく追加
+}) => {
   const [fixedOpen, setFixedOpen] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -110,6 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange, setCurrentView 
       ]);
       setWorkspaces(workspacesData);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unknown error occurred');
       console.error('Error refreshing workspaces:', error);
     } finally {
       setRefreshLoading(false);
@@ -224,7 +231,10 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange, setCurrentView 
                   
                   {/* 選択されたワークスペースのプロジェクト・実験のみ表示 */}
                   {selectedWorkspace && (
-                    <WorkspaceContentItem workspaceId={selectedWorkspace} />
+                    <WorkspaceContentItem 
+                      workspaceId={selectedWorkspace}
+                      onExperimentClick={onExperimentClick} // コールバックを渡す
+                    />
                   )}
                   
                   {/* ワークスペースが選択されていない場合 */}
