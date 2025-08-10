@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { GraphQLTest } from "./components/debug/GraphQLTest";
+import { ImageUploadTest } from "./components/debug/ImageUploadTest";
 import { GraphQLSchemaExport } from "./components/GraphQLSchemaExport";
 import { WebSocketClient } from "./components/WebSocketStatus";
 import ConnectWidget from "./components/ConnectWidget";
@@ -99,6 +100,11 @@ function App() {
             icon: "📝",
             label: "Markdown Editor",
             onClick: () => setCurrentView("markdown"),
+          },
+          {
+            icon: "🖼️",
+            label: "Image Upload",
+            onClick: () => setCurrentView("image"),
           },
         ]}
         onFixedChange={setSidebarFixed}
@@ -246,6 +252,9 @@ function App() {
 
                 case "markdown":
                   return <MarkdownEditor />;
+
+                case "image":
+                  return <ImageUploadTest />;
 
                 default:
                   return null;

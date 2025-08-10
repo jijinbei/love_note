@@ -100,7 +100,6 @@ export function ImageUploadTest() {
         query GetImages($workspaceId: UUID!) {
           images(workspaceId: $workspaceId) {
             id
-            workspaceId
             originalFilename
             filePath
             mimeType

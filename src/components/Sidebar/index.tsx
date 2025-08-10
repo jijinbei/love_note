@@ -207,6 +207,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   label: "Markdown Editor",
                   onClick: () => setCurrentView && setCurrentView("markdown"),
                 },
+                {
+                  icon: "🖼️",
+                  label: "Image Upload",
+                  onClick: () => setCurrentView && setCurrentView("image"),
+                },
               ]}
             />
 
