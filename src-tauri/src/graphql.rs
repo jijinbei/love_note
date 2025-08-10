@@ -1,12 +1,29 @@
-use async_graphql::{Context, Object, Schema, Result, dataloader::DataLoader};
+use async_graphql::{Context, Object, Schema, Result, dataloader::DataLoader, ComplexObject};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 use chrono::Utc;
+use std::fs;
+use base64::prelude::*;
 use crate::models::{
-    User, Workspace, Project, Experiment, Block,
-    CreateUserRequest, CreateWorkspaceRequest, CreateProjectRequest, CreateExperimentRequest, CreateBlockInput
+    User, Workspace, Project, Experiment, Block, Image,
+    CreateUserRequest, CreateWorkspaceRequest, CreateProjectRequest, CreateExperimentRequest, CreateBlockInput, ImageUploadInput
 };
-use crate::loader::{UserLoader, WorkspaceLoader, ProjectLoader, ExperimentLoader, BlockLoader};
+use crate::loader::{UserLoader, WorkspaceLoader, ProjectLoader, ExperimentLoader, BlockLoader, ImageLoader, ImageByIdLoader};
+use crate::image_utils;
+
+// Image GraphQL resolver with dataUrl field
+#[ComplexObject]
+impl Image {
+    async fn data_url(&self) -> Result<String> {
+        match fs::read(&self.file_path) {
+            Ok(data) => {
+                let base64_data = BASE64_STANDARD.encode(&data);
+                Ok(format!("data:{};base64,{}", self.mime_type, base64_data))
+            }
+            Err(e) => Err(async_graphql::Error::new(format!("Failed to read image file: {}", e)))
+        }
+    }
+}
 
 // GraphQL Query resolver
 pub struct Query;
@@ -46,6 +63,20 @@ impl Query {
         let blocks = loader.load_one(experiment_id).await?
             .unwrap_or_default();
         Ok(blocks)
+    }
+
+    async fn images(&self, ctx: &Context<'_>, workspace_id: Uuid) -> Result<Vec<Image>> {
+        let loader = ctx.data::<DataLoader<ImageLoader>>()?;
+        let images = loader.load_one(workspace_id).await?
+            .unwrap_or_default();
+        Ok(images)
+    }
+
+    async fn image(&self, ctx: &Context<'_>, id: Uuid) -> Result<Option<Image>> {
+        let loader = ctx.data::<DataLoader<ImageByIdLoader>>()?;
+        let image = loader.load_one(id).await?
+            .unwrap_or_default();
+        Ok(image)
     }
 }
 
@@ -197,13 +228,98 @@ impl Mutation {
 
         Ok(block)
     }
+
+    async fn upload_image(&self, ctx: &Context<'_>, input: ImageUploadInput) -> Result<Image> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let app_handle = ctx.data::<tauri::AppHandle>()?;
+        
+        // Decode base64 image data
+        let image_data = image_utils::decode_base64_image(&input.data)
+            .map_err(|e| async_graphql::Error::new(format!("Invalid image data: {}", e)))?;
+        
+        // Detect MIME type from filename
+        let mime_type = image_utils::detect_mime_type(&input.filename)
+            .map_err(|e| async_graphql::Error::new(format!("Unsupported file format: {}", e)))?;
+        
+        // Get image metadata
+        let metadata = image_utils::get_image_metadata(&image_data, &mime_type)
+            .map_err(|e| async_graphql::Error::new(format!("Image validation failed: {}", e)))?;
+        
+        // Generate unique filename and save to filesystem
+        let unique_filename = image_utils::generate_unique_filename(&input.filename);
+        let file_path = image_utils::save_image_file(app_handle, &image_data, &unique_filename)
+            .map_err(|e| async_graphql::Error::new(format!("Failed to save image: {}", e)))?;
+        
+        // Create database record
+        let id = Uuid::new_v4();
+        let now = Utc::now();
+        
+        let image = Image {
+            id,
+            workspace_id: input.workspace_id,
+            original_filename: input.filename.clone(),
+            file_path: file_path.to_string_lossy().to_string(),
+            mime_type: metadata.mime_type.clone(),
+            file_size: metadata.file_size as i64,
+            width: metadata.width.map(|w| w as i32),
+            height: metadata.height.map(|h| h as i32),
+            alt_text: input.alt_text.clone(),
+            created_at: now,
+            updated_at: now,
+        };
+        
+        sqlx::query("INSERT INTO images (id, workspace_id, original_filename, file_path, mime_type, file_size, width, height, alt_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(&image.id)
+            .bind(&image.workspace_id)
+            .bind(&image.original_filename)
+            .bind(&image.file_path)
+            .bind(&image.mime_type)
+            .bind(&image.file_size)
+            .bind(&image.width)
+            .bind(&image.height)
+            .bind(&image.alt_text)
+            .bind(&image.created_at)
+            .bind(&image.updated_at)
+            .execute(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+        
+        Ok(image)
+    }
+
+    async fn delete_image(&self, ctx: &Context<'_>, id: Uuid) -> Result<bool> {
+        let pool = ctx.data::<SqlitePool>()?;
+        
+        // Get image record to find file path
+        let image: Option<Image> = sqlx::query_as("SELECT * FROM images WHERE id = ?")
+            .bind(&id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+        
+        if let Some(image) = image {
+            // Delete from filesystem
+            let _ = image_utils::delete_image_file(&image.file_path);
+            
+            // Delete from database
+            sqlx::query("DELETE FROM images WHERE id = ?")
+                .bind(&id)
+                .execute(pool)
+                .await
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+            
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
 }
 
 // GraphQL Schema type
 pub type LoveNoteSchema = Schema<Query, Mutation, async_graphql::EmptySubscription>;
 
 // Schema builder function with DataLoaders and SqlitePool
-pub fn create_schema_with_loaders(pool: SqlitePool) -> LoveNoteSchema {
+pub fn create_schema_with_loaders(pool: SqlitePool, app_handle: tauri::AppHandle) -> LoveNoteSchema {
     Schema::build(Query, Mutation, async_graphql::EmptySubscription)
         .data(DataLoader::new(
             UserLoader::new(pool.clone()),
@@ -225,7 +341,16 @@ pub fn create_schema_with_loaders(pool: SqlitePool) -> LoveNoteSchema {
             BlockLoader::new(pool.clone()),
             tokio::spawn,
         ))
+        .data(DataLoader::new(
+            ImageLoader::new(pool.clone()),
+            tokio::spawn,
+        ))
+        .data(DataLoader::new(
+            ImageByIdLoader::new(pool.clone()),
+            tokio::spawn,
+        ))
         .data(pool)
+        .data(app_handle)
         .finish()
 }
 

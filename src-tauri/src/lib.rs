@@ -3,6 +3,7 @@ use sqlx::SqlitePool;
 mod models;
 pub mod graphql;
 mod loader;
+mod image_utils;
 use graphql::{LoveNoteSchema, create_schema_with_loaders, create_schema_for_sdl};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 
@@ -87,7 +88,7 @@ pub fn run() {
                 match setup_database(&handle).await {
                     Ok(pool) => {
                         // Create GraphQL schema with DataLoaders
-                        let schema = create_schema_with_loaders(pool.clone());
+                        let schema = create_schema_with_loaders(pool.clone(), handle.clone());
                         
                         // Manage schema in Tauri state
                         handle.manage(schema);

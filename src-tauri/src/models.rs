@@ -59,6 +59,23 @@ pub struct Block {
     pub updated_at: DateTime<Utc>,
 }
 
+// Image model
+#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
+#[graphql(rename_fields = "camelCase", complex)]
+pub struct Image {
+    pub id: Uuid,
+    pub workspace_id: Uuid,
+    pub original_filename: String,
+    pub file_path: String,
+    pub mime_type: String,
+    pub file_size: i64,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub alt_text: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 // Block content types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -66,7 +83,7 @@ pub enum BlockContent {
     NoteBlock { text: String },
     SampleRefBlock { sample_id: Uuid },
     ProtocolRefBlock { protocol_id: Uuid },
-    ImageBlock { path: String, alt: String },
+    ImageBlock { image_id: Uuid, alt: Option<String> },
     TableBlock { headers: Vec<String>, rows: Vec<Vec<String>> },
 }
 
@@ -146,6 +163,26 @@ pub struct CreateProtocolRequest {
     pub workspace_id: Uuid,
     pub name: String,
     pub steps: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateImageRequest {
+    pub workspace_id: Uuid,
+    pub original_filename: String,
+    pub file_path: String,
+    pub mime_type: String,
+    pub file_size: i64,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub alt_text: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, InputObject)]
+pub struct ImageUploadInput {
+    pub workspace_id: Uuid,
+    pub filename: String,
+    pub data: String, // Base64 encoded image data
+    pub alt_text: Option<String>,
 }
 
 // GraphQL-specific input types for complex cases
