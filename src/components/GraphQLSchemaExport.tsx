@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export function GraphQLSchemaExport() {
-  const [schema, setSchema] = useState('');
+  const [schema, setSchema] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -12,12 +12,11 @@ export function GraphQLSchemaExport() {
       setIsLoading(true);
       setError(null);
       setCopySuccess(false);
-      
-      const schemaSDL = await invoke<string>('export_graphql_schema');
+
+      const schemaSDL = await invoke<string>("export_graphql_schema");
       setSchema(schemaSDL);
-      
     } catch (err) {
-      console.error('Schema export error:', err);
+      console.error("Schema export error:", err);
       setError(`Failed to export schema: ${err}`);
     } finally {
       setIsLoading(false);
@@ -26,106 +25,74 @@ export function GraphQLSchemaExport() {
 
   const copyToClipboard = async () => {
     if (!schema) return;
-    
+
     try {
       setCopySuccess(false);
       await navigator.clipboard.writeText(schema);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 3000);
     } catch (err) {
-      console.error('Clipboard error:', err);
-      setError(`Failed to copy to clipboard: ${err instanceof Error ? err.message : 'Permission denied'}`);
+      console.error("Clipboard error:", err);
+      setError(
+        `Failed to copy to clipboard: ${err instanceof Error ? err.message : "Permission denied"}`
+      );
       setTimeout(() => setError(null), 5000);
     }
   };
 
   return (
-    <div style={{ 
-      padding: '20px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      maxWidth: '800px',
-      margin: '0 auto'
-    }}>
-      <div style={{ 
-        marginBottom: '30px',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ 
-          margin: '0 0 10px 0', 
-          fontSize: '24px',
-          color: '#2d3748'
-        }}>
+    <div className="p-5 font-sans max-w-[800px] mx-auto">
+      <div className="mb-8 text-center">
+        <h2 className="m-0 mb-2 text-2xl text-gray-800">
           📊 GraphQL Schema Export
         </h2>
-        <p style={{ 
-          margin: 0, 
-          color: '#718096',
-          fontSize: '16px' 
-        }}>
+        <p className="m-0 text-gray-500 text-base">
           Export your GraphQL schema to use with external visualization tools
         </p>
       </div>
 
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        justifyContent: 'center',
-        marginBottom: '30px'
-      }}>
-        <button 
+      <div className="flex gap-3 justify-center mb-8">
+        <button
           onClick={loadSchema}
           disabled={isLoading}
+          className="px-6 py-3 text-base font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out flex items-center justify-center gap-2"
           style={{
-            padding: '12px 24px',
-            fontSize: '16px',
-            fontWeight: '600',
-            backgroundColor: isLoading ? '#a0aec0' : '#4299e1',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            transition: 'all 0.2s',
-            minWidth: '160px'
+            backgroundColor: isLoading ? "#a0aec0" : "#4299e1",
+            color: "white",
+            cursor: isLoading ? "not-allowed" : "pointer",
           }}
           onMouseOver={(e) => {
             if (!isLoading) {
-              e.currentTarget.style.backgroundColor = '#3182ce';
-              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.backgroundColor = "#3182ce";
+              e.currentTarget.style.transform = "translateY(-1px)";
             }
           }}
           onMouseOut={(e) => {
             if (!isLoading) {
-              e.currentTarget.style.backgroundColor = '#4299e1';
-              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.backgroundColor = "#4299e1";
+              e.currentTarget.style.transform = "translateY(0)";
             }
           }}
         >
-          {isLoading ? '⏳ Loading...' : '📊 Load Schema'}
+          {isLoading ? "⏳ Loading..." : "📊 Load Schema"}
         </button>
 
         {schema && (
-          <button 
+          <button
             onClick={copyToClipboard}
+            className="px-6 py-3 text-base font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out flex items-center justify-center gap-2"
             style={{
-              padding: '12px 24px',
-              fontSize: '16px',
-              fontWeight: '600',
-              backgroundColor: '#48bb78',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s'
+              backgroundColor: "#48bb78",
+              color: "white",
+              cursor: "pointer",
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = '#38a169';
-              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.backgroundColor = "#38a169";
+              e.currentTarget.style.transform = "translateY(-1px)";
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = '#48bb78';
-              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.backgroundColor = "#48bb78";
+              e.currentTarget.style.transform = "translateY(0)";
             }}
           >
             📋 Copy to Clipboard
@@ -135,86 +102,33 @@ export function GraphQLSchemaExport() {
 
       {/* Status Messages */}
       {copySuccess && (
-        <div style={{
-          padding: '12px 16px',
-          backgroundColor: '#c6f6d5',
-          border: '1px solid #9ae6b4',
-          borderRadius: '8px',
-          color: '#22543d',
-          marginBottom: '20px',
-          textAlign: 'center',
-          fontSize: '14px',
-          fontWeight: '500'
-        }}>
+        <div className="p-3 bg-green-100 border border-green-300 rounded-lg mb-5 text-center text-green-800 text-sm font-medium">
           ✅ Schema copied to clipboard successfully!
         </div>
       )}
 
       {error && (
-        <div style={{
-          padding: '12px 16px',
-          backgroundColor: '#fed7d7',
-          border: '1px solid #fc8181',
-          borderRadius: '8px',
-          color: '#742a2a',
-          marginBottom: '20px',
-          textAlign: 'center',
-          fontSize: '14px'
-        }}>
+        <div className="p-3 bg-red-100 border border-red-300 rounded-lg mb-5 text-center text-red-800 text-sm">
           ❌ {error}
         </div>
       )}
 
       {/* Schema Preview */}
       {schema && (
-        <div style={{
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          backgroundColor: 'white',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{
-            padding: '12px 16px',
-            backgroundColor: '#f7fafc',
-            borderBottom: '1px solid #e2e8f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{ 
-              fontSize: '14px', 
-              fontWeight: '600',
-              color: '#4a5568'
-            }}>
+        <div className="border border-gray-300 rounded-xl overflow-hidden bg-white shadow-md">
+          <div className="p-3 bg-gray-100 border-b border-gray-300 flex justify-between items-center">
+            <div className="text-sm font-semibold text-gray-700">
               📄 schema.graphql
             </div>
-            <div style={{ 
-              fontSize: '12px', 
-              color: '#718096'
-            }}>
-              {schema.length.toLocaleString()} characters | {schema.split('\n').length} lines
+            <div className="text-xs text-gray-500">
+              {schema.length.toLocaleString()} characters |{" "}
+              {schema.split("\n").length} lines
             </div>
           </div>
-          <div style={{
-            padding: '16px',
-            fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace',
-            fontSize: '12px',
-            lineHeight: '1.5',
-            color: '#2d3748',
-            backgroundColor: '#f8f9fa',
-            maxHeight: '300px',
-            overflow: 'auto',
-            whiteSpace: 'pre-wrap',
-            textAlign: 'left'
-          }}>
+          <div className="p-4 font-mono text-xs leading-relaxed text-gray-800 bg-gray-50 max-h-[300px] overflow-auto whitespace-pre-wrap">
             {schema.substring(0, 1000)}
             {schema.length > 1000 && (
-              <div style={{ 
-                color: '#718096', 
-                fontStyle: 'italic',
-                marginTop: '8px' 
-              }}>
+              <div className="text-gray-500 italic mt-2">
                 ... ({(schema.length - 1000).toLocaleString()} more characters)
               </div>
             )}
@@ -223,40 +137,28 @@ export function GraphQLSchemaExport() {
       )}
 
       {/* Instructions */}
-      <div style={{
-        marginTop: '30px',
-        padding: '20px',
-        backgroundColor: '#edf2f7',
-        borderRadius: '12px',
-        borderLeft: '4px solid #4299e1'
-      }}>
-        <h3 style={{ 
-          margin: '0 0 12px 0',
-          fontSize: '16px',
-          color: '#2d3748'
-        }}>
+      <div className="mt-8 p-5 bg-gray-100 rounded-xl border-l-4 border-blue-500">
+        <h3 className="m-0 mb-3 text-lg text-gray-800">
           🚀 Recommended Visualization Tools
         </h3>
-        <ul style={{ 
-          margin: '0',
-          paddingLeft: '0',
-          color: '#4a5568',
-          lineHeight: '1.6'
-        }}>
-          <li><strong>GraphQL Voyager:</strong> <code>https://graphql-kit.com/graphql-voyager/</code></li>
-          <li><strong>GraphQL Editor:</strong> <code>https://app.graphqleditor.com/</code></li>
-          <li><strong>GraphiQL:</strong> Interactive query interface</li>
+        <ul className="m-0 pl-5 list-disc text-gray-700 leading-relaxed">
+          <li>
+            <strong>GraphQL Voyager:</strong>{" "}
+            <code>https://graphql-kit.com/graphql-voyager/</code>
+          </li>
+          <li>
+            <strong>GraphQL Editor:</strong>{" "}
+            <code>https://app.graphqleditor.com/</code>
+          </li>
+          <li>
+            <strong>GraphiQL:</strong> Interactive query interface
+          </li>
         </ul>
-        
-        <div style={{
-          marginTop: '16px',
-          padding: '12px',
-          backgroundColor: '#bee3f8',
-          borderRadius: '8px',
-          fontSize: '14px',
-          color: '#2a4365'
-        }}>
-          💡 <strong>Tips:</strong> After copying, paste the schema into any of these tools to see an interactive graph visualization of your data relationships!
+
+        <div className="mt-4 p-3 bg-blue-100 rounded-lg text-blue-800 text-sm">
+          💡 <strong>Tips:</strong> After copying, paste the schema into any of
+          these tools to see an interactive graph visualization of your data
+          relationships!
         </div>
       </div>
     </div>

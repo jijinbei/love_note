@@ -4,7 +4,7 @@ export default function SharedNotes() {
   const { doc, addNote, updateNote } = useAutomerge();
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div className="grid gap-3">
       <button
         onClick={() => addNote("New note")}
         className="px-3 py-1 rounded border"
@@ -12,7 +12,7 @@ export default function SharedNotes() {
         + Add Note
       </button>
 
-      <div style={{ display: "grid", gap: 8 }}>
+      <div className="grid gap-2">
         {doc.notes.map((n) => (
           <div key={n.id} className="border rounded p-2">
             <input
@@ -20,7 +20,9 @@ export default function SharedNotes() {
               value={n.text}
               onChange={(e) => updateNote(n.id, e.target.value)}
             />
-            <div className="text-xs text-gray-500">updated: {new Date(n.updatedAt).toLocaleString()}</div>
+            <div className="text-xs text-gray-500">
+              updated: {new Date(n.updatedAt).toLocaleString()}
+            </div>
           </div>
         ))}
       </div>
