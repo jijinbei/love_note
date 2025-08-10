@@ -5,10 +5,12 @@ import type { Project, Experiment } from '../../generated/graphql';
 
 interface WorkspaceContentItemProps {
   workspaceId: string;
+  onExperimentClick?: (experimentId: string) => void; // 新しく追加
 }
 
 export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
   workspaceId,
+  onExperimentClick, // 新しく追加
 }) => {
   const { isLoading, loadProjects, loadExperiments, createProject, createExperiment } = useGraphQL();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -120,6 +122,7 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
           isLoading={isLoading}
           onToggle={toggleProject}
           onCreateExperiment={handleCreateExperiment}
+          onExperimentClick={onExperimentClick} // コールバックを渡す
         />
       ))}
       
