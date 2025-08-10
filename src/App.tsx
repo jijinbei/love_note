@@ -23,8 +23,11 @@ function App() {
   const [wsUrl, setWsUrl] = useState<string>("");
   const [serverName, setServerName] = useState<string>("");
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
-  const { isLoading, error, setError, loadWorkspaces, createWorkspace } = useGraphQL();
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
+    null
+  );
+  const { isLoading, error, setError, loadWorkspaces, createWorkspace } =
+    useGraphQL();
 
   // 状態変化バナー
   const [banner, setBanner] = useState<{
@@ -51,8 +54,6 @@ function App() {
   useEffect(() => {
     if (currentView === "server") setShowConnectBanner(true);
   }, [currentView]);
-
-  
 
   // ワークスペースを作成する関数
   const handleCreateWorkspace = async () => {
@@ -99,6 +100,11 @@ function App() {
             icon: "📝", // Markdown Editorのアイコン
             label: "Markdown Editor",
             onClick: () => setCurrentView("markdown"), // "markdown" に遷移
+          },
+          {
+            icon: "🖼️",
+            label: "Image Upload",
+            onClick: () => setCurrentView("image"),
           },
           {
             icon: "🖼️",
@@ -172,7 +178,7 @@ function App() {
             {(() => {
               switch (currentView) {
                 case "home":
-                 return (
+                  return (
                     <Home
                       workspaces={workspaces}
                       selectedWorkspace={selectedWorkspace}
