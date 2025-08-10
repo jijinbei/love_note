@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { GraphQLTest } from "./components/debug/GraphQLTest";
+import { ImageUploadTest } from "./components/debug/ImageUploadTest";
 import { GraphQLSchemaExport } from "./components/GraphQLSchemaExport";
 import { WebSocketClient } from "./components/WebSocketStatus";
 import ConnectWidget from "./components/ConnectWidget";
@@ -14,8 +15,8 @@ import "./App.css";
 
 function App() {
   const [currentView, setCurrentView] = useState<
-    "graphql" | "schema" | "server" | "home" | "markdown"
-  >("home"); // "markdown" を追加
+    "graphql" | "schema" | "server" | "home" | "markdown" | "image"
+  >("home");
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
   const [isConnected, setIsConnected] = useState(false);
@@ -98,6 +99,11 @@ function App() {
             icon: "📝", // Markdown Editorのアイコン
             label: "Markdown Editor",
             onClick: () => setCurrentView("markdown"), // "markdown" に遷移
+          },
+          {
+            icon: "🖼️",
+            label: "Image Upload",
+            onClick: () => setCurrentView("image"),
           },
         ]}
         onFixedChange={setSidebarFixed}
@@ -241,6 +247,9 @@ function App() {
 
                 case "markdown": // Markdown Editorを表示
                   return <MarkdownEditor />;
+
+                case "image":
+                  return <ImageUploadTest />;
 
                 default:
                   return null;

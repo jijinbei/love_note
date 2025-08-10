@@ -5,7 +5,7 @@ use async_graphql::{
 use std::collections::HashMap;
 use sqlx::SqlitePool;
 use uuid::Uuid;
-use crate::models::{User, Workspace, Project, Experiment, Block};
+use crate::models::{User, Workspace, Project, Experiment, Block, Image};
 
 /// UserLoader - loads all users or specific ones by ID
 pub struct UserLoader(SqlitePool);
@@ -146,6 +146,68 @@ impl Loader<Uuid> for BlockLoader {
         }
         
         Ok(blocks_map)
+    }
+}
+
+/// ImageLoader - loads images by workspace_id
+pub struct ImageLoader(SqlitePool);
+
+impl ImageLoader {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self(pool)
+    }
+}
+
+impl Loader<Uuid> for ImageLoader {
+    type Value = Vec<Image>;
+    type Error = FieldError;
+
+    async fn load(&self, workspace_ids: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
+        let mut images_map = HashMap::new();
+        
+        for workspace_id in workspace_ids {
+            let images = sqlx::query_as::<_, Image>(
+                "SELECT * FROM images WHERE workspace_id = ? ORDER BY created_at DESC"
+            )
+            .bind(workspace_id)
+            .fetch_all(&self.0)
+            .await?;
+            
+            images_map.insert(*workspace_id, images);
+        }
+        
+        Ok(images_map)
+    }
+}
+
+/// ImageByIdLoader - loads individual images by ID
+pub struct ImageByIdLoader(SqlitePool);
+
+impl ImageByIdLoader {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self(pool)
+    }
+}
+
+impl Loader<Uuid> for ImageByIdLoader {
+    type Value = Option<Image>;
+    type Error = FieldError;
+
+    async fn load(&self, image_ids: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
+        let mut images_map = HashMap::new();
+        
+        for image_id in image_ids {
+            let image = sqlx::query_as::<_, Image>(
+                "SELECT * FROM images WHERE id = ?"
+            )
+            .bind(image_id)
+            .fetch_optional(&self.0)
+            .await?;
+            
+            images_map.insert(*image_id, image);
+        }
+        
+        Ok(images_map)
     }
 }
 

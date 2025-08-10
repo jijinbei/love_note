@@ -65,7 +65,7 @@ const getFormFields = (type: FormType): FormField[] => {
 };
 
 export function GraphQLTest() {
-  const [activeTab, setActiveTab] = useState<'query' | 'create'>('query');
+  const [activeTab, setActiveTab] = useState<'query' | 'create' | 'image'>('query');
   const [selectedCreateType, setSelectedCreateType] = useState<FormType>('user');
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
