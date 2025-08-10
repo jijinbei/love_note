@@ -1,13 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { WorkspaceSelector } from "./Sidebar/WorkspaceSelector";
 import type { Workspace } from "../generated/graphql";
+import RecentFiles from "./RecentFiles";
+import { useGraphQL } from "../hooks/useGraphQL";
 
 type HomeProps = {
-  workspaces: Workspace[]; // 正しい型を指定
+  workspaces: Workspace[];
   selectedWorkspace: string | null;
   isLoading: boolean;
   setSelectedWorkspace: (workspaceId: string | null) => void;
   handleCreateWorkspace: () => void;
+};
+
+type Experiment = {
+  id: string;
+  title: string;
+  updatedAt: string;
 };
 
 const Home: React.FC<HomeProps> = ({
@@ -17,6 +25,41 @@ const Home: React.FC<HomeProps> = ({
   setSelectedWorkspace,
   handleCreateWorkspace,
 }) => {
+  const { loadWorkspaces, loadProjects, loadExperiments } = useGraphQL();
+  const [experiments, setExperiments] = useState<Experiment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchExperiments = async () => {
+      try {
+        setLoading(true);
+        const workspaces = await loadWorkspaces();
+        const allExperiments: Experiment[] = [];
+
+        for (const workspace of workspaces) {
+          const projects = await loadProjects(workspace.id);
+
+          for (const project of projects) {
+            const projectExperiments = await loadExperiments(project.id);
+            allExperiments.push(...projectExperiments);
+          }
+        }
+
+        const sortedExperiments = allExperiments.sort(
+          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+
+        setExperiments(sortedExperiments);
+      } catch (error) {
+        console.error("Failed to fetch experiments:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExperiments();
+  }, []); // 空の依存配列にして、コンポーネントマウント時に一度だけ実行
+
   return (
     <div className="text-center">
       <img
@@ -28,14 +71,23 @@ const Home: React.FC<HomeProps> = ({
       <p>Electronic Lab Notebook with Tauri + React + SQLite</p>
       <p>Switch to GraphQL Test to verify database operations.</p>
 
+      {/* 最近使用したエクスペリメント */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <RecentFiles experiments={experiments} />
+      )}
+
       {/* ワークスペース選択UI */}
-      <WorkspaceSelector
-        workspaces={workspaces}
-        selectedWorkspace={selectedWorkspace}
-        isLoading={isLoading}
-        onWorkspaceChange={(workspaceId) => setSelectedWorkspace(workspaceId || null)} // 型を一致させる
-        onCreateWorkspace={handleCreateWorkspace}
-      />
+      <div className="w-[70%] mx-auto h-96">
+        <WorkspaceSelector
+          workspaces={workspaces}
+          selectedWorkspace={selectedWorkspace}
+          isLoading={isLoading}
+          onWorkspaceChange={(workspaceId) => setSelectedWorkspace(workspaceId || null)}
+          onCreateWorkspace={handleCreateWorkspace}
+        />
+      </div>
     </div>
   );
 };
