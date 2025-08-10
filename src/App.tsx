@@ -5,7 +5,10 @@ import { WebSocketClient } from "./components/WebSocketStatus";
 import ConnectWidget from "./components/ConnectWidget";
 import ConnectionStatus from "./components/ConnectionStatus";
 import Sidebar from "./components/Sidebar";
+import Home from "./components/Home";
 import { AutomergeProvider } from "./components/AutomergeRepo";
+import type { Workspace } from "./generated/graphql";
+import { useGraphQL } from "./hooks/useGraphQL"; // GraphQLフックをインポート
 import MarkdownEditor from "./components/MarkdownEditor"; // MarkdownEditorをインポート
 import "./App.css";
 
@@ -15,12 +18,14 @@ function App() {
   >("home"); // "markdown" を追加
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
-
   const [isConnected, setIsConnected] = useState(false);
   const [wsUrl, setWsUrl] = useState<string>("");
   const [serverName, setServerName] = useState<string>("");
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const { isLoading, error, setError, loadWorkspaces, createWorkspace } = useGraphQL();
 
-  // 状態変化バナー（※二重定義しない）
+  // 状態変化バナー
   const [banner, setBanner] = useState<{
     show: boolean;
     kind: "connected" | "disconnected" | "error";
@@ -45,6 +50,25 @@ function App() {
   useEffect(() => {
     if (currentView === "server") setShowConnectBanner(true);
   }, [currentView]);
+
+  
+
+  // ワークスペースを作成する関数
+  const handleCreateWorkspace = async () => {
+    const workspaceName = prompt("新しいワークスペース名を入力してください:");
+    if (!workspaceName?.trim()) return;
+
+    try {
+      // ワークスペース作成ロジック（例: API呼び出し）
+      await createWorkspace(workspaceName); // createWorkspace関数は適切にインポートされている必要があります
+
+      // 作成後にワークスペースを再読み込み
+      const workspacesData = await loadWorkspaces(); // loadWorkspaces関数もインポートされている必要があります
+      setWorkspaces(workspacesData);
+    } catch (error) {
+      console.error("Error creating workspace:", error);
+    }
+  };
 
   return (
     <div className="h-screen flex">
@@ -77,13 +101,15 @@ function App() {
           },
         ]}
         onFixedChange={setSidebarFixed}
+        setCurrentView={setCurrentView}
       />
 
       <div
-        className={`flex-1 p-4 overflow-auto transition-all duration-300`}
-        style={sidebarFixed ? { marginLeft: SIDEBAR_WIDTH } : {}}
+        className={`flex-1 p-4 overflow-auto transition-all duration-300 ${
+          sidebarFixed ? "ml-[260px]" : ""
+        }`}
       >
-        <div style={!sidebarFixed ? { width: "90vw", maxWidth: "90%" } : { width: "100%" }}>
+        <div className={`${!sidebarFixed ? "w-[90vw] max-w-[90%]" : "w-full"}`}>
           {/* ★ ここでのみ状態変化のバナーを出す（右上の常時表示は撤去） */}
           <ConnectionStatus
             show={banner.show}
@@ -111,9 +137,7 @@ function App() {
                 statusVal === "closed" ||
                 statusVal === false;
 
-              const isErr =
-                statusVal === "error" ||
-                statusVal === "failed";
+              const isErr = statusVal === "error" || statusVal === "failed";
 
               if (isUp) {
                 setIsConnected(true);
@@ -127,7 +151,11 @@ function App() {
               }
               if (isErr) {
                 setIsConnected(false);
-                setBanner({ show: true, kind: "error", message: "接続エラーが発生しました" });
+                setBanner({
+                  show: true,
+                  kind: "error",
+                  message: "接続エラーが発生しました",
+                });
                 return;
               }
 
@@ -138,14 +166,15 @@ function App() {
             {(() => {
               switch (currentView) {
                 case "home":
-                  return (
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold mb-4">Love Note</h1>
-                      <p>Electronic Lab Notebook with Tauri + React + SQLite</p>
-                      <p>Switch to GraphQL Test to verify database operations.</p>
-                    </div>
+                 return (
+                    <Home
+                      workspaces={workspaces}
+                      selectedWorkspace={selectedWorkspace}
+                      isLoading={isLoading}
+                      setSelectedWorkspace={setSelectedWorkspace}
+                      handleCreateWorkspace={handleCreateWorkspace}
+                    />
                   );
-
                 case "graphql":
                   return <GraphQLTest />;
 
@@ -172,7 +201,9 @@ function App() {
                       {!isConnected && (
                         <div className="text-gray-500 text-center mb-4">
                           <p>WebSocket 未接続です</p>
-                          <p>サーバが起動して接続が確立されると、ここにリアルタイム画面が表示されます。</p>
+                          <p>
+                            サーバが起動して接続が確立されると、ここにリアルタイム画面が表示されます。
+                          </p>
                         </div>
                       )}
 
@@ -187,10 +218,18 @@ function App() {
                             setIsConnected(false);
                             setWsUrl("");
                             setServerName("");
-                            setBanner({ show: true, kind: "disconnected", message: "手動で切断しました。" });
+                            setBanner({
+                              show: true,
+                              kind: "disconnected",
+                              message: "手動で切断しました。",
+                            });
                           } else {
                             setIsConnected(false);
-                            setBanner({ show: true, kind: "disconnected", message: "接続が切断されました。" });
+                            setBanner({
+                              show: true,
+                              kind: "disconnected",
+                              message: "接続が切断されました。",
+                            });
                           }
                         }}
                       />
@@ -210,18 +249,6 @@ function App() {
           </AutomergeProvider>
         </div>
       </div>
-
-      {/* <ConnectWidget
-        open={connectOpen}
-        onCancel={() => setConnectOpen(false)}
-        onConnect={({ url, name }) => {
-          setWsUrl(url);
-          setServerName(name);
-          setIsConnected(true);
-          setConnectOpen(false);
-          setCurrentView("server");
-        }}
-      /> */}
     </div>
   );
 }
