@@ -12,45 +12,26 @@ const MarkdownEditor: React.FC = () => {
   };
 
   return (
-    <div style={{ display: "flex", gap: "1rem", padding: "1rem" }}>
+    <div className="flex gap-4 p-4">
       {/* Markdown入力エリア */}
       <textarea
         value={markdown}
         onChange={handleInputChange}
         placeholder="ここにMarkdownを書いてください"
-        style={{
-          width: "50%",
-          height: "400px",
-          padding: "1rem",
-          fontSize: "16px",
-          border: "1px solid #ccc",
-          borderRadius: "8px",
-          fontFamily: "monospace",
-        }}
+        className="w-1/2 h-[400px] p-4 text-base border border-gray-300 rounded-lg font-mono"
       />
 
       {/* Markdownプレビューエリア */}
-      <div
-        className="markdown-preview"
-        style={{
-          width: "50%",
-          height: "400px",
-          padding: "1rem",
-          backgroundColor: "#f9f9f9",
-          border: "1px solid #ccc",
-          borderRadius: "8px",
-          overflowY: "auto",
-        }}
-      >
+      <div className="markdown-preview w-1/2 h-[400px] p-4 bg-gray-100 border border-gray-300">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || "");
-              return !inline && match ? (
+              return !inline ? (
                 <SyntaxHighlighter
                   style={oneDark as any}
-                  language={match[1]}
+                  language={match ? match[1] : "text"}
                   PreTag="div"
                   {...props}
                 >

@@ -5,6 +5,7 @@ import { WorkspaceContentItem } from './WorkspaceContentItem';
 import { useGraphQL } from '../../hooks/useGraphQL';
 import { SIDEBAR_WIDTH } from '../../utils/constants';
 import type { Workspace } from '../../generated/graphql';
+import HoverSidebar from "./HoverSidebar";
 
 export type SidebarItem = {
   icon: React.ReactNode;
@@ -15,9 +16,10 @@ export type SidebarItem = {
 type SidebarProps = {
   items: SidebarItem[];
   onFixedChange?: (fixed: boolean) => void;
+  setCurrentView: (view: "graphql" | "schema" | "server" | "home" | "markdown") => void;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange }) => {
+const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange, setCurrentView }) => {
   const [fixedOpen, setFixedOpen] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -169,6 +171,37 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange }) => {
                 {sidebarIcon}
               </button>
             </div>
+
+            {/* HoverSidebar を追加 */}
+            <HoverSidebar
+              items={[
+                {
+                  icon: "🏠",
+                  label: "Home",
+                  onClick: () => setCurrentView && setCurrentView("home"),
+                },
+                {
+                  icon: "🔍",
+                  label: "GraphQL Test",
+                  onClick: () => setCurrentView && setCurrentView("graphql"),
+                },
+                {
+                  icon: "📋",
+                  label: "Schema Export",
+                  onClick: () => setCurrentView && setCurrentView("schema"),
+                },
+                {
+                  icon: "鯖",
+                  label: "Collaborative Editing Mode",
+                  onClick: () => setCurrentView && setCurrentView("server"),
+                },
+                {
+                  icon: "📝",
+                  label: "Markdown Editor",
+                  onClick: () => setCurrentView && setCurrentView("markdown"),
+                },
+              ]}
+            />
 
             {/* コンテンツ */}
             <div className="flex flex-col flex-1 overflow-hidden">
