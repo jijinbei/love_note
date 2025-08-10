@@ -225,18 +225,6 @@ function App() {
           </AutomergeProvider>
         </div>
       </div>
-
-      {/* <ConnectWidget
-        open={connectOpen}
-        onCancel={() => setConnectOpen(false)}
-        onConnect={({ url, name }) => {
-          setWsUrl(url);
-          setServerName(name);
-          setIsConnected(true);
-          setConnectOpen(false);
-          setCurrentView("server");
-        }}
-      /> */}
     </div>
   );
 }
