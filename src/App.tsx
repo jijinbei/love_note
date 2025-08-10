@@ -10,12 +10,14 @@ import { AutomergeProvider } from "./components/AutomergeRepo";
 import type { Workspace } from "./generated/graphql";
 import { useGraphQL } from "./hooks/useGraphQL"; // GraphQLフックをインポート
 import MarkdownEditor from "./components/MarkdownEditor"; // MarkdownEditorをインポート
+import MarkdownPage from "./components/MarkdownPage";
 import "./App.css";
 
 function App() {
-  const [currentView, setCurrentView] = useState<
-    "graphql" | "schema" | "server" | "home" | "markdown"
-  >("home"); // "markdown" を追加
+  const [currentView, setCurrentView] = useState<string>("home"); // string型に変更
+  // const [currentView, setCurrentView] = useState<
+  //   "graphql" | "schema" | "server" | "home" | "markdown"
+  // >("home"); // "markdown" を追加
   const [sidebarFixed, setSidebarFixed] = useState(false);
   const SIDEBAR_WIDTH = 260;
   const [isConnected, setIsConnected] = useState(false);
@@ -24,6 +26,7 @@ function App() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const { isLoading, error, setError, loadWorkspaces, createWorkspace } = useGraphQL();
+  const [selectedExperimentId, setSelectedExperimentId] = useState<string | null>(null);
 
   // 状態変化バナー
   const [banner, setBanner] = useState<{
@@ -173,8 +176,17 @@ function App() {
                       isLoading={isLoading}
                       setSelectedWorkspace={setSelectedWorkspace}
                       handleCreateWorkspace={handleCreateWorkspace}
+                      setCurrentView={setCurrentView}
+                      onExperimentClick={(experiment.id) => {
+                        setSelectedExperimentId(experiment.id);
+                        setCurrentView("markdownPage");
+                      }}
                     />
                   );
+
+                case "markdownPage":
+                  return <MarkdownPage experimentId={selectedExperimentId} />;
+
                 case "graphql":
                   return <GraphQLTest />;
 

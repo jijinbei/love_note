@@ -207,18 +207,6 @@ const Sidebar: React.FC<SidebarProps> = ({ items, onFixedChange, setCurrentView 
             <div className="flex flex-col flex-1 overflow-hidden">
               <div className="overflow-y-auto flex-1 py-4">
                 <ul className="space-y-1 px-4">
-                  {items.map((item) => (
-                    <li key={item.label}>
-                      <button
-                        onClick={item.onClick}
-                        className="flex items-center w-full text-left px-4 py-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 transition"
-                      >
-                        <span className="mr-3 text-lg">{item.icon}</span>
-                        <span>{item.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                  
                   {/* エラー表示 */}
                   {error && (
                     <li className="text-red-600 text-xs p-2 bg-red-50 border border-red-200 rounded-md mb-2">
