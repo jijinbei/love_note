@@ -5,7 +5,10 @@ import { WebSocketClient } from "./components/WebSocketStatus";
 import ConnectWidget from "./components/ConnectWidget";
 import ConnectionStatus from "./components/ConnectionStatus";
 import Sidebar from "./components/Sidebar";
+import Home from "./components/Home";
 import { AutomergeProvider } from "./components/AutomergeRepo";
+import type { Workspace } from "./generated/graphql";
+import { useGraphQL } from "./hooks/useGraphQL"; // GraphQLフックをインポート
 import MarkdownEditor from "./components/MarkdownEditor"; // MarkdownEditorをインポート
 import "./App.css";
 
@@ -18,8 +21,11 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [wsUrl, setWsUrl] = useState<string>("");
   const [serverName, setServerName] = useState<string>("");
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const { isLoading, error, setError, loadWorkspaces, createWorkspace } = useGraphQL();
 
-  // 状態変化バナー（※二重定義しない）
+  // 状態変化バナー
   const [banner, setBanner] = useState<{
     show: boolean;
     kind: "connected" | "disconnected" | "error";
@@ -44,6 +50,25 @@ function App() {
   useEffect(() => {
     if (currentView === "server") setShowConnectBanner(true);
   }, [currentView]);
+
+  
+
+  // ワークスペースを作成する関数
+  const handleCreateWorkspace = async () => {
+    const workspaceName = prompt("新しいワークスペース名を入力してください:");
+    if (!workspaceName?.trim()) return;
+
+    try {
+      // ワークスペース作成ロジック（例: API呼び出し）
+      await createWorkspace(workspaceName); // createWorkspace関数は適切にインポートされている必要があります
+
+      // 作成後にワークスペースを再読み込み
+      const workspacesData = await loadWorkspaces(); // loadWorkspaces関数もインポートされている必要があります
+      setWorkspaces(workspacesData);
+    } catch (error) {
+      console.error("Error creating workspace:", error);
+    }
+  };
 
   return (
     <div className="h-screen flex">
@@ -141,16 +166,15 @@ function App() {
             {(() => {
               switch (currentView) {
                 case "home":
-                  return (
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold mb-4">Love Note</h1>
-                      <p>Electronic Lab Notebook with Tauri + React + SQLite</p>
-                      <p>
-                        Switch to GraphQL Test to verify database operations.
-                      </p>
-                    </div>
+                 return (
+                    <Home
+                      workspaces={workspaces}
+                      selectedWorkspace={selectedWorkspace}
+                      isLoading={isLoading}
+                      setSelectedWorkspace={setSelectedWorkspace}
+                      handleCreateWorkspace={handleCreateWorkspace}
+                    />
                   );
-
                 case "graphql":
                   return <GraphQLTest />;
 
@@ -225,18 +249,6 @@ function App() {
           </AutomergeProvider>
         </div>
       </div>
-
-      {/* <ConnectWidget
-        open={connectOpen}
-        onCancel={() => setConnectOpen(false)}
-        onConnect={({ url, name }) => {
-          setWsUrl(url);
-          setServerName(name);
-          setIsConnected(true);
-          setConnectOpen(false);
-          setCurrentView("server");
-        }}
-      /> */}
     </div>
   );
 }
