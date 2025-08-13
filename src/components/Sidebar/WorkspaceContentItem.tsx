@@ -12,10 +12,20 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
   workspaceId,
   onExperimentClick, // 新しく追加
 }) => {
-  const { isLoading, loadProjects, loadExperiments, createProject, createExperiment } = useGraphQL();
+  const {
+    isLoading,
+    loadProjects,
+    loadExperiments,
+    createProject,
+    createExperiment,
+  } = useGraphQL();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectExperiments, setProjectExperiments] = useState<Record<string, Experiment[]>>({});
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [projectExperiments, setProjectExperiments] = useState<
+    Record<string, Experiment[]>
+  >({});
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    new Set()
+  );
 
   // プロジェクトを自動ロード
   useEffect(() => {
@@ -43,7 +53,7 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
           .then(experiments => {
             setProjectExperiments(prev => ({
               ...prev,
-              [projectId]: experiments
+              [projectId]: experiments,
             }));
           })
           .catch(console.error);
@@ -54,9 +64,9 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
 
   // プロジェクト作成
   const handleCreateProject = async () => {
-    const projectName = prompt("新しいプロジェクト名を入力してください:");
+    const projectName = prompt('新しいプロジェクト名を入力してください:');
     if (!projectName?.trim()) return;
-    
+
     try {
       await createProject(workspaceId, projectName);
       // Reload projects
@@ -69,16 +79,16 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
 
   // 実験作成
   const handleCreateExperiment = async (projectId: string) => {
-    const experimentTitle = prompt("新しい実験タイトルを入力してください:");
+    const experimentTitle = prompt('新しい実験タイトルを入力してください:');
     if (!experimentTitle?.trim()) return;
-    
+
     try {
       await createExperiment(projectId, experimentTitle);
       // Reload experiments for this project
       const experiments = await loadExperiments(projectId);
       setProjectExperiments(prev => ({
         ...prev,
-        [projectId]: experiments
+        [projectId]: experiments,
       }));
     } catch (error) {
       console.error('Error creating experiment:', error);
@@ -102,7 +112,13 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
             </div>
           ) : (
             <div className="flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -111,11 +127,11 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
           )}
         </button>
       </li>
-      
+
       {/* プロジェクト一覧 */}
-      {projects.map((project) => (
-        <ProjectItem 
-          key={project.id} 
+      {projects.map(project => (
+        <ProjectItem
+          key={project.id}
           project={project}
           experiments={projectExperiments[project.id] || []}
           isExpanded={expandedProjects.has(project.id)}
@@ -125,7 +141,7 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
           onExperimentClick={onExperimentClick} // コールバックを渡す
         />
       ))}
-      
+
       {/* プロジェクトが存在しない場合 */}
       {projects.length === 0 && !isLoading && (
         <li className="text-gray-500 text-xs italic p-2 text-center">

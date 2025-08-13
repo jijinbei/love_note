@@ -26,18 +26,18 @@ export const WorkspaceSelector: React.FC<WorkspaceSelectorProps> = ({
       <div className="flex items-center gap-2">
         <select
           value={selectedWorkspace || ''}
-          onChange={(e) => onWorkspaceChange(e.target.value || null)}
+          onChange={e => onWorkspaceChange(e.target.value || null)}
           className="flex-1 p-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={isLoading}
         >
           <option value="">Select workspace...</option>
-          {workspaces.map((workspace) => (
+          {workspaces.map(workspace => (
             <option key={workspace.id} value={workspace.id}>
               📁 {workspace.name}
             </option>
           ))}
         </select>
-        
+
         {/* 新しいワークスペース作成ボタン */}
         <button
           className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"

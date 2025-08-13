@@ -1,6 +1,6 @@
 // import React from "react";
 
-type Kind = "connected" | "disconnected" | "error";
+type Kind = 'connected' | 'disconnected' | 'error';
 
 type Props = {
   show: boolean;
@@ -9,39 +9,32 @@ type Props = {
   onClose: () => void;
 };
 
-const stylesByKind: Record<
-  Kind,
-  { wrap: string; dot: string; title: string }
-> = {
-  connected: {
-    wrap: "bg-emerald-50 border-emerald-200 text-emerald-900",
-    dot: "bg-emerald-500",
-    title: "接続されました",
-  },
-  disconnected: {
-    wrap: "bg-gray-50 border-gray-200 text-gray-900",
-    dot: "bg-gray-500",
-    title: "切断されました",
-  },
-  error: {
-    wrap: "bg-rose-50 border-rose-200 text-rose-900",
-    dot: "bg-rose-500",
-    title: "接続エラー",
-  },
-};
+const stylesByKind: Record<Kind, { wrap: string; dot: string; title: string }> =
+  {
+    connected: {
+      wrap: 'bg-emerald-50 border-emerald-200 text-emerald-900',
+      dot: 'bg-emerald-500',
+      title: '接続されました',
+    },
+    disconnected: {
+      wrap: 'bg-gray-50 border-gray-200 text-gray-900',
+      dot: 'bg-gray-500',
+      title: '切断されました',
+    },
+    error: {
+      wrap: 'bg-rose-50 border-rose-200 text-rose-900',
+      dot: 'bg-rose-500',
+      title: '接続エラー',
+    },
+  };
 
-export default function StatusBanner({
-  show,
-  kind,
-  message,
-  onClose,
-}: Props) {
+export default function StatusBanner({ show, kind, message, onClose }: Props) {
   const s = stylesByKind[kind];
 
   return (
     <div
       className={`fixed top-4 right-0 transform transition-transform duration-300 z-50 ${
-        show ? "translate-x-0" : "translate-x-full"
+        show ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       <div
@@ -65,7 +58,7 @@ export default function StatusBanner({
             />
             <span>{s.title}</span>
           </div>
-          {kind !== "connected" && message && (
+          {kind !== 'connected' && message && (
             <div className="mt-1 text-sm break-all">{message}</div>
           )}
         </div>

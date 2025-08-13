@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use async_graphql::{SimpleObject, InputObject};
+use async_graphql::{InputObject, SimpleObject};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 // User model
@@ -80,11 +80,23 @@ pub struct Image {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BlockContent {
-    NoteBlock { text: String },
-    SampleRefBlock { sample_id: Uuid },
-    ProtocolRefBlock { protocol_id: Uuid },
-    ImageBlock { image_id: Uuid, alt: Option<String> },
-    TableBlock { headers: Vec<String>, rows: Vec<Vec<String>> },
+    NoteBlock {
+        text: String,
+    },
+    SampleRefBlock {
+        sample_id: Uuid,
+    },
+    ProtocolRefBlock {
+        protocol_id: Uuid,
+    },
+    ImageBlock {
+        image_id: Uuid,
+        alt: Option<String>,
+    },
+    TableBlock {
+        headers: Vec<String>,
+        rows: Vec<Vec<String>>,
+    },
 }
 
 // Master data models

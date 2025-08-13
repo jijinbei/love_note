@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
+import {
   GetWorkspacesDocument,
   GetProjectsDocument,
   GetExperimentsDocument,
   CreateWorkspaceDocument,
   CreateProjectDocument,
-  CreateExperimentDocument
+  CreateExperimentDocument,
 } from '../generated/graphql';
 import type { Workspace, Project, Experiment } from '../generated/graphql';
 import { getQueryString, type GraphQLResponse } from '../utils/graphql';
@@ -20,15 +20,17 @@ export const useGraphQL = () => {
     try {
       const result = await invoke<string>('graphql_query', {
         query: getQueryString(GetWorkspacesDocument),
-        variables: null
+        variables: null,
       });
-      const data: GraphQLResponse<{workspaces: Workspace[]}> = JSON.parse(result);
+      const data: GraphQLResponse<{ workspaces: Workspace[] }> =
+        JSON.parse(result);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
       return data.data?.workspaces || [];
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load workspaces';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to load workspaces';
       setError(errorMessage);
       console.error('Error loading workspaces:', err);
       throw err;
@@ -40,9 +42,9 @@ export const useGraphQL = () => {
     try {
       const result = await invoke<string>('graphql_query', {
         query: getQueryString(GetProjectsDocument),
-        variables: { workspaceId }
+        variables: { workspaceId },
       });
-      const data: GraphQLResponse<{projects: Project[]}> = JSON.parse(result);
+      const data: GraphQLResponse<{ projects: Project[] }> = JSON.parse(result);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
@@ -58,9 +60,10 @@ export const useGraphQL = () => {
     try {
       const result = await invoke<string>('graphql_query', {
         query: getQueryString(GetExperimentsDocument),
-        variables: { projectId }
+        variables: { projectId },
       });
-      const data: GraphQLResponse<{experiments: Experiment[]}> = JSON.parse(result);
+      const data: GraphQLResponse<{ experiments: Experiment[] }> =
+        JSON.parse(result);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
@@ -72,7 +75,10 @@ export const useGraphQL = () => {
   };
 
   // Create workspace
-  const createWorkspace = async (name: string, description?: string): Promise<void> => {
+  const createWorkspace = async (
+    name: string,
+    description?: string
+  ): Promise<void> => {
     setIsLoading(true);
     setError('');
     try {
@@ -81,16 +87,17 @@ export const useGraphQL = () => {
         variables: {
           input: {
             name: name.trim(),
-            description: description || null
-          }
-        }
+            description: description || null,
+          },
+        },
       });
       const data: GraphQLResponse = JSON.parse(result);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create workspace';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create workspace';
       setError(errorMessage);
       console.error('Error creating workspace:', err);
       throw err;
@@ -100,7 +107,11 @@ export const useGraphQL = () => {
   };
 
   // Create project
-  const createProject = async (workspaceId: string, name: string, description?: string): Promise<void> => {
+  const createProject = async (
+    workspaceId: string,
+    name: string,
+    description?: string
+  ): Promise<void> => {
     setIsLoading(true);
     setError('');
     try {
@@ -110,16 +121,17 @@ export const useGraphQL = () => {
           input: {
             workspaceId,
             name: name.trim(),
-            description: description || null
-          }
-        }
+            description: description || null,
+          },
+        },
       });
       const data: GraphQLResponse = JSON.parse(result);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create project';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create project';
       setError(errorMessage);
       console.error('Error creating project:', err);
       throw err;
@@ -129,7 +141,10 @@ export const useGraphQL = () => {
   };
 
   // Create experiment
-  const createExperiment = async (projectId: string, title: string): Promise<void> => {
+  const createExperiment = async (
+    projectId: string,
+    title: string
+  ): Promise<void> => {
     setIsLoading(true);
     setError('');
     try {
@@ -138,16 +153,17 @@ export const useGraphQL = () => {
         variables: {
           input: {
             projectId,
-            title: title.trim()
-          }
-        }
+            title: title.trim(),
+          },
+        },
       });
       const data: GraphQLResponse = JSON.parse(result);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create experiment';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create experiment';
       setError(errorMessage);
       console.error('Error creating experiment:', err);
       throw err;

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import type {
   GetWorkspacesQuery,
   GetImagesQuery,
@@ -10,9 +10,9 @@ import type {
   UploadImageMutationVariables,
   DeleteImageMutationVariables,
   ImageUploadInput,
-} from "../../generated/graphql";
-import { graphql } from "../../generated";
-import { getQueryString } from "../../utils/graphql";
+} from '../../generated/graphql';
+import { graphql } from '../../generated';
+import { getQueryString } from '../../utils/graphql';
 
 interface GraphQLResponse<T = any> {
   data?: T;
@@ -21,18 +21,18 @@ interface GraphQLResponse<T = any> {
 
 export function ImageUploadTest() {
   const [workspaces, setWorkspaces] = useState<
-    GetWorkspacesQuery["workspaces"]
+    GetWorkspacesQuery['workspaces']
   >([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
-  const [altText, setAltText] = useState<string>("");
-  const [uploadError, setUploadError] = useState<string>("");
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
+  const [altText, setAltText] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadedImages, setUploadedImages] = useState<
-    GetImagesQuery["images"]
+    GetImagesQuery['images']
   >([]);
   const [isLoadingImages, setIsLoadingImages] = useState<boolean>(false);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   // Load workspaces on mount
   useEffect(() => {
@@ -52,12 +52,12 @@ export function ImageUploadTest() {
   useEffect(() => {
     if (selectedFile) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = e => {
         setPreviewUrl(e.target?.result as string);
       };
       reader.readAsDataURL(selectedFile);
     } else {
-      setPreviewUrl("");
+      setPreviewUrl('');
     }
   }, [selectedFile]);
 
@@ -75,7 +75,7 @@ export function ImageUploadTest() {
         }
       `);
 
-      const result = await invoke<string>("graphql_query", {
+      const result = await invoke<string>('graphql_query', {
         query: getQueryString(query),
         variables: null,
       });
@@ -88,7 +88,7 @@ export function ImageUploadTest() {
 
       setWorkspaces(response.data?.workspaces || []);
     } catch (error) {
-      console.error("Error loading workspaces:", error);
+      console.error('Error loading workspaces:', error);
       setUploadError(`Failed to load workspaces: ${error}`);
     }
   };
@@ -116,7 +116,7 @@ export function ImageUploadTest() {
 
       const variables: GetImagesQueryVariables = { workspaceId };
 
-      const result = await invoke<string>("graphql_query", {
+      const result = await invoke<string>('graphql_query', {
         query: getQueryString(query),
         variables,
       });
@@ -129,7 +129,7 @@ export function ImageUploadTest() {
 
       setUploadedImages(response.data?.images || []);
     } catch (error) {
-      console.error("Error loading images:", error);
+      console.error('Error loading images:', error);
       setUploadError(`Failed to load images: ${error}`);
     } finally {
       setIsLoadingImages(false);
@@ -141,25 +141,25 @@ export function ImageUploadTest() {
     if (file) {
       // Validate file type
       const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/webp",
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
       ];
       if (!allowedTypes.includes(file.type)) {
-        setUploadError("Only JPEG, PNG, and WebP images are supported");
+        setUploadError('Only JPEG, PNG, and WebP images are supported');
         return;
       }
 
       // Validate file size (10MB limit)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        setUploadError("File size must be less than 10MB");
+        setUploadError('File size must be less than 10MB');
         return;
       }
 
       setSelectedFile(file);
-      setUploadError("");
+      setUploadError('');
     }
   };
 
@@ -169,7 +169,7 @@ export function ImageUploadTest() {
       reader.onload = () => {
         const result = reader.result as string;
         // Remove the data URL prefix to get just the base64 data
-        const base64Data = result.split(",")[1];
+        const base64Data = result.split(',')[1];
         resolve(base64Data);
       };
       reader.onerror = reject;
@@ -179,12 +179,12 @@ export function ImageUploadTest() {
 
   const handleUpload = async () => {
     if (!selectedFile || !selectedWorkspaceId) {
-      setUploadError("Please select both a file and workspace");
+      setUploadError('Please select both a file and workspace');
       return;
     }
 
     setIsUploading(true);
-    setUploadError("");
+    setUploadError('');
 
     try {
       // Convert file to base64
@@ -218,7 +218,7 @@ export function ImageUploadTest() {
 
       const variables: UploadImageMutationVariables = { input };
 
-      const result = await invoke<string>("graphql_query", {
+      const result = await invoke<string>('graphql_query', {
         query: getQueryString(mutation),
         variables,
       });
@@ -231,23 +231,23 @@ export function ImageUploadTest() {
 
       // Clear form
       setSelectedFile(null);
-      setAltText("");
-      setPreviewUrl("");
+      setAltText('');
+      setPreviewUrl('');
 
       // Reset file input
       const fileInput = document.getElementById(
-        "fileInput"
+        'fileInput'
       ) as HTMLInputElement;
       if (fileInput) {
-        fileInput.value = "";
+        fileInput.value = '';
       }
 
       // Reload images
       await loadImages(selectedWorkspaceId);
 
-      console.log("Image uploaded successfully:", response.data?.uploadImage);
+      console.log('Image uploaded successfully:', response.data?.uploadImage);
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error('Upload error:', error);
       setUploadError(`Upload failed: ${error}`);
     } finally {
       setIsUploading(false);
@@ -264,7 +264,7 @@ export function ImageUploadTest() {
 
       const variables: DeleteImageMutationVariables = { id: imageId };
 
-      const result = await invoke<string>("graphql_query", {
+      const result = await invoke<string>('graphql_query', {
         query: getQueryString(mutation),
         variables,
       });
@@ -280,19 +280,19 @@ export function ImageUploadTest() {
         await loadImages(selectedWorkspaceId);
       }
 
-      console.log("Image deleted successfully");
+      console.log('Image deleted successfully');
     } catch (error) {
-      console.error("Delete error:", error);
+      console.error('Delete error:', error);
       setUploadError(`Delete failed: ${error}`);
     }
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const formatDate = (dateString: string): string => {
@@ -316,11 +316,11 @@ export function ImageUploadTest() {
         </h3>
         <select
           value={selectedWorkspaceId}
-          onChange={(e) => setSelectedWorkspaceId(e.target.value)}
+          onChange={e => setSelectedWorkspaceId(e.target.value)}
           className="w-full p-3 border-2 border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Select a workspace...</option>
-          {workspaces.map((workspace) => (
+          {workspaces.map(workspace => (
             <option key={workspace.id} value={workspace.id}>
               {workspace.name}
             </option>
@@ -364,7 +364,7 @@ export function ImageUploadTest() {
             <input
               type="text"
               value={altText}
-              onChange={(e) => setAltText(e.target.value)}
+              onChange={e => setAltText(e.target.value)}
               placeholder="Describe the image for accessibility..."
               className="w-full p-2 border-2 border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
@@ -383,7 +383,7 @@ export function ImageUploadTest() {
                   className="max-w-full max-h-64 mx-auto rounded-lg shadow-md"
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  {selectedFile?.name} -{" "}
+                  {selectedFile?.name} -{' '}
                   {selectedFile && formatFileSize(selectedFile.size)}
                 </p>
               </div>
@@ -401,11 +401,11 @@ export function ImageUploadTest() {
             disabled={!selectedFile || !selectedWorkspaceId || isUploading}
             className={`w-full p-3 rounded-md text-white font-semibold transition-all ${
               isUploading || !selectedFile || !selectedWorkspaceId
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-600 cursor-pointer"
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-500 hover:bg-green-600 cursor-pointer'
             }`}
           >
-            {isUploading ? "⏳ Uploading..." : "🚀 Upload Image"}
+            {isUploading ? '⏳ Uploading...' : '🚀 Upload Image'}
           </button>
         </div>
       )}
@@ -422,7 +422,7 @@ export function ImageUploadTest() {
               disabled={isLoadingImages}
               className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 disabled:opacity-60"
             >
-              {isLoadingImages ? "⏳" : "🔄"} Refresh
+              {isLoadingImages ? '⏳' : '🔄'} Refresh
             </button>
           </div>
 
@@ -435,7 +435,7 @@ export function ImageUploadTest() {
 
           {uploadedImages.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {uploadedImages.map((image) => (
+              {uploadedImages.map(image => (
                 <div
                   key={image.id}
                   className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm"

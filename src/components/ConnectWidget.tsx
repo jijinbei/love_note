@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 type Props = {
   connected: boolean;
@@ -19,14 +19,14 @@ export default function ConnectWidget({
   onHide,
   onShow,
 }: Props) {
-  const [name, setName] = useState(serverName || "");
-  const [url, setUrl] = useState(wsUrl || "");
+  const [name, setName] = useState(serverName || '');
+  const [url, setUrl] = useState(wsUrl || '');
 
   // 接続状態が変わったらフォーム初期値を追従
   useEffect(() => {
     if (!connected) {
-      setName(serverName || "");
-      setUrl(wsUrl || "");
+      setName(serverName || '');
+      setUrl(wsUrl || '');
     }
   }, [connected, serverName, wsUrl]);
 
@@ -48,7 +48,7 @@ export default function ConnectWidget({
       <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded mb-4 flex items-center gap-3">
         <span className="font-semibold">Connected</span>
         <span className="text-sm break-all">
-          Server: <b>{serverName || "(unnamed)"}</b>
+          Server: <b>{serverName || '(unnamed)'}</b>
         </span>
         <span className="text-sm break-all">
           URL: <b>{wsUrl}</b>
@@ -85,7 +85,7 @@ export default function ConnectWidget({
           <input
             className="mt-1 w-full border border-gray-300 rounded px-2 py-1"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             placeholder="my-collab-room"
           />
         </label>
@@ -94,7 +94,7 @@ export default function ConnectWidget({
           <input
             className="mt-1 w-full border border-gray-300 rounded px-2 py-1"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={e => setUrl(e.target.value)}
             placeholder="ws://127.0.0.1:8080/ws"
           />
         </label>

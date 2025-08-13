@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-import "katex/dist/katex.min.css";
+import 'katex/dist/katex.min.css';
 
 const INITIAL_SAMPLE = `文章
 # aaa
@@ -48,7 +48,6 @@ function greet(name) {
 greet("World");
 \`\`\`
 `;
-
 
 const MarkdownEditor: React.FC = () => {
   const [markdown, setMarkdown] = useState<string>(INITIAL_SAMPLE);
@@ -92,15 +91,15 @@ const MarkdownEditor: React.FC = () => {
               rehypePlugins={[rehypeKatex]}
               components={{
                 code({ inline, className, children, ...props }: any) {
-                  const match = /language-(\w+)/.exec(className || "");
+                  const match = /language-(\w+)/.exec(className || '');
                   return !inline ? (
                     <SyntaxHighlighter
                       style={oneDark as any}
-                      language={match ? match[1] : "text"}
+                      language={match ? match[1] : 'text'}
                       PreTag="div"
                       {...props}
                     >
-                      {String(children).replace(/\n$/, "")}
+                      {String(children).replace(/\n$/, '')}
                     </SyntaxHighlighter>
                   ) : (
                     <code className={className} {...props}>

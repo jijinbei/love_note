@@ -6,14 +6,14 @@ import {
   useRef,
   useState,
   PropsWithChildren,
-} from "react";
-import * as A from "@automerge/automerge";
+} from 'react';
+import * as A from '@automerge/automerge';
 
 /** === Types === */
 export type Note = { id: string; text: string; updatedAt: number };
 export type DocType = { notes: Note[] };
 
-export type SyncStatus = "disconnected" | "connecting" | "connected" | "error";
+export type SyncStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 type Presence = {
   userId: string;
@@ -39,21 +39,21 @@ const CtxAutomerge = createContext<Ctx | null>(null);
 export const useAutomerge = () => {
   const v = useContext(CtxAutomerge);
   if (!v)
-    throw new Error("useAutomerge must be used inside <AutomergeProvider>");
+    throw new Error('useAutomerge must be used inside <AutomergeProvider>');
   return v;
 };
 
 /** === Utilities === */
 const encodeChanges = (changes: Uint8Array[]) =>
-  changes.map((c) => btoa(String.fromCharCode(...c)));
+  changes.map(c => btoa(String.fromCharCode(...c)));
 
 const decodeChanges = (encoded: string[]) =>
   encoded.map(
-    (b64) =>
+    b64 =>
       new Uint8Array(
         atob(b64)
-          .split("")
-          .map((ch) => ch.charCodeAt(0))
+          .split('')
+          .map(ch => ch.charCodeAt(0))
       )
   );
 
@@ -101,7 +101,7 @@ export function AutomergeProvider({
   );
   const prevDocRef = useRef<A.Doc<DocType>>(doc);
 
-  const [status, setStatus] = useState<SyncStatus>("disconnected");
+  const [status, setStatus] = useState<SyncStatus>('disconnected');
   const [error, setError] = useState<string>();
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -111,29 +111,29 @@ export function AutomergeProvider({
   );
   const myUserId = userIdRef.current;
   const myColor = useMemo(() => {
-    const colors = ["#1e90ff", "#e91e63", "#ff9800", "#4caf50", "#9c27b0"];
+    const colors = ['#1e90ff', '#e91e63', '#ff9800', '#4caf50', '#9c27b0'];
     return colors[Math.floor(Math.random() * colors.length)];
   }, []);
 
   useEffect(() => {
     if (!wsUrl || !roomName) {
-      setStatus("disconnected");
-      onStatusChange?.("disconnected");
+      setStatus('disconnected');
+      onStatusChange?.('disconnected');
       return;
     }
 
-    setStatus("connecting");
-    onStatusChange?.("connecting");
+    setStatus('connecting');
+    onStatusChange?.('connecting');
     const ws = new WebSocket(`${wsUrl}?room=${roomName}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setStatus("connected");
-      ws.send(JSON.stringify({ type: "join", room: roomName }));
+      setStatus('connected');
+      ws.send(JSON.stringify({ type: 'join', room: roomName }));
       const snap = A.save(doc);
       ws.send(
         JSON.stringify({
-          type: "snapshot",
+          type: 'snapshot',
           room: roomName,
           data: Array.from(snap),
         })
@@ -141,46 +141,46 @@ export function AutomergeProvider({
     };
 
     ws.onerror = () => {
-      setStatus("error");
-      setError("WebSocket error");
+      setStatus('error');
+      setError('WebSocket error');
     };
 
     ws.onclose = () => {
-      setStatus("disconnected");
+      setStatus('disconnected');
       wsRef.current = null;
     };
 
-    ws.onmessage = (evt) => {
+    ws.onmessage = evt => {
       try {
-        if (typeof evt.data === "string") {
+        if (typeof evt.data === 'string') {
           const msg = JSON.parse(evt.data);
-          if (msg.type === "snapshot" && Array.isArray(msg.data)) {
+          if (msg.type === 'snapshot' && Array.isArray(msg.data)) {
             const loaded = A.load<DocType>(new Uint8Array(msg.data));
             prevDocRef.current = loaded;
             setDoc(loaded);
-          } else if (msg.type === "changes" && Array.isArray(msg.changes)) {
+          } else if (msg.type === 'changes' && Array.isArray(msg.changes)) {
             const changes = decodeChanges(msg.changes);
             const [next] = A.applyChanges(doc, changes);
             prevDocRef.current = next;
             setDoc(next);
-          } else if (msg.type === "presence") {
+          } else if (msg.type === 'presence') {
             const p: Presence = msg.presence;
             if (!p || p.userId === myUserId) return;
-            setCursors((prev) => {
+            setCursors(prev => {
               const m = new Map(prev);
               m.set(p.userId, p);
               return m;
             });
           }
         } else if (evt.data instanceof Blob) {
-          (evt.data as Blob).arrayBuffer().then((buf) => {
+          (evt.data as Blob).arrayBuffer().then(buf => {
             const next = A.load<DocType>(new Uint8Array(buf));
             prevDocRef.current = next;
             setDoc(next);
           });
         }
       } catch {
-        setError("message handling error");
+        setError('message handling error');
       }
     };
 
@@ -200,7 +200,7 @@ export function AutomergeProvider({
     if (ws && ws.readyState === WebSocket.OPEN && changes.length) {
       ws.send(
         JSON.stringify({
-          type: "changes",
+          type: 'changes',
           room: roomName,
           changes: encodeChanges(changes),
         })
@@ -221,9 +221,9 @@ export function AutomergeProvider({
       ts: Date.now(),
     };
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "presence", room: roomName, presence }));
+      ws.send(JSON.stringify({ type: 'presence', room: roomName, presence }));
     }
-    setCursors((prev) => {
+    setCursors(prev => {
       const m = new Map(prev);
       m.set(myUserId, presence);
       return m;
@@ -233,15 +233,15 @@ export function AutomergeProvider({
   const api = useMemo(
     () => ({
       addNote: (text: string) =>
-        applyChange((d) => {
+        applyChange(d => {
           const id =
             (crypto as any).randomUUID?.() ??
             Math.random().toString(36).slice(2);
           d.notes.push({ id, text, updatedAt: Date.now() });
         }),
       updateNote: (id: string, text: string) =>
-        applyChange((d) => {
-          const n = d.notes.find((n) => n.id === id);
+        applyChange(d => {
+          const n = d.notes.find(n => n.id === id);
           if (n) {
             n.text = text;
             n.updatedAt = Date.now();
@@ -325,7 +325,7 @@ export function CursorOverlay({
       if (rects.length === 0) return;
       rects.forEach((rect, i) =>
         out.push({
-          key: uid + ":" + i,
+          key: uid + ':' + i,
           rect,
           color: p.color,
           caret: p.start === p.end,
@@ -347,7 +347,7 @@ export function CursorOverlay({
             width: caret ? 2 : rect.width,
             height: rect.height,
             background: caret ? color : `${color}40`,
-            borderLeft: caret ? `2px solid ${color}` : "none",
+            borderLeft: caret ? `2px solid ${color}` : 'none',
           }}
         />
       ))}

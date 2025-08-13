@@ -6,7 +6,7 @@
 body {
   background-color: #ffffff; /* 白背景 */
   color: #000000; /* 黒文字 */
-  font-family: "Helvetica Neue", Arial, sans-serif; /* 高級感のあるフォント */
+  font-family: 'Helvetica Neue', Arial, sans-serif; /* 高級感のあるフォント */
 }
 
 .markdown-preview h1 {
@@ -48,7 +48,7 @@ body {
   padding: 1rem;
   border-radius: 8px;
   overflow-x: auto;
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -64,7 +64,7 @@ body {
   color: red;
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 /* Ordered list (ol) のスタイル */

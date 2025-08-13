@@ -23,7 +23,7 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
   return (
     <li className="mb-1">
       <div className="group flex flex-col w-full px-2 py-1 rounded hover:bg-blue-50">
-        <div 
+        <div
           className="flex items-center cursor-pointer"
           onClick={() => onToggle(project.id)}
           title={`${project.name} を折りたたむ/展開`}
@@ -39,22 +39,32 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
               viewBox="0 0 24 24"
             >
               {isExpanded ? (
-                <polyline points="6 9 12 15 18 9" stroke="currentColor" fill="none" />
+                <polyline
+                  points="6 9 12 15 18 9"
+                  stroke="currentColor"
+                  fill="none"
+                />
               ) : (
-                <polyline points="9 6 15 12 9 18" stroke="currentColor" fill="none" />
+                <polyline
+                  points="9 6 15 12 9 18"
+                  stroke="currentColor"
+                  fill="none"
+                />
               )}
             </svg>
           </div>
 
           {/* プロジェクト名 */}
           <span className="mr-3 text-sm">📋</span>
-          <span className="flex-1 truncate text-left text-sm">{project.name}</span>
+          <span className="flex-1 truncate text-left text-sm">
+            {project.name}
+          </span>
 
           {/* 実験追加ボタン - ホバー時のみ表示 */}
           <button
             className="p-1 rounded hover:bg-blue-200 transition text-gray-400 opacity-0 group-hover:opacity-100"
             title={`${project.name} に実験を追加`}
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onCreateExperiment(project.id);
             }}
@@ -77,9 +87,9 @@ export const ProjectItem: React.FC<ProjectItemProps> = ({
         {/* 実験リスト */}
         {isExpanded && experiments.length > 0 && (
           <ul className="pl-6 space-y-1 mt-1">
-            {experiments.map((experiment) => (
-              <li 
-                key={experiment.id} 
+            {experiments.map(experiment => (
+              <li
+                key={experiment.id}
                 className="text-sm text-gray-600 flex items-center p-1 rounded hover:bg-yellow-50 cursor-pointer"
                 onClick={() => onExperimentClick?.(experiment.id)} // クリックイベントを追加
                 title={`${experiment.title} を開く`}

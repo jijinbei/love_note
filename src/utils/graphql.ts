@@ -3,10 +3,10 @@ import type { DocumentNode } from 'graphql';
 
 export interface GraphQLResponse<T = any> {
   data?: T;
-  errors?: Array<{ 
-    message: string; 
-    locations?: Array<{ line: number; column: number }>; 
-    path?: string[] 
+  errors?: Array<{
+    message: string;
+    locations?: Array<{ line: number; column: number }>;
+    path?: string[];
   }>;
 }
 
@@ -28,7 +28,10 @@ export const getQueryString = (document: any): string => {
   if (typeof document === 'string') {
     return document;
   }
-  
-  console.error('Failed to extract query string. Document structure:', document);
+
+  console.error(
+    'Failed to extract query string. Document structure:',
+    document
+  );
   throw new Error('Unable to extract query string from document');
 };

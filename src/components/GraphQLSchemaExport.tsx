@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 export function GraphQLSchemaExport() {
-  const [schema, setSchema] = useState("");
+  const [schema, setSchema] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -13,10 +13,10 @@ export function GraphQLSchemaExport() {
       setError(null);
       setCopySuccess(false);
 
-      const schemaSDL = await invoke<string>("export_graphql_schema");
+      const schemaSDL = await invoke<string>('export_graphql_schema');
       setSchema(schemaSDL);
     } catch (err) {
-      console.error("Schema export error:", err);
+      console.error('Schema export error:', err);
       setError(`Failed to export schema: ${err}`);
     } finally {
       setIsLoading(false);
@@ -32,9 +32,9 @@ export function GraphQLSchemaExport() {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 3000);
     } catch (err) {
-      console.error("Clipboard error:", err);
+      console.error('Clipboard error:', err);
       setError(
-        `Failed to copy to clipboard: ${err instanceof Error ? err.message : "Permission denied"}`
+        `Failed to copy to clipboard: ${err instanceof Error ? err.message : 'Permission denied'}`
       );
       setTimeout(() => setError(null), 5000);
     }
@@ -57,24 +57,24 @@ export function GraphQLSchemaExport() {
           disabled={isLoading}
           className="px-6 py-3 text-base font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out flex items-center justify-center gap-2"
           style={{
-            backgroundColor: isLoading ? "#a0aec0" : "#4299e1",
-            color: "white",
-            cursor: isLoading ? "not-allowed" : "pointer",
+            backgroundColor: isLoading ? '#a0aec0' : '#4299e1',
+            color: 'white',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
           }}
-          onMouseOver={(e) => {
+          onMouseOver={e => {
             if (!isLoading) {
-              e.currentTarget.style.backgroundColor = "#3182ce";
-              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.backgroundColor = '#3182ce';
+              e.currentTarget.style.transform = 'translateY(-1px)';
             }
           }}
-          onMouseOut={(e) => {
+          onMouseOut={e => {
             if (!isLoading) {
-              e.currentTarget.style.backgroundColor = "#4299e1";
-              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.backgroundColor = '#4299e1';
+              e.currentTarget.style.transform = 'translateY(0)';
             }
           }}
         >
-          {isLoading ? "⏳ Loading..." : "📊 Load Schema"}
+          {isLoading ? '⏳ Loading...' : '📊 Load Schema'}
         </button>
 
         {schema && (
@@ -82,17 +82,17 @@ export function GraphQLSchemaExport() {
             onClick={copyToClipboard}
             className="px-6 py-3 text-base font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out flex items-center justify-center gap-2"
             style={{
-              backgroundColor: "#48bb78",
-              color: "white",
-              cursor: "pointer",
+              backgroundColor: '#48bb78',
+              color: 'white',
+              cursor: 'pointer',
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = "#38a169";
-              e.currentTarget.style.transform = "translateY(-1px)";
+            onMouseOver={e => {
+              e.currentTarget.style.backgroundColor = '#38a169';
+              e.currentTarget.style.transform = 'translateY(-1px)';
             }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "#48bb78";
-              e.currentTarget.style.transform = "translateY(0)";
+            onMouseOut={e => {
+              e.currentTarget.style.backgroundColor = '#48bb78';
+              e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             📋 Copy to Clipboard
@@ -121,8 +121,8 @@ export function GraphQLSchemaExport() {
               📄 schema.graphql
             </div>
             <div className="text-xs text-gray-500">
-              {schema.length.toLocaleString()} characters |{" "}
-              {schema.split("\n").length} lines
+              {schema.length.toLocaleString()} characters |{' '}
+              {schema.split('\n').length} lines
             </div>
           </div>
           <div className="p-4 font-mono text-xs leading-relaxed text-gray-800 bg-gray-50 max-h-[300px] overflow-auto whitespace-pre-wrap">
@@ -143,11 +143,11 @@ export function GraphQLSchemaExport() {
         </h3>
         <ul className="m-0 pl-5 list-disc text-gray-700 leading-relaxed">
           <li>
-            <strong>GraphQL Voyager:</strong>{" "}
+            <strong>GraphQL Voyager:</strong>{' '}
             <code>https://graphql-kit.com/graphql-voyager/</code>
           </li>
           <li>
-            <strong>GraphQL Editor:</strong>{" "}
+            <strong>GraphQL Editor:</strong>{' '}
             <code>https://app.graphqleditor.com/</code>
           </li>
           <li>

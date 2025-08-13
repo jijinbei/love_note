@@ -1,8 +1,8 @@
-use std::path::{Path, PathBuf};
-use std::fs;
 use base64::prelude::*;
-use uuid::Uuid;
+use std::fs;
+use std::path::{Path, PathBuf};
 use tauri::Manager;
+use uuid::Uuid;
 
 // Supported image formats
 const SUPPORTED_MIME_TYPES: &[&str] = &["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -43,7 +43,7 @@ pub fn detect_mime_type(filename: &str) -> Result<String> {
 
     let mime_type = match extension.as_str() {
         "jpg" | "jpeg" => "image/jpeg",
-        "png" => "image/png", 
+        "png" => "image/png",
         "webp" => "image/webp",
         _ => return Err(ImageError::UnsupportedFormat(extension)),
     };
@@ -98,39 +98,36 @@ pub fn generate_unique_filename(original_filename: &str) -> String {
         .and_then(|ext| ext.to_str())
         .map(|ext| format!(".{}", ext))
         .unwrap_or_default();
-    
+
     format!("{}{}", Uuid::new_v4(), extension)
 }
 
 // Get images directory path
 pub fn get_images_dir(app: &tauri::AppHandle) -> Result<PathBuf> {
-    let app_data_dir = app.path().app_data_dir()
-        .map_err(|e| ImageError::IoError(std::io::Error::new(
-            std::io::ErrorKind::Other, 
-            format!("Failed to get app data directory: {}", e)
-        )))?;
-    
+    let app_data_dir = app.path().app_data_dir().map_err(|e| {
+        ImageError::IoError(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to get app data directory: {}", e),
+        ))
+    })?;
+
     let images_dir = app_data_dir.join("images");
-    
+
     // Create directory if it doesn't exist
     if !images_dir.exists() {
         fs::create_dir_all(&images_dir)?;
     }
-    
+
     Ok(images_dir)
 }
 
 // Save image file to filesystem
-pub fn save_image_file(
-    app: &tauri::AppHandle,
-    data: &[u8],
-    filename: &str,
-) -> Result<PathBuf> {
+pub fn save_image_file(app: &tauri::AppHandle, data: &[u8], filename: &str) -> Result<PathBuf> {
     let images_dir = get_images_dir(app)?;
     let file_path = images_dir.join(filename);
-    
+
     fs::write(&file_path, data)?;
-    
+
     Ok(file_path)
 }
 
@@ -146,9 +143,9 @@ pub fn delete_image_file(file_path: &str) -> Result<()> {
 // Get full image metadata
 pub fn get_image_metadata(data: &[u8], mime_type: &str) -> Result<ImageMetadata> {
     validate_image_data(data, mime_type)?;
-    
+
     let (width, height) = get_image_dimensions(data, mime_type)?;
-    
+
     Ok(ImageMetadata {
         mime_type: mime_type.to_string(),
         file_size: data.len(),

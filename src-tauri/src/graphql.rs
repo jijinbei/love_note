@@ -1,15 +1,18 @@
-use async_graphql::{Context, Object, Schema, Result, dataloader::DataLoader, ComplexObject};
-use sqlx::SqlitePool;
-use uuid::Uuid;
-use chrono::Utc;
-use std::fs;
-use base64::prelude::*;
-use crate::models::{
-    User, Workspace, Project, Experiment, Block, Image,
-    CreateUserRequest, CreateWorkspaceRequest, CreateProjectRequest, CreateExperimentRequest, CreateBlockInput, ImageUploadInput
-};
-use crate::loader::{UserLoader, WorkspaceLoader, ProjectLoader, ExperimentLoader, BlockLoader, ImageLoader, ImageByIdLoader};
 use crate::image_utils;
+use crate::loader::{
+    BlockLoader, ExperimentLoader, ImageByIdLoader, ImageLoader, ProjectLoader, UserLoader,
+    WorkspaceLoader,
+};
+use crate::models::{
+    Block, CreateBlockInput, CreateExperimentRequest, CreateProjectRequest, CreateUserRequest,
+    CreateWorkspaceRequest, Experiment, Image, ImageUploadInput, Project, User, Workspace,
+};
+use async_graphql::{dataloader::DataLoader, ComplexObject, Context, Object, Result, Schema};
+use base64::prelude::*;
+use chrono::Utc;
+use sqlx::SqlitePool;
+use std::fs;
+use uuid::Uuid;
 
 // Image GraphQL resolver with dataUrl field
 #[ComplexObject]
@@ -20,7 +23,10 @@ impl Image {
                 let base64_data = BASE64_STANDARD.encode(&data);
                 Ok(format!("data:{};base64,{}", self.mime_type, base64_data))
             }
-            Err(e) => Err(async_graphql::Error::new(format!("Failed to read image file: {}", e)))
+            Err(e) => Err(async_graphql::Error::new(format!(
+                "Failed to read image file: {}",
+                e
+            ))),
         }
     }
 }
@@ -32,50 +38,43 @@ pub struct Query;
 impl Query {
     async fn users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
         let loader = ctx.data::<DataLoader<UserLoader>>()?;
-        let users = loader.load_one(()).await?
-            .unwrap_or_default();
+        let users = loader.load_one(()).await?.unwrap_or_default();
         Ok(users)
     }
 
     async fn workspaces(&self, ctx: &Context<'_>) -> Result<Vec<Workspace>> {
         let loader = ctx.data::<DataLoader<WorkspaceLoader>>()?;
-        let workspaces = loader.load_one(()).await?
-            .unwrap_or_default();
+        let workspaces = loader.load_one(()).await?.unwrap_or_default();
         Ok(workspaces)
     }
 
     async fn projects(&self, ctx: &Context<'_>, workspace_id: Uuid) -> Result<Vec<Project>> {
         let loader = ctx.data::<DataLoader<ProjectLoader>>()?;
-        let projects = loader.load_one(workspace_id).await?
-            .unwrap_or_default();
+        let projects = loader.load_one(workspace_id).await?.unwrap_or_default();
         Ok(projects)
     }
 
     async fn experiments(&self, ctx: &Context<'_>, project_id: Uuid) -> Result<Vec<Experiment>> {
         let loader = ctx.data::<DataLoader<ExperimentLoader>>()?;
-        let experiments = loader.load_one(project_id).await?
-            .unwrap_or_default();
+        let experiments = loader.load_one(project_id).await?.unwrap_or_default();
         Ok(experiments)
     }
 
     async fn blocks(&self, ctx: &Context<'_>, experiment_id: Uuid) -> Result<Vec<Block>> {
         let loader = ctx.data::<DataLoader<BlockLoader>>()?;
-        let blocks = loader.load_one(experiment_id).await?
-            .unwrap_or_default();
+        let blocks = loader.load_one(experiment_id).await?.unwrap_or_default();
         Ok(blocks)
     }
 
     async fn images(&self, ctx: &Context<'_>, workspace_id: Uuid) -> Result<Vec<Image>> {
         let loader = ctx.data::<DataLoader<ImageLoader>>()?;
-        let images = loader.load_one(workspace_id).await?
-            .unwrap_or_default();
+        let images = loader.load_one(workspace_id).await?.unwrap_or_default();
         Ok(images)
     }
 
     async fn image(&self, ctx: &Context<'_>, id: Uuid) -> Result<Option<Image>> {
         let loader = ctx.data::<DataLoader<ImageByIdLoader>>()?;
-        let image = loader.load_one(id).await?
-            .unwrap_or_default();
+        let image = loader.load_one(id).await?.unwrap_or_default();
         Ok(image)
     }
 }
@@ -113,7 +112,11 @@ impl Mutation {
         Ok(user)
     }
 
-    async fn create_workspace(&self, ctx: &Context<'_>, input: CreateWorkspaceRequest) -> Result<Workspace> {
+    async fn create_workspace(
+        &self,
+        ctx: &Context<'_>,
+        input: CreateWorkspaceRequest,
+    ) -> Result<Workspace> {
         let pool = ctx.data::<SqlitePool>()?;
         let id = Uuid::new_v4();
         let now = Utc::now();
@@ -139,7 +142,11 @@ impl Mutation {
         Ok(workspace)
     }
 
-    async fn create_project(&self, ctx: &Context<'_>, input: CreateProjectRequest) -> Result<Project> {
+    async fn create_project(
+        &self,
+        ctx: &Context<'_>,
+        input: CreateProjectRequest,
+    ) -> Result<Project> {
         let pool = ctx.data::<SqlitePool>()?;
         let id = Uuid::new_v4();
         let now = Utc::now();
@@ -167,7 +174,11 @@ impl Mutation {
         Ok(project)
     }
 
-    async fn create_experiment(&self, ctx: &Context<'_>, input: CreateExperimentRequest) -> Result<Experiment> {
+    async fn create_experiment(
+        &self,
+        ctx: &Context<'_>,
+        input: CreateExperimentRequest,
+    ) -> Result<Experiment> {
         let pool = ctx.data::<SqlitePool>()?;
         let id = Uuid::new_v4();
         let now = Utc::now();
@@ -198,11 +209,13 @@ impl Mutation {
         let id = Uuid::new_v4();
         let now = Utc::now();
 
-        let request = input.to_request()
+        let request = input
+            .to_request()
             .map_err(|e| async_graphql::Error::new(format!("Invalid block content: {}", e)))?;
 
-        let content_json = serde_json::to_string(&request.content)
-            .map_err(|e| async_graphql::Error::new(format!("Content serialization error: {}", e)))?;
+        let content_json = serde_json::to_string(&request.content).map_err(|e| {
+            async_graphql::Error::new(format!("Content serialization error: {}", e))
+        })?;
 
         let block = Block {
             id: id,
@@ -232,28 +245,28 @@ impl Mutation {
     async fn upload_image(&self, ctx: &Context<'_>, input: ImageUploadInput) -> Result<Image> {
         let pool = ctx.data::<SqlitePool>()?;
         let app_handle = ctx.data::<tauri::AppHandle>()?;
-        
+
         // Decode base64 image data
         let image_data = image_utils::decode_base64_image(&input.data)
             .map_err(|e| async_graphql::Error::new(format!("Invalid image data: {}", e)))?;
-        
+
         // Detect MIME type from filename
         let mime_type = image_utils::detect_mime_type(&input.filename)
             .map_err(|e| async_graphql::Error::new(format!("Unsupported file format: {}", e)))?;
-        
+
         // Get image metadata
         let metadata = image_utils::get_image_metadata(&image_data, &mime_type)
             .map_err(|e| async_graphql::Error::new(format!("Image validation failed: {}", e)))?;
-        
+
         // Generate unique filename and save to filesystem
         let unique_filename = image_utils::generate_unique_filename(&input.filename);
         let file_path = image_utils::save_image_file(app_handle, &image_data, &unique_filename)
             .map_err(|e| async_graphql::Error::new(format!("Failed to save image: {}", e)))?;
-        
+
         // Create database record
         let id = Uuid::new_v4();
         let now = Utc::now();
-        
+
         let image = Image {
             id,
             workspace_id: input.workspace_id,
@@ -267,7 +280,7 @@ impl Mutation {
             created_at: now,
             updated_at: now,
         };
-        
+
         sqlx::query("INSERT INTO images (id, workspace_id, original_filename, file_path, mime_type, file_size, width, height, alt_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&image.id)
             .bind(&image.workspace_id)
@@ -283,31 +296,31 @@ impl Mutation {
             .execute(pool)
             .await
             .map_err(|e| async_graphql::Error::new(e.to_string()))?;
-        
+
         Ok(image)
     }
 
     async fn delete_image(&self, ctx: &Context<'_>, id: Uuid) -> Result<bool> {
         let pool = ctx.data::<SqlitePool>()?;
-        
+
         // Get image record to find file path
         let image: Option<Image> = sqlx::query_as("SELECT * FROM images WHERE id = ?")
             .bind(&id)
             .fetch_optional(pool)
             .await
             .map_err(|e| async_graphql::Error::new(e.to_string()))?;
-        
+
         if let Some(image) = image {
             // Delete from filesystem
             let _ = image_utils::delete_image_file(&image.file_path);
-            
+
             // Delete from database
             sqlx::query("DELETE FROM images WHERE id = ?")
                 .bind(&id)
                 .execute(pool)
                 .await
                 .map_err(|e| async_graphql::Error::new(e.to_string()))?;
-            
+
             Ok(true)
         } else {
             Ok(false)
@@ -319,12 +332,12 @@ impl Mutation {
 pub type LoveNoteSchema = Schema<Query, Mutation, async_graphql::EmptySubscription>;
 
 // Schema builder function with DataLoaders and SqlitePool
-pub fn create_schema_with_loaders(pool: SqlitePool, app_handle: tauri::AppHandle) -> LoveNoteSchema {
+pub fn create_schema_with_loaders(
+    pool: SqlitePool,
+    app_handle: tauri::AppHandle,
+) -> LoveNoteSchema {
     Schema::build(Query, Mutation, async_graphql::EmptySubscription)
-        .data(DataLoader::new(
-            UserLoader::new(pool.clone()),
-            tokio::spawn,
-        ))
+        .data(DataLoader::new(UserLoader::new(pool.clone()), tokio::spawn))
         .data(DataLoader::new(
             WorkspaceLoader::new(pool.clone()),
             tokio::spawn,
@@ -356,6 +369,5 @@ pub fn create_schema_with_loaders(pool: SqlitePool, app_handle: tauri::AppHandle
 
 // Schema builder function without DataLoaders for SDL export
 pub fn create_schema_for_sdl() -> LoveNoteSchema {
-    Schema::build(Query, Mutation, async_graphql::EmptySubscription)
-        .finish()
+    Schema::build(Query, Mutation, async_graphql::EmptySubscription).finish()
 }

@@ -2,10 +2,10 @@ import type { Workspace, Project, Experiment } from '../../generated/graphql';
 
 export interface GraphQLResponse<T = any> {
   data?: T;
-  errors?: Array<{ 
-    message: string; 
-    locations?: Array<{ line: number; column: number }>; 
-    path?: string[] 
+  errors?: Array<{
+    message: string;
+    locations?: Array<{ line: number; column: number }>;
+    path?: string[];
   }>;
 }
 

@@ -1,8 +1,8 @@
-import React from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm"; // GitHub Flavored Markdown (GFM) をサポート
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'; // GitHub Flavored Markdown (GFM) をサポート
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const MarkdownViewer: React.FC<{ content: string }> = ({ content }) => {
   return (
@@ -11,15 +11,15 @@ const MarkdownViewer: React.FC<{ content: string }> = ({ content }) => {
         remarkPlugins={[remarkGfm]}
         components={{
           code({ node, inline, className, children, ...props }: any) {
-            const match = /language-(\w+)/.exec(className || "");
+            const match = /language-(\w+)/.exec(className || '');
             return !inline ? (
               <SyntaxHighlighter
                 style={oneDark as any}
-                language={match ? match[1] : "text"}
+                language={match ? match[1] : 'text'}
                 PreTag="div"
                 {...props}
               >
-                {String(children).replace(/\n$/, "")}
+                {String(children).replace(/\n$/, '')}
               </SyntaxHighlighter>
             ) : (
               <code className={className} {...props}>

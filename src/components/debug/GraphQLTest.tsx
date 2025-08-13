@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
+import {
   GetUsersDocument,
   GetBlocksDocument,
   CreateUserDocument,
-  CreateBlockDocument
+  CreateBlockDocument,
 } from '../../generated/graphql';
-import type { 
-  User, 
-  Workspace, 
+import type {
+  User,
+  Workspace,
   Project,
   Experiment,
-  Block
+  Block,
 } from '../../generated/graphql';
 import { getQueryString } from '../../utils/graphql';
 import type { GraphQLResponse } from '../../utils/graphql';
@@ -26,38 +26,121 @@ interface FormField {
   placeholder: string;
 }
 
-
 // フォームフィールド定義
 const getFormFields = (type: FormType): FormField[] => {
   switch (type) {
     case 'user':
       return [
-        { name: 'username', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
-        { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email' },
-        { name: 'displayName', label: 'Display Name', type: 'text', required: false, placeholder: 'Enter display name (optional)' },
+        {
+          name: 'username',
+          label: 'Username',
+          type: 'text',
+          required: true,
+          placeholder: 'Enter username',
+        },
+        {
+          name: 'email',
+          label: 'Email',
+          type: 'email',
+          required: true,
+          placeholder: 'Enter email',
+        },
+        {
+          name: 'displayName',
+          label: 'Display Name',
+          type: 'text',
+          required: false,
+          placeholder: 'Enter display name (optional)',
+        },
       ];
     case 'workspace':
       return [
-        { name: 'name', label: 'Workspace Name', type: 'text', required: true, placeholder: 'Enter workspace name' },
-        { name: 'description', label: 'Description', type: 'textarea', required: false, placeholder: 'Enter description (optional)' },
+        {
+          name: 'name',
+          label: 'Workspace Name',
+          type: 'text',
+          required: true,
+          placeholder: 'Enter workspace name',
+        },
+        {
+          name: 'description',
+          label: 'Description',
+          type: 'textarea',
+          required: false,
+          placeholder: 'Enter description (optional)',
+        },
       ];
     case 'project':
       return [
-        { name: 'workspaceId', label: 'Workspace', type: 'select-workspace', required: true, placeholder: 'Select a workspace' },
-        { name: 'name', label: 'Project Name', type: 'text', required: true, placeholder: 'Enter project name' },
-        { name: 'description', label: 'Description', type: 'textarea', required: false, placeholder: 'Enter description (optional)' },
+        {
+          name: 'workspaceId',
+          label: 'Workspace',
+          type: 'select-workspace',
+          required: true,
+          placeholder: 'Select a workspace',
+        },
+        {
+          name: 'name',
+          label: 'Project Name',
+          type: 'text',
+          required: true,
+          placeholder: 'Enter project name',
+        },
+        {
+          name: 'description',
+          label: 'Description',
+          type: 'textarea',
+          required: false,
+          placeholder: 'Enter description (optional)',
+        },
       ];
     case 'experiment':
       return [
-        { name: 'projectId', label: 'Project', type: 'select-project', required: true, placeholder: 'Select a project' },
-        { name: 'title', label: 'Experiment Title', type: 'text', required: true, placeholder: 'Enter experiment title' },
+        {
+          name: 'projectId',
+          label: 'Project',
+          type: 'select-project',
+          required: true,
+          placeholder: 'Select a project',
+        },
+        {
+          name: 'title',
+          label: 'Experiment Title',
+          type: 'text',
+          required: true,
+          placeholder: 'Enter experiment title',
+        },
       ];
     case 'block':
       return [
-        { name: 'experimentId', label: 'Experiment', type: 'select-experiment', required: true, placeholder: 'Select an experiment' },
-        { name: 'blockType', label: 'Block Type', type: 'text', required: true, placeholder: 'text, image, code, etc.' },
-        { name: 'content', label: 'Content', type: 'textarea', required: true, placeholder: 'Enter block content' },
-        { name: 'orderIndex', label: 'Order Index', type: 'number', required: true, placeholder: '0, 1, 2...' },
+        {
+          name: 'experimentId',
+          label: 'Experiment',
+          type: 'select-experiment',
+          required: true,
+          placeholder: 'Select an experiment',
+        },
+        {
+          name: 'blockType',
+          label: 'Block Type',
+          type: 'text',
+          required: true,
+          placeholder: 'text, image, code, etc.',
+        },
+        {
+          name: 'content',
+          label: 'Content',
+          type: 'textarea',
+          required: true,
+          placeholder: 'Enter block content',
+        },
+        {
+          name: 'orderIndex',
+          label: 'Order Index',
+          type: 'number',
+          required: true,
+          placeholder: '0, 1, 2...',
+        },
       ];
     default:
       return [];
@@ -65,39 +148,54 @@ const getFormFields = (type: FormType): FormField[] => {
 };
 
 export function GraphQLTest() {
-  const [activeTab, setActiveTab] = useState<'query' | 'create' | 'image'>('query');
-  const [selectedCreateType, setSelectedCreateType] = useState<FormType>('user');
+  const [activeTab, setActiveTab] = useState<'query' | 'create' | 'image'>(
+    'query'
+  );
+  const [selectedCreateType, setSelectedCreateType] =
+    useState<FormType>('user');
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
-  
+
   // Use shared GraphQL hook
-  const { 
-    isLoading, 
-    error, 
-    setError, 
-    loadWorkspaces, 
-    loadProjects, 
-    loadExperiments, 
-    createWorkspace, 
-    createProject, 
-    createExperiment 
+  const {
+    isLoading,
+    error,
+    setError,
+    loadWorkspaces,
+    loadProjects,
+    loadExperiments,
+    createWorkspace,
+    createProject,
+    createExperiment,
   } = useGraphQL();
-  
+
   // Data states
   const [users, setUsers] = useState<User[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [workspaceProjects, setWorkspaceProjects] = useState<Record<string, Project[]>>({});
-  const [projectExperiments, setProjectExperiments] = useState<Record<string, Experiment[]>>({});
-  const [experimentBlocks, setExperimentBlocks] = useState<Record<string, Block[]>>({});
-  
+  const [workspaceProjects, setWorkspaceProjects] = useState<
+    Record<string, Project[]>
+  >({});
+  const [projectExperiments, setProjectExperiments] = useState<
+    Record<string, Experiment[]>
+  >({});
+  const [experimentBlocks, setExperimentBlocks] = useState<
+    Record<string, Block[]>
+  >({});
+
   // Flattened data for select options
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [allExperiments, setAllExperiments] = useState<Experiment[]>([]);
-  
+
   // Expansion states
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<Set<string>>(new Set());
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
-  const [expandedExperiments, setExpandedExperiments] = useState<Set<string>>(new Set());
+  const [expandedWorkspaces, setExpandedWorkspaces] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedExperiments, setExpandedExperiments] = useState<Set<string>>(
+    new Set()
+  );
 
   // フォームデータの初期化
   useEffect(() => {
@@ -119,11 +217,15 @@ export function GraphQLTest() {
     try {
       // Load users and workspaces in parallel
       const [usersResult, workspacesData] = await Promise.all([
-        invoke<string>('graphql_query', { query: getQueryString(GetUsersDocument), variables: null }),
-        loadWorkspaces()
+        invoke<string>('graphql_query', {
+          query: getQueryString(GetUsersDocument),
+          variables: null,
+        }),
+        loadWorkspaces(),
       ]);
 
-      const usersData: GraphQLResponse<{users: User[]}> = JSON.parse(usersResult);
+      const usersData: GraphQLResponse<{ users: User[] }> =
+        JSON.parse(usersResult);
 
       if (usersData.errors) {
         throw new Error(usersData.errors[0]?.message);
@@ -131,15 +233,14 @@ export function GraphQLTest() {
 
       setUsers(usersData.data?.users || []);
       setWorkspaces(workspacesData);
-      
+
       // Clear all cached data to force refresh
       setWorkspaceProjects({});
       setProjectExperiments({});
       setExperimentBlocks({});
-      
+
       // Load all projects and experiments for select options
       await loadAllProjectsAndExperiments(workspacesData);
-      
     } catch (err) {
       console.error('Error loading initial data:', err);
     }
@@ -154,7 +255,7 @@ export function GraphQLTest() {
       for (const workspace of workspaceList) {
         const projectsData = await loadProjects(workspace.id);
         projects.push(...projectsData);
-        
+
         for (const project of projectsData) {
           const experimentsData = await loadExperiments(project.id);
           experiments.push(...experimentsData);
@@ -178,7 +279,7 @@ export function GraphQLTest() {
 
     return {
       data: workspaceProjects[workspaceId] || [],
-      isLoading: false // 簡略化
+      isLoading: false, // 簡略化
     };
   };
 
@@ -192,7 +293,7 @@ export function GraphQLTest() {
 
     return {
       data: projectExperiments[projectId] || [],
-      isLoading: false // 簡略化
+      isLoading: false, // 簡略化
     };
   };
 
@@ -206,7 +307,7 @@ export function GraphQLTest() {
 
     return {
       data: experimentBlocks[experimentId] || [],
-      isLoading: false // 簡略化
+      isLoading: false, // 簡略化
     };
   };
 
@@ -216,7 +317,7 @@ export function GraphQLTest() {
         const projectsData = await loadProjects(workspaceId);
         setWorkspaceProjects(prev => ({
           ...prev,
-          [workspaceId]: projectsData
+          [workspaceId]: projectsData,
         }));
       }
     } catch (error) {
@@ -230,7 +331,7 @@ export function GraphQLTest() {
         const experimentsData = await loadExperiments(projectId);
         setProjectExperiments(prev => ({
           ...prev,
-          [projectId]: experimentsData
+          [projectId]: experimentsData,
         }));
       }
     } catch (error) {
@@ -243,13 +344,14 @@ export function GraphQLTest() {
       if (!experimentBlocks[experimentId]) {
         const result = await invoke<string>('graphql_query', {
           query: getQueryString(GetBlocksDocument),
-          variables: { experimentId }
+          variables: { experimentId },
         });
-        const blocksData: GraphQLResponse<{blocks: Block[]}> = JSON.parse(result);
+        const blocksData: GraphQLResponse<{ blocks: Block[] }> =
+          JSON.parse(result);
         if (!blocksData.errors) {
           setExperimentBlocks(prev => ({
             ...prev,
-            [experimentId]: blocksData.data?.blocks || []
+            [experimentId]: blocksData.data?.blocks || [],
           }));
         }
       }
@@ -262,7 +364,7 @@ export function GraphQLTest() {
   const handleCreateData = async () => {
     setIsCreating(true);
     setError('');
-    
+
     try {
       const input: any = {};
       Object.entries(formData).forEach(([key, value]) => {
@@ -280,7 +382,7 @@ export function GraphQLTest() {
           // User creation uses direct invoke as it's not in useGraphQL hook
           const userResult = await invoke<string>('graphql_query', {
             query: getQueryString(CreateUserDocument),
-            variables: { input }
+            variables: { input },
           });
           const userResponse: GraphQLResponse = JSON.parse(userResult);
           if (userResponse.errors) {
@@ -302,18 +404,18 @@ export function GraphQLTest() {
             if (input.blockType === 'text') {
               input.content = JSON.stringify({
                 type: 'NoteBlock',
-                text: input.content
+                text: input.content,
               });
             } else {
               input.content = JSON.stringify({
                 type: 'NoteBlock',
-                text: input.content
+                text: input.content,
               });
             }
           }
           const blockResult = await invoke<string>('graphql_query', {
             query: getQueryString(CreateBlockDocument),
-            variables: { input }
+            variables: { input },
           });
           const blockResponse: GraphQLResponse = JSON.parse(blockResult);
           if (blockResponse.errors) {
@@ -334,10 +436,11 @@ export function GraphQLTest() {
 
       // データを再読み込み（キャッシュクリア含む）
       await loadInitialData();
-      
-      // 作成成功メッセージを表示
-      console.log(`${selectedCreateType} created successfully and data refreshed`);
 
+      // 作成成功メッセージを表示
+      console.log(
+        `${selectedCreateType} created successfully and data refreshed`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create data');
       console.error('Error creating data:', err);
@@ -354,24 +457,27 @@ export function GraphQLTest() {
   // WorkspaceItem コンポーネント
   const WorkspaceItem = ({ workspace }: { workspace: Workspace }) => {
     const isExpanded = expandedWorkspaces.has(workspace.id);
-    const { data: projects, isLoading: projectsLoading } = useProjects(workspace.id, isExpanded);
+    const { data: projects, isLoading: projectsLoading } = useProjects(
+      workspace.id,
+      isExpanded
+    );
 
     return (
       <div key={workspace.id} className="mb-2">
         <div className="my-1.5 p-2 bg-white rounded border border-gray-300 text-xs font-mono hover:bg-gray-100">
-          <div 
+          <div
             onClick={() => toggleWorkspace(workspace.id)}
             className="flex items-center mb-1 cursor-pointer"
           >
-            <span className="mr-2 text-xs">
-              {isExpanded ? '▼' : '▶'}
-            </span>
+            <span className="mr-2 text-xs">{isExpanded ? '▼' : '▶'}</span>
             <strong>📁 {workspace.name}</strong>
             {projectsLoading && <span className="ml-2 text-gray-600">⏳</span>}
           </div>
-          <div className="text-[10px] text-gray-500 break-all font-mono ml-4 select-text cursor-text">{workspace.id}</div>
+          <div className="text-[10px] text-gray-500 break-all font-mono ml-4 select-text cursor-text">
+            {workspace.id}
+          </div>
         </div>
-        
+
         {/* プロジェクト表示 */}
         {isExpanded && (
           <div className="ml-5 mt-1.5">
@@ -379,7 +485,9 @@ export function GraphQLTest() {
               <ProjectItem key={project.id} project={project} />
             ))}
             {projects.length === 0 && (
-              <div className="text-gray-500 text-xs italic p-2">No projects in this workspace</div>
+              <div className="text-gray-500 text-xs italic p-2">
+                No projects in this workspace
+              </div>
             )}
           </div>
         )}
@@ -390,24 +498,29 @@ export function GraphQLTest() {
   // ProjectItem コンポーネント
   const ProjectItem = ({ project }: { project: Project }) => {
     const isExpanded = expandedProjects.has(project.id);
-    const { data: experiments, isLoading: experimentsLoading } = useExperiments(project.id, isExpanded);
+    const { data: experiments, isLoading: experimentsLoading } = useExperiments(
+      project.id,
+      isExpanded
+    );
 
     return (
       <div className="mb-1.5">
         <div className="p-1.5 bg-blue-50 rounded border border-blue-200 text-xs font-mono hover:bg-blue-100">
-          <div 
+          <div
             onClick={() => toggleProject(project.id)}
             className="flex items-center mb-1 cursor-pointer"
           >
-            <span className="mr-1.5 text-xs">
-              {isExpanded ? '▼' : '▶'}
-            </span>
+            <span className="mr-1.5 text-xs">{isExpanded ? '▼' : '▶'}</span>
             📋 <strong>{project.name}</strong>
-            {experimentsLoading && <span className="ml-1.5 text-gray-600">⏳</span>}
+            {experimentsLoading && (
+              <span className="ml-1.5 text-gray-600">⏳</span>
+            )}
           </div>
-          <div className="text-[10px] text-gray-500 break-all font-mono ml-4 select-text cursor-text">{project.id}</div>
+          <div className="text-[10px] text-gray-500 break-all font-mono ml-4 select-text cursor-text">
+            {project.id}
+          </div>
         </div>
-        
+
         {/* 実験表示 */}
         {isExpanded && (
           <div className="ml-5 mt-1">
@@ -415,7 +528,9 @@ export function GraphQLTest() {
               <ExperimentItem key={experiment.id} experiment={experiment} />
             ))}
             {experiments.length === 0 && (
-              <div className="text-gray-500 text-xs italic p-1">No experiments in this project</div>
+              <div className="text-gray-500 text-xs italic p-1">
+                No experiments in this project
+              </div>
             )}
           </div>
         )}
@@ -426,35 +541,48 @@ export function GraphQLTest() {
   // ExperimentItem コンポーネント
   const ExperimentItem = ({ experiment }: { experiment: Experiment }) => {
     const isExpanded = expandedExperiments.has(experiment.id);
-    const { data: blocks, isLoading: blocksLoading } = useBlocks(experiment.id, isExpanded);
+    const { data: blocks, isLoading: blocksLoading } = useBlocks(
+      experiment.id,
+      isExpanded
+    );
 
     return (
       <div className="mb-1">
         <div className="p-1 bg-yellow-50 rounded border border-yellow-200 text-xs font-mono hover:bg-yellow-100">
-          <div 
+          <div
             onClick={() => toggleExperiment(experiment.id)}
             className="flex items-center mb-1 cursor-pointer"
           >
-            <span className="mr-1 text-xs">
-              {isExpanded ? '▼' : '▶'}
-            </span>
+            <span className="mr-1 text-xs">{isExpanded ? '▼' : '▶'}</span>
             🧪 <strong>{experiment.title}</strong>
             {blocksLoading && <span className="ml-1 text-gray-600">⏳</span>}
           </div>
-          <div className="text-[10px] text-gray-500 break-all font-mono ml-3 select-text cursor-text">{experiment.id}</div>
+          <div className="text-[10px] text-gray-500 break-all font-mono ml-3 select-text cursor-text">
+            {experiment.id}
+          </div>
         </div>
-        
+
         {/* ブロック表示 */}
         {isExpanded && (
           <div className="ml-5 mt-0.5">
             {blocks.map(block => (
-              <div key={block.id} className="p-1 bg-red-50 rounded text-xs font-mono mb-0.5 border border-red-200">
-                <div>🧱 <strong>{block.blockType}</strong>: {block.content.substring(0, 30)}...</div>
-                <div className="text-[10px] text-gray-500 mt-1 break-all font-mono">{block.id}</div>
+              <div
+                key={block.id}
+                className="p-1 bg-red-50 rounded text-xs font-mono mb-0.5 border border-red-200"
+              >
+                <div>
+                  🧱 <strong>{block.blockType}</strong>:{' '}
+                  {block.content.substring(0, 30)}...
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1 break-all font-mono">
+                  {block.id}
+                </div>
               </div>
             ))}
             {blocks.length === 0 && (
-              <div className="text-gray-500 text-xs italic p-1">No blocks in this experiment</div>
+              <div className="text-gray-500 text-xs italic p-1">
+                No blocks in this experiment
+              </div>
             )}
           </div>
         )}
@@ -495,9 +623,12 @@ export function GraphQLTest() {
 
   return (
     <div className="p-5 font-sans max-w-6xl mx-auto bg-white min-h-screen text-gray-800">
-      <h1 className="text-gray-800 mb-2.5 text-2xl font-bold">🚀 GraphQL + TypeScript Interface</h1>
+      <h1 className="text-gray-800 mb-2.5 text-2xl font-bold">
+        🚀 GraphQL + TypeScript Interface
+      </h1>
       <p className="text-gray-600 mb-8">
-        Type-safe GraphQL operations with hierarchical data exploration and automatic form generation.
+        Type-safe GraphQL operations with hierarchical data exploration and
+        automatic form generation.
       </p>
 
       {/* タブ切り替え */}
@@ -505,8 +636,8 @@ export function GraphQLTest() {
         <button
           onClick={() => setActiveTab('query')}
           className={`px-5 py-2.5 border-none cursor-pointer rounded-t-lg mr-2.5 font-bold transition-all ${
-            activeTab === 'query' 
-              ? 'bg-blue-500 text-white' 
+            activeTab === 'query'
+              ? 'bg-blue-500 text-white'
               : 'bg-transparent text-gray-600 hover:bg-gray-100'
           }`}
         >
@@ -515,8 +646,8 @@ export function GraphQLTest() {
         <button
           onClick={() => setActiveTab('create')}
           className={`px-5 py-2.5 border-none cursor-pointer rounded-t-lg font-bold transition-all ${
-            activeTab === 'create' 
-              ? 'bg-green-500 text-white' 
+            activeTab === 'create'
+              ? 'bg-green-500 text-white'
               : 'bg-transparent text-gray-600 hover:bg-gray-100'
           }`}
         >
@@ -526,15 +657,17 @@ export function GraphQLTest() {
 
       {activeTab === 'create' && (
         <div className="mb-10 p-5 bg-gray-50 rounded-lg">
-          <h3 className="text-gray-800 mb-5 text-lg font-semibold">➕ Create New Data</h3>
-          
+          <h3 className="text-gray-800 mb-5 text-lg font-semibold">
+            ➕ Create New Data
+          </h3>
+
           <div className="mb-5">
             <label className="block mb-2 font-bold text-gray-800">
               Select Data Type:
             </label>
             <select
               value={selectedCreateType}
-              onChange={(e) => setSelectedCreateType(e.target.value as FormType)}
+              onChange={e => setSelectedCreateType(e.target.value as FormType)}
               className="w-full p-2.5 border-2 border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="user">👤 User</option>
@@ -546,15 +679,16 @@ export function GraphQLTest() {
           </div>
 
           {/* 自動生成フォーム */}
-          {getFormFields(selectedCreateType).map((field) => (
+          {getFormFields(selectedCreateType).map(field => (
             <div key={field.name} className="mb-5">
               <label className="block mb-2 font-bold text-gray-800">
-                {field.label} {field.required && <span className="text-red-600">*</span>}
+                {field.label}{' '}
+                {field.required && <span className="text-red-600">*</span>}
               </label>
               {field.type === 'textarea' ? (
                 <textarea
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleInputChange(field.name, e.target.value)}
+                  onChange={e => handleInputChange(field.name, e.target.value)}
                   placeholder={field.placeholder}
                   rows={3}
                   className="w-full p-2.5 border-2 border-gray-300 rounded-md text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -562,7 +696,7 @@ export function GraphQLTest() {
               ) : field.type === 'select-workspace' ? (
                 <select
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleInputChange(field.name, e.target.value)}
+                  onChange={e => handleInputChange(field.name, e.target.value)}
                   className="w-full p-2.5 border-2 border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">{field.placeholder}</option>
@@ -575,7 +709,7 @@ export function GraphQLTest() {
               ) : field.type === 'select-project' ? (
                 <select
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleInputChange(field.name, e.target.value)}
+                  onChange={e => handleInputChange(field.name, e.target.value)}
                   className="w-full p-2.5 border-2 border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">{field.placeholder}</option>
@@ -588,7 +722,7 @@ export function GraphQLTest() {
               ) : field.type === 'select-experiment' ? (
                 <select
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleInputChange(field.name, e.target.value)}
+                  onChange={e => handleInputChange(field.name, e.target.value)}
                   className="w-full p-2.5 border-2 border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">{field.placeholder}</option>
@@ -602,7 +736,7 @@ export function GraphQLTest() {
                 <input
                   type={field.type === 'uuid' ? 'text' : field.type}
                   value={formData[field.name] || ''}
-                  onChange={(e) => handleInputChange(field.name, e.target.value)}
+                  onChange={e => handleInputChange(field.name, e.target.value)}
                   placeholder={field.placeholder}
                   className={`w-full p-2.5 border-2 border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     field.type === 'uuid' ? 'font-mono' : ''
@@ -622,7 +756,9 @@ export function GraphQLTest() {
             onClick={handleCreateData}
             disabled={isCreating}
             className={`w-full p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white border-none rounded-md text-base font-bold cursor-pointer transition-all ${
-              isCreating ? 'opacity-60 cursor-not-allowed' : 'opacity-100 hover:from-green-600 hover:to-teal-600'
+              isCreating
+                ? 'opacity-60 cursor-not-allowed'
+                : 'opacity-100 hover:from-green-600 hover:to-teal-600'
             }`}
           >
             {isCreating ? '⏳ Creating...' : '✨ Create'}
@@ -634,7 +770,9 @@ export function GraphQLTest() {
         /* データ表示セクション */
         <div className="p-5 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-gray-800 text-lg font-semibold">📚 Live Data Explorer</h3>
+            <h3 className="text-gray-800 text-lg font-semibold">
+              📚 Live Data Explorer
+            </h3>
             <button
               onClick={loadInitialData}
               disabled={isLoading}
@@ -643,7 +781,7 @@ export function GraphQLTest() {
               {isLoading ? '⏳ Loading...' : '🔄 Refresh'}
             </button>
           </div>
-          
+
           {isLoading && (
             <div className="text-gray-600 italic mb-5 flex items-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
@@ -656,10 +794,12 @@ export function GraphQLTest() {
               ❌ Error: {error}
             </div>
           )}
-          
+
           {workspaces.length > 0 ? (
             <div className="mb-5">
-              <h4 className="text-green-600 mb-2.5 font-semibold">📁 Workspaces ({workspaces.length}):</h4>
+              <h4 className="text-green-600 mb-2.5 font-semibold">
+                📁 Workspaces ({workspaces.length}):
+              </h4>
               {workspaces.map(workspace => (
                 <WorkspaceItem key={workspace.id} workspace={workspace} />
               ))}
@@ -674,14 +814,23 @@ export function GraphQLTest() {
 
           {users.length > 0 && (
             <div>
-              <h4 className="text-pink-600 font-semibold mb-2.5">👥 Users ({users.length}):</h4>
+              <h4 className="text-pink-600 font-semibold mb-2.5">
+                👥 Users ({users.length}):
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {users.map(user => (
-                  <div key={user.id} className="p-2 bg-white rounded border border-gray-300 text-xs">
+                  <div
+                    key={user.id}
+                    className="p-2 bg-white rounded border border-gray-300 text-xs"
+                  >
                     <div className="font-bold">{user.username}</div>
                     <div className="text-gray-600">{user.email}</div>
-                    {user.displayName && <div className="text-gray-500">{user.displayName}</div>}
-                    <div className="text-gray-400 font-mono text-[10px] mt-1 break-all">{user.id}</div>
+                    {user.displayName && (
+                      <div className="text-gray-500">{user.displayName}</div>
+                    )}
+                    <div className="text-gray-400 font-mono text-[10px] mt-1 break-all">
+                      {user.id}
+                    </div>
                   </div>
                 ))}
               </div>

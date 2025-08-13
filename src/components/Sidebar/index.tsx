@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { WorkspaceContentItem } from './WorkspaceContentItem';
 import { useGraphQL } from '../../hooks/useGraphQL';
 import { SIDEBAR_WIDTH } from '../../utils/constants';
 import type { Workspace } from '../../generated/graphql';
-import HoverSidebar from "./HoverSidebar";
+import HoverSidebar from './HoverSidebar';
 
 export type SidebarItem = {
   icon: React.ReactNode;
@@ -20,26 +20,29 @@ type SidebarProps = {
   onExperimentClick?: (experimentId: string) => void; // 新しく追加
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  items, 
-  onFixedChange, 
-  setCurrentView, 
-  onExperimentClick // 新しく追加
+const Sidebar: React.FC<SidebarProps> = ({
+  items,
+  onFixedChange,
+  setCurrentView,
+  onExperimentClick, // 新しく追加
 }) => {
   const [fixedOpen, setFixedOpen] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const hoverAreaRef = useRef<HTMLDivElement>(null);
-  
+
   // GraphQL data states
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
-  
-  const { isLoading, error, setError, loadWorkspaces, createWorkspace } = useGraphQL();
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
+    null
+  );
+
+  const { isLoading, error, setError, loadWorkspaces, createWorkspace } =
+    useGraphQL();
 
   // fixedOpenの変更時に親へ通知
   useEffect(() => {
-    if (typeof onFixedChange === "function") {
+    if (typeof onFixedChange === 'function') {
       onFixedChange(fixedOpen);
     }
   }, [fixedOpen, onFixedChange]);
@@ -69,8 +72,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     const handleMouseMove = (e: MouseEvent) => {
       setHovering(e.clientX < 24);
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [fixedOpen]);
 
   const isSidebarOpen = fixedOpen || hovering || sidebarHovered;
@@ -90,9 +93,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 
   const handleCreateWorkspace = async () => {
-    const workspaceName = prompt("新しいワークスペース名を入力してください:");
+    const workspaceName = prompt('新しいワークスペース名を入力してください:');
     if (!workspaceName?.trim()) return;
-    
+
     try {
       await createWorkspace(workspaceName);
       // Reload workspaces
@@ -112,11 +115,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       // 最低500msはローディング表示を維持（アニメーションを見せるため）
       const [workspacesData] = await Promise.all([
         loadWorkspaces(),
-        new Promise(resolve => setTimeout(resolve, 500))
+        new Promise(resolve => setTimeout(resolve, 500)),
       ]);
       setWorkspaces(workspacesData);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Unknown error occurred');
+      setError(
+        error instanceof Error ? error.message : 'Unknown error occurred'
+      );
       console.error('Error refreshing workspaces:', error);
     } finally {
       setRefreshLoading(false);
@@ -131,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: SIDEBAR_WIDTH, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ type: "tween", duration: 0.3 }}
+            transition={{ type: 'tween', duration: 0.3 }}
             className="fixed top-0 left-0 h-screen z-40 bg-white text-gray-600 shadow-lg border-r border-gray-200 overflow-hidden flex flex-col"
             onMouseEnter={() => setSidebarHovered(true)}
             onMouseLeave={() => setSidebarHovered(false)}
@@ -140,13 +145,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center px-6 py-4 border-b border-gray-100">
               <span className="font-bold text-lg">Menu</span>
               <div className="flex-1" />
-              
+
               {/* リフレッシュボタン */}
               <button
                 className={`p-1.5 rounded hover:bg-gray-100 transition ${
-                  refreshLoading ? 'text-blue-500' : 'text-gray-400 hover:text-gray-600'
+                  refreshLoading
+                    ? 'text-blue-500'
+                    : 'text-gray-400 hover:text-gray-600'
                 }`}
-                title={refreshLoading ? "データを更新中..." : "データを更新"}
+                title={refreshLoading ? 'データを更新中...' : 'データを更新'}
                 onClick={handleRefresh}
                 disabled={refreshLoading}
               >
@@ -165,14 +172,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
                 </svg>
               </button>
-              
+
               <button
-                onClick={() => setFixedOpen((prev) => !prev)}
+                onClick={() => setFixedOpen(prev => !prev)}
                 className={`p-1.5 rounded hover:bg-gray-100 transition ml-2 ${
-                  fixedOpen ? "text-blue-500" : "text-gray-400"
+                  fixedOpen ? 'text-blue-500' : 'text-gray-400'
                 }`}
                 title={
-                  fixedOpen ? "サイドバーを閉じる" : "サイドバーを固定表示"
+                  fixedOpen ? 'サイドバーを閉じる' : 'サイドバーを固定表示'
                 }
               >
                 {sidebarIcon}
@@ -183,34 +190,34 @@ const Sidebar: React.FC<SidebarProps> = ({
             <HoverSidebar
               items={[
                 {
-                  icon: "🏠",
-                  label: "Home",
-                  onClick: () => setCurrentView && setCurrentView("home"),
+                  icon: '🏠',
+                  label: 'Home',
+                  onClick: () => setCurrentView && setCurrentView('home'),
                 },
                 {
-                  icon: "🔍",
-                  label: "GraphQL Test",
-                  onClick: () => setCurrentView && setCurrentView("graphql"),
+                  icon: '🔍',
+                  label: 'GraphQL Test',
+                  onClick: () => setCurrentView && setCurrentView('graphql'),
                 },
                 {
-                  icon: "📋",
-                  label: "Schema Export",
-                  onClick: () => setCurrentView && setCurrentView("schema"),
+                  icon: '📋',
+                  label: 'Schema Export',
+                  onClick: () => setCurrentView && setCurrentView('schema'),
                 },
                 {
-                  icon: "鯖",
-                  label: "Collaborative Editing Mode",
-                  onClick: () => setCurrentView && setCurrentView("server"),
+                  icon: '鯖',
+                  label: 'Collaborative Editing Mode',
+                  onClick: () => setCurrentView && setCurrentView('server'),
                 },
                 {
-                  icon: "📝",
-                  label: "Markdown Editor",
-                  onClick: () => setCurrentView && setCurrentView("markdown"),
+                  icon: '📝',
+                  label: 'Markdown Editor',
+                  onClick: () => setCurrentView && setCurrentView('markdown'),
                 },
                 {
-                  icon: "🖼️",
-                  label: "Image Upload",
-                  onClick: () => setCurrentView && setCurrentView("image"),
+                  icon: '🖼️',
+                  label: 'Image Upload',
+                  onClick: () => setCurrentView && setCurrentView('image'),
                 },
               ]}
             />
@@ -225,7 +232,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       ❌ {error}
                     </li>
                   )}
-                  
+
                   {/* ローディング表示 */}
                   {isLoading && (
                     <li className="text-gray-600 text-xs p-2 flex items-center">
@@ -233,24 +240,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                       Loading...
                     </li>
                   )}
-                  
+
                   {/* 選択されたワークスペースのプロジェクト・実験のみ表示 */}
                   {selectedWorkspace && (
-                    <WorkspaceContentItem 
+                    <WorkspaceContentItem
                       workspaceId={selectedWorkspace}
                       onExperimentClick={onExperimentClick} // コールバックを渡す
                     />
                   )}
-                  
+
                   {/* ワークスペースが選択されていない場合 */}
-                  {!selectedWorkspace && workspaces.length === 0 && !isLoading && (
-                    <li className="text-gray-500 text-xs italic p-2 text-center">
-                      No workspaces found.
-                    </li>
-                  )}
+                  {!selectedWorkspace &&
+                    workspaces.length === 0 &&
+                    !isLoading && (
+                      <li className="text-gray-500 text-xs italic p-2 text-center">
+                        No workspaces found.
+                      </li>
+                    )}
                 </ul>
               </div>
-              
+
               {/* ワークスペース選択UI */}
               <WorkspaceSelector
                 workspaces={workspaces}
