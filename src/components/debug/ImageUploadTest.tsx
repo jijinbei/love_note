@@ -5,7 +5,6 @@ import type {
   GetImagesQuery,
   UploadImageMutation,
   DeleteImageMutation,
-  GetWorkspacesQueryVariables,
   GetImagesQueryVariables,
   UploadImageMutationVariables,
   DeleteImageMutationVariables,

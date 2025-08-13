@@ -94,6 +94,11 @@ The generated types include:
   - Linux: `.local/share/com.xxxxxxx.love-note/love_note.db`
 - To reset database: Delete the database file and restart the application
 
+### Code Formatting
+
+- `bun run fmt` - Format code using Prettier (TypeScript/JavaScript) and cargo fmt (Rust)
+- `bun run fmt:check` - Check code formatting without making changes
+
 ### Build
 
 - `bun run build` - Build the project for production
