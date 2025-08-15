@@ -18,8 +18,6 @@ pub enum ImageError {
     InvalidBase64Data,
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-    #[error("Image processing error: {0}")]
-    ImageProcessingError(String),
 }
 
 pub type Result<T> = std::result::Result<T, ImageError>;
