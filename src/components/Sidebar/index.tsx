@@ -210,11 +210,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick: () => setCurrentView && setCurrentView('server'),
                 },
                 {
-                  icon: '📝',
-                  label: 'Markdown Editor',
-                  onClick: () => setCurrentView && setCurrentView('markdown'),
-                },
-                {
                   icon: '🖼️',
                   label: 'Image Upload',
                   onClick: () => setCurrentView && setCurrentView('image'),

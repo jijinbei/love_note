@@ -10,8 +10,7 @@ import Home from './components/Home';
 import { AutomergeProvider } from './components/AutomergeRepo';
 import type { Workspace } from './generated/graphql';
 import { useGraphQL } from './hooks/useGraphQL';
-import MarkdownEditor from './components/Markdown/MarkdownEditor';
-import MarkdownPage from './components/Markdown/MarkdownPage';
+import MarkdownPage from './components/Markdown';
 import './App.css';
 
 function App() {
@@ -100,11 +99,6 @@ function App() {
             icon: '鯖',
             label: 'Collaborative Editing Mode',
             onClick: () => setCurrentView('server'),
-          },
-          {
-            icon: '📝',
-            label: 'Markdown Editor',
-            onClick: () => setCurrentView('markdown'),
           },
           {
             icon: '🖼️',
@@ -254,10 +248,6 @@ function App() {
 
                 case 'schema':
                   return <GraphQLSchemaExport />;
-
-                case 'markdown':
-                  return <MarkdownEditor />;
-
                 case 'image':
                   return <ImageUploadTest />;
 
