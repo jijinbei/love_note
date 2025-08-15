@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import type {
   Workspace,
   Project,
-  Experiment as GeneratedExperiment,
 } from '../generated/graphql';
 import RecentFiles from './RecentFiles';
 import { WorkspaceManagement } from './WorkspaceManagement';
