@@ -79,7 +79,7 @@ function App() {
   return (
     <div className="h-screen flex">
       <Sidebar
-        items={[
+        hoverItems={[
           {
             icon: '🏠',
             label: 'Home',

@@ -14,16 +14,16 @@ export type SidebarItem = {
 };
 
 type SidebarProps = {
-  items: SidebarItem[];
+  hoverItems: SidebarItem[];
   onFixedChange?: (fixed: boolean) => void;
   setCurrentView: (view: string) => void;
   onExperimentClick?: (experimentId: string) => void; // 新しく追加
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
-  items,
+  hoverItems,
   onFixedChange,
-  setCurrentView,
+  setCurrentView: _setCurrentView,
   onExperimentClick, // 新しく追加
 }) => {
   const [fixedOpen, setFixedOpen] = useState(false);
@@ -187,35 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* HoverSidebar を追加 */}
-            <HoverSidebar
-              items={[
-                {
-                  icon: '🏠',
-                  label: 'Home',
-                  onClick: () => setCurrentView && setCurrentView('home'),
-                },
-                {
-                  icon: '🔍',
-                  label: 'GraphQL Test',
-                  onClick: () => setCurrentView && setCurrentView('graphql'),
-                },
-                {
-                  icon: '📋',
-                  label: 'Schema Export',
-                  onClick: () => setCurrentView && setCurrentView('schema'),
-                },
-                {
-                  icon: '鯖',
-                  label: 'Collaborative Editing Mode',
-                  onClick: () => setCurrentView && setCurrentView('server'),
-                },
-                {
-                  icon: '🖼️',
-                  label: 'Image Upload',
-                  onClick: () => setCurrentView && setCurrentView('image'),
-                },
-              ]}
-            />
+            <HoverSidebar items={hoverItems} />
 
             {/* コンテンツ */}
             <div className="flex flex-col flex-1 overflow-hidden">
