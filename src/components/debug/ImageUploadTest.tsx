@@ -103,8 +103,6 @@ export function ImageUploadTest() {
             filePath
             mimeType
             fileSize
-            width
-            height
             altText
             createdAt
             updatedAt
@@ -198,8 +196,6 @@ export function ImageUploadTest() {
             filePath
             mimeType
             fileSize
-            width
-            height
             altText
             createdAt
             updatedAt
@@ -457,11 +453,6 @@ export function ImageUploadTest() {
                     <p className="text-xs text-gray-500 mb-1">
                       {formatFileSize(image.fileSize)} • {image.mimeType}
                     </p>
-                    {image.width && image.height && (
-                      <p className="text-xs text-gray-500 mb-1">
-                        {image.width} × {image.height} px
-                      </p>
-                    )}
                     {image.altText && (
                       <p className="text-xs text-gray-600 mb-2 italic">
                         "{image.altText}"

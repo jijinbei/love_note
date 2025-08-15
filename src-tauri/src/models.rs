@@ -69,8 +69,6 @@ pub struct Image {
     pub file_path: String,
     pub mime_type: String,
     pub file_size: i64,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
     pub alt_text: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -184,8 +182,6 @@ pub struct CreateImageRequest {
     pub file_path: String,
     pub mime_type: String,
     pub file_size: i64,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
     pub alt_text: Option<String>,
 }
 

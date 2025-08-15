@@ -27,8 +27,6 @@ pub type Result<T> = std::result::Result<T, ImageError>;
 pub struct ImageMetadata {
     pub mime_type: String,
     pub file_size: usize,
-    pub width: Option<u32>,
-    pub height: Option<u32>,
 }
 
 /// Detect MIME type from file extension
@@ -79,14 +77,6 @@ pub fn decode_base64_image(base64_data: &str) -> Result<Vec<u8>> {
     BASE64_STANDARD
         .decode(clean_data)
         .map_err(|_| ImageError::InvalidBase64Data)
-}
-
-/// Get image dimensions (basic implementation)
-pub fn get_image_dimensions(_data: &[u8], _mime_type: &str) -> Result<(Option<u32>, Option<u32>)> {
-    // For now, return None for dimensions
-    // In a production app, you would use an image processing library like `image` crate
-    // to extract actual dimensions
-    Ok((None, None))
 }
 
 /// Generate unique filename with UUID
@@ -142,12 +132,8 @@ pub fn delete_image_file(file_path: &str) -> Result<()> {
 pub fn get_image_metadata(data: &[u8], mime_type: &str) -> Result<ImageMetadata> {
     validate_image_data(data, mime_type)?;
 
-    let (width, height) = get_image_dimensions(data, mime_type)?;
-
     Ok(ImageMetadata {
         mime_type: mime_type.to_string(),
         file_size: data.len(),
-        width,
-        height,
     })
 }

@@ -304,22 +304,18 @@ impl Mutation {
             file_path: file_path.to_string_lossy().to_string(),
             mime_type: metadata.mime_type.clone(),
             file_size: metadata.file_size as i64,
-            width: metadata.width.map(|w| w as i32),
-            height: metadata.height.map(|h| h as i32),
             alt_text: input.alt_text.clone(),
             created_at: now,
             updated_at: now,
         };
 
-        sqlx::query("INSERT INTO images (id, workspace_id, original_filename, file_path, mime_type, file_size, width, height, alt_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        sqlx::query("INSERT INTO images (id, workspace_id, original_filename, file_path, mime_type, file_size, alt_text, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
             .bind(&image.id)
             .bind(&image.workspace_id)
             .bind(&image.original_filename)
             .bind(&image.file_path)
             .bind(&image.mime_type)
             .bind(&image.file_size)
-            .bind(&image.width)
-            .bind(&image.height)
             .bind(&image.alt_text)
             .bind(&image.created_at)
             .bind(&image.updated_at)
