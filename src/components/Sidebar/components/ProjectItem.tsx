@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Project, Experiment } from '../../generated/graphql';
+import type { Project, Experiment } from '../../../generated/graphql';
 
 interface ProjectItemProps {
   project: Project;

@@ -1,7 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { ProjectItem } from './ProjectItem';
-import { useGraphQL } from '../../hooks/useGraphQL';
-import type { Project, Experiment } from '../../generated/graphql';
+import { graphql } from '../../../generated/gql';
+import { print } from 'graphql';
+import { invoke } from '@tauri-apps/api/core';
+import type { Project, Experiment } from '../../../generated/graphql';
+
+// GraphQL queries using the graphql() function
+const GetWorkspaceProjectsQuery = graphql(`
+  query GetWorkspaceProjects($workspaceId: UUID!) {
+    projects(workspaceId: $workspaceId) {
+      id
+      name
+      workspaceId
+    }
+  }
+`);
+
+const GetProjectExperimentsQuery = graphql(`
+  query GetProjectExperiments($projectId: UUID!) {
+    experiments(projectId: $projectId) {
+      id
+      title
+      projectId
+    }
+  }
+`);
+
+const CreateWorkspaceProjectMutation = graphql(`
+  mutation CreateWorkspaceProject($input: CreateProjectRequest!) {
+    createProject(input: $input) {
+      id
+      name
+      workspaceId
+    }
+  }
+`);
+
+const CreateProjectExperimentMutation = graphql(`
+  mutation CreateProjectExperiment($input: CreateExperimentRequest!) {
+    createExperiment(input: $input) {
+      id
+      title
+      projectId
+    }
+  }
+`);
 
 interface WorkspaceContentItemProps {
   workspaceId: string;
@@ -12,13 +55,6 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
   workspaceId,
   onExperimentClick, // 新しく追加
 }) => {
-  const {
-    isLoading,
-    loadProjects,
-    loadExperiments,
-    createProject,
-    createExperiment,
-  } = useGraphQL();
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectExperiments, setProjectExperiments] = useState<
     Record<string, Experiment[]>
@@ -26,6 +62,98 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set()
   );
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load projects function
+  const loadProjects = async (workspaceId: string): Promise<Project[]> => {
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(GetWorkspaceProjectsQuery),
+        variables: { workspaceId },
+      });
+      const data = JSON.parse(result);
+
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+      return data.data?.projects || [];
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+      return [];
+    }
+  };
+
+  // Load experiments function
+  const loadExperiments = async (projectId: string): Promise<Experiment[]> => {
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(GetProjectExperimentsQuery),
+        variables: { projectId },
+      });
+      const data = JSON.parse(result);
+
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+      return data.data?.experiments || [];
+    } catch (error) {
+      console.error('Failed to load experiments:', error);
+      return [];
+    }
+  };
+
+  // Create project function
+  const createProject = async (workspaceId: string, name: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(CreateWorkspaceProjectMutation),
+        variables: {
+          input: {
+            name,
+            description: null,
+            workspaceId,
+          },
+        },
+      });
+      const data = JSON.parse(result);
+
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create experiment function
+  const createExperiment = async (projectId: string, title: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(CreateProjectExperimentMutation),
+        variables: {
+          input: {
+            title,
+            projectId,
+          },
+        },
+      });
+      const data = JSON.parse(result);
+
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+    } catch (error) {
+      console.error('Error creating experiment:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // プロジェクトを自動ロード
   useEffect(() => {

@@ -8,25 +8,18 @@ import ConnectionStatus from './components/ConnectionStatus';
 import Sidebar from './components/Sidebar';
 import Home from './components/Home';
 import { AutomergeProvider } from './components/AutomergeRepo';
-import type { Workspace } from './generated/graphql';
-import { useGraphQL } from './hooks/useGraphQL';
 import MarkdownPage from './components/Markdown';
 import './App.css';
 
 function App() {
   const [currentView, setCurrentView] = useState<string>('home');
-  const [sidebarFixed, setSidebarFixed] = useState(false);
-  const SIDEBAR_WIDTH = 260;
   const [isConnected, setIsConnected] = useState(false);
   const [wsUrl, setWsUrl] = useState<string>('');
   const [serverName, setServerName] = useState<string>('');
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
-    null
-  );
-  const { isLoading, error, setError, loadWorkspaces, createWorkspace } =
-    useGraphQL();
   const [selectedExperimentId, setSelectedExperimentId] = useState<
+    string | null
+  >(null);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
     string | null
   >(null);
 
@@ -62,61 +55,40 @@ function App() {
     setSelectedExperimentId(experimentId);
     setCurrentView('markdownPage');
   };
-  // ワークスペースを作成する関数
-  const handleCreateWorkspace = async () => {
-    const workspaceName = prompt('新しいワークスペース名を入力してください:');
-    if (!workspaceName?.trim()) return;
-
-    try {
-      await createWorkspace(workspaceName);
-      const workspacesData = await loadWorkspaces();
-      setWorkspaces(workspacesData);
-    } catch (error) {
-      console.error('Error creating workspace:', error);
-    }
-  };
 
   return (
-    <div className="h-screen flex">
-      <Sidebar
-        hoverItems={[
-          {
-            icon: '🏠',
-            label: 'Home',
-            onClick: () => setCurrentView('home'),
-          },
-          {
-            icon: '🔍',
-            label: 'GraphQL Test',
-            onClick: () => setCurrentView('graphql'),
-          },
-          {
-            icon: '📋',
-            label: 'Schema Export',
-            onClick: () => setCurrentView('schema'),
-          },
-          {
-            icon: '鯖',
-            label: 'Collaborative Editing Mode',
-            onClick: () => setCurrentView('server'),
-          },
-          {
-            icon: '🖼️',
-            label: 'Image Upload',
-            onClick: () => setCurrentView('image'),
-          },
-        ]}
-        onFixedChange={setSidebarFixed}
-        setCurrentView={setCurrentView}
-        onExperimentClick={handleExperimentClick}
-      />
-
-      <div
-        className={`flex-1 p-4 overflow-auto transition-all duration-300 ${
-          sidebarFixed ? 'ml-[260px]' : ''
-        }`}
-      >
-        <div className={`${!sidebarFixed ? 'w-[90vw] max-w-[90%]' : 'w-full'}`}>
+    <Sidebar
+      hoverItems={[
+        {
+          icon: '🏠',
+          label: 'Home',
+          onClick: () => setCurrentView('home'),
+        },
+        {
+          icon: '🔍',
+          label: 'GraphQL Test',
+          onClick: () => setCurrentView('graphql'),
+        },
+        {
+          icon: '📋',
+          label: 'Schema Export',
+          onClick: () => setCurrentView('schema'),
+        },
+        {
+          icon: '鯖',
+          label: 'Collaborative Editing Mode',
+          onClick: () => setCurrentView('server'),
+        },
+        {
+          icon: '🖼️',
+          label: 'Image Upload',
+          onClick: () => setCurrentView('image'),
+        },
+      ]}
+      setCurrentView={setCurrentView}
+      onExperimentClick={handleExperimentClick}
+      selectedWorkspaceId={selectedWorkspaceId}
+    >
           <ConnectionStatus
             show={banner.show}
             kind={banner.kind}
@@ -174,12 +146,8 @@ function App() {
                 case 'home':
                   return (
                     <Home
-                      workspaces={workspaces}
-                      selectedWorkspace={selectedWorkspace}
-                      isLoading={isLoading}
-                      setSelectedWorkspace={setSelectedWorkspace}
-                      handleCreateWorkspace={handleCreateWorkspace}
                       setCurrentView={setCurrentView}
+                      onWorkspaceChange={setSelectedWorkspaceId}
                     />
                   );
 
@@ -256,9 +224,7 @@ function App() {
               }
             })()}
           </AutomergeProvider>
-        </div>
-      </div>
-    </div>
+    </Sidebar>
   );
 }
 
