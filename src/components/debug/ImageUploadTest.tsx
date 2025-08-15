@@ -11,7 +11,7 @@ import type {
   ImageUploadInput,
 } from '../../generated/graphql';
 import { graphql } from '../../generated';
-import { getQueryString } from '../../utils/graphql';
+import { print } from 'graphql';
 
 interface GraphQLResponse<T = any> {
   data?: T;
@@ -75,7 +75,7 @@ export function ImageUploadTest() {
       `);
 
       const result = await invoke<string>('graphql_query', {
-        query: getQueryString(query),
+        query: print(query),
         variables: null,
       });
 
@@ -114,7 +114,7 @@ export function ImageUploadTest() {
       const variables: GetImagesQueryVariables = { workspaceId };
 
       const result = await invoke<string>('graphql_query', {
-        query: getQueryString(query),
+        query: print(query),
         variables,
       });
 
@@ -214,7 +214,7 @@ export function ImageUploadTest() {
       const variables: UploadImageMutationVariables = { input };
 
       const result = await invoke<string>('graphql_query', {
-        query: getQueryString(mutation),
+        query: print(mutation),
         variables,
       });
 
@@ -260,7 +260,7 @@ export function ImageUploadTest() {
       const variables: DeleteImageMutationVariables = { id: imageId };
 
       const result = await invoke<string>('graphql_query', {
-        query: getQueryString(mutation),
+        query: print(mutation),
         variables,
       });
 

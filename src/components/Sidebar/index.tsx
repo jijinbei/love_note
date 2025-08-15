@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SIDEBAR_WIDTH } from '../../utils/constants';
 import { useSidebarState } from './hooks/useSidebarState';
 import { useSidebarResize } from './hooks/useSidebarResize';
 import { SidebarHeader } from './components/SidebarHeader';
@@ -9,6 +8,7 @@ import { WorkspaceContentItem } from './components/WorkspaceContentItem';
 import { SIDEBAR_STYLES, ANIMATION_CONFIG } from './constants';
 import HoverSidebar from './components/HoverSidebar';
 
+const SIDEBAR_WIDTH = 260;
 export type SidebarItem = {
   icon: React.ReactNode;
   label: string;

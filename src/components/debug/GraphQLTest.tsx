@@ -9,8 +9,18 @@ import type {
   Experiment,
   Block,
 } from '../../generated/graphql';
-import type { GraphQLResponse } from '../../utils/graphql';
-import { FormType } from '../../utils/constants';
+// GraphQL response interface
+interface GraphQLResponse<T = any> {
+  data?: T;
+  errors?: Array<{
+    message: string;
+    locations?: Array<{ line: number; column: number }>;
+    path?: string[];
+  }>;
+}
+
+// Form types
+type FormType = 'user' | 'workspace' | 'project' | 'experiment' | 'block';
 
 // GraphQL queries and mutations using graphql() function
 const GetUsersTestQuery = graphql(`
