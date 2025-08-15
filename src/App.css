@@ -1,77 +1,8 @@
 @import 'tailwindcss';
 
-/* 全体の背景色と文字色 */
+/* Global styles */
 body {
-  background-color: #ffffff; /* 白背景 */
-  color: #000000; /* 黒文字 */
-  font-family: 'Helvetica Neue', Arial, sans-serif; /* 高級感のあるフォント */
-}
-
-.markdown-preview h1 {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-
-.markdown-preview h2 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 0.75rem;
-}
-
-.markdown-preview h3 {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.markdown-preview ul {
-  list-style-type: disc;
-  margin-left: 1.5rem;
-}
-
-.markdown-preview li {
-  margin-bottom: 0.5rem;
-}
-
-.markdown-preview p {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-}
-
-/* コードブロックのスタイル */
-.markdown-preview pre {
-  background-color: #dcdcdc; /* コードブロックの背景色 */
-  color: black; /* コードブロック全体のテキスト色 */
-  padding: 1rem;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-family: 'Courier New', Courier, monospace;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-/* コードブロック内の <code> の文字色も黒にする */
-.markdown-preview pre code {
-  color: black;
-}
-
-/* インラインコード（preの中にないcode）だけ赤にする */
-.markdown-preview :not(pre) > code {
-  background-color: #dcdcdc;
-  color: red;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-family: 'Courier New', Courier, monospace;
-}
-
-/* Ordered list (ol) のスタイル */
-.markdown-preview ol {
-  list-style-type: decimal; /* 数字のリストスタイル */
-  margin-left: 1.5rem; /* 左側の余白 */
-  margin-bottom: 1rem; /* 下部の余白 */
-}
-
-.markdown-preview ol li {
-  margin-bottom: 0.5rem; /* 各リスト項目の間隔 */
+  background-color: #ffffff;
+  color: #000000;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
 }

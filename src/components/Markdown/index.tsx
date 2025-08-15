@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import EditMode from './EditMode';
 import PreviewMode from './PreviewMode';
+import './styles.css';
 
 type MarkdownPageProps = {
   experimentId: string | null;

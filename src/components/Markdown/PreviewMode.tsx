@@ -11,7 +11,7 @@ interface PreviewModeProps {
 const PreviewMode: React.FC<PreviewModeProps> = ({ markdown }) => {
   return (
     <div className="flex justify-center p-4">
-      <div className="max-w-4xl w-full">
+      <div className="markdown-preview max-w-4xl w-full">
         <ReactMarkdown {...markdownPlugins} components={markdownComponents}>
           {markdown || '**内容を編集モードで入力してください**'}
         </ReactMarkdown>
