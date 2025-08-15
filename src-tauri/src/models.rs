@@ -17,7 +17,7 @@ pub struct User {
 
 // Hierarchical models
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
-#[graphql(rename_fields = "camelCase")]
+#[graphql(rename_fields = "camelCase", complex)]
 pub struct Workspace {
     pub id: Uuid,
     pub name: String,
@@ -27,7 +27,7 @@ pub struct Workspace {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
-#[graphql(rename_fields = "camelCase")]
+#[graphql(rename_fields = "camelCase", complex)]
 pub struct Project {
     pub id: Uuid,
     pub workspace_id: Uuid,
@@ -38,7 +38,7 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
-#[graphql(rename_fields = "camelCase")]
+#[graphql(rename_fields = "camelCase", complex)]
 pub struct Experiment {
     pub id: Uuid,
     pub project_id: Uuid,

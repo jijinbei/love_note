@@ -31,6 +31,36 @@ impl Image {
     }
 }
 
+// Workspace GraphQL resolver with nested projects field
+#[ComplexObject]
+impl Workspace {
+    async fn projects(&self, ctx: &Context<'_>) -> Result<Vec<Project>> {
+        let loader = ctx.data::<DataLoader<ProjectLoader>>()?;
+        let projects = loader.load_one(self.id).await?.unwrap_or_default();
+        Ok(projects)
+    }
+}
+
+// Project GraphQL resolver with nested experiments field
+#[ComplexObject]
+impl Project {
+    async fn experiments(&self, ctx: &Context<'_>) -> Result<Vec<Experiment>> {
+        let loader = ctx.data::<DataLoader<ExperimentLoader>>()?;
+        let experiments = loader.load_one(self.id).await?.unwrap_or_default();
+        Ok(experiments)
+    }
+}
+
+// Experiment GraphQL resolver with nested blocks field
+#[ComplexObject]
+impl Experiment {
+    async fn blocks(&self, ctx: &Context<'_>) -> Result<Vec<Block>> {
+        let loader = ctx.data::<DataLoader<BlockLoader>>()?;
+        let blocks = loader.load_one(self.id).await?.unwrap_or_default();
+        Ok(blocks)
+    }
+}
+
 // GraphQL Query resolver
 pub struct Query;
 
