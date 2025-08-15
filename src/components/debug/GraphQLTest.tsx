@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  GetUsersDocument,
-  GetBlocksDocument,
-  CreateUserDocument,
-  CreateBlockDocument,
-} from '../../generated/graphql';
+import { graphql } from '../../generated/gql';
+import { print } from 'graphql';
 import type {
   User,
   Workspace,
@@ -13,10 +9,147 @@ import type {
   Experiment,
   Block,
 } from '../../generated/graphql';
-import { getQueryString } from '../../utils/graphql';
-import type { GraphQLResponse } from '../../utils/graphql';
-import { FormType } from '../../utils/constants';
-import { useGraphQL } from '../../hooks/useGraphQL';
+// GraphQL response interface
+interface GraphQLResponse<T = any> {
+  data?: T;
+  errors?: Array<{
+    message: string;
+    locations?: Array<{ line: number; column: number }>;
+    path?: string[];
+  }>;
+}
+
+// Form types
+type FormType = 'user' | 'workspace' | 'project' | 'experiment' | 'block';
+
+// GraphQL queries and mutations using graphql() function
+const GetUsersTestQuery = graphql(`
+  query GetUsers {
+    users {
+      id
+      username
+      email
+      displayName
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const GetWorkspacesTestQuery = graphql(`
+  query GetWorkspaces {
+    workspaces {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const GetProjectsTestQuery = graphql(`
+  query GetProjects($workspaceId: UUID!) {
+    projects(workspaceId: $workspaceId) {
+      id
+      workspaceId
+      name
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const GetExperimentsTestQuery = graphql(`
+  query GetExperiments($projectId: UUID!) {
+    experiments(projectId: $projectId) {
+      id
+      projectId
+      title
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const GetBlocksTestQuery = graphql(`
+  query GetBlocks($experimentId: UUID!) {
+    blocks(experimentId: $experimentId) {
+      id
+      experimentId
+      blockType
+      content
+      orderIndex
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const CreateUserTestMutation = graphql(`
+  mutation CreateUser($input: CreateUserRequest!) {
+    createUser(input: $input) {
+      id
+      username
+      email
+      displayName
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const CreateWorkspaceTestMutation = graphql(`
+  mutation CreateWorkspace($input: CreateWorkspaceRequest!) {
+    createWorkspace(input: $input) {
+      id
+      name
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const CreateProjectTestMutation = graphql(`
+  mutation CreateProject($input: CreateProjectRequest!) {
+    createProject(input: $input) {
+      id
+      workspaceId
+      name
+      description
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const CreateExperimentTestMutation = graphql(`
+  mutation CreateExperiment($input: CreateExperimentRequest!) {
+    createExperiment(input: $input) {
+      id
+      projectId
+      title
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const CreateBlockTestMutation = graphql(`
+  mutation CreateBlock($input: CreateBlockInput!) {
+    createBlock(input: $input) {
+      id
+      experimentId
+      blockType
+      content
+      orderIndex
+      createdAt
+      updatedAt
+    }
+  }
+`);
 
 interface FormField {
   name: string;
@@ -156,18 +289,9 @@ export function GraphQLTest() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
 
-  // Use shared GraphQL hook
-  const {
-    isLoading,
-    error,
-    setError,
-    loadWorkspaces,
-    loadProjects,
-    loadExperiments,
-    createWorkspace,
-    createProject,
-    createExperiment,
-  } = useGraphQL();
+  // GraphQL operations state
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -197,6 +321,158 @@ export function GraphQLTest() {
     new Set()
   );
 
+  // GraphQL operations using graphql() function
+  const loadWorkspaces = async (): Promise<Workspace[]> => {
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(GetWorkspacesTestQuery),
+        variables: null,
+      });
+      const data: GraphQLResponse<{ workspaces: Workspace[] }> =
+        JSON.parse(result);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+      return data.data?.workspaces || [];
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to load workspaces';
+      setError(errorMessage);
+      console.error('Error loading workspaces:', err);
+      throw err;
+    }
+  };
+
+  const loadProjects = async (workspaceId: string): Promise<Project[]> => {
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(GetProjectsTestQuery),
+        variables: { workspaceId },
+      });
+      const data: GraphQLResponse<{ projects: Project[] }> = JSON.parse(result);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+      return data.data?.projects || [];
+    } catch (err) {
+      console.error('Error loading projects:', err);
+      throw err;
+    }
+  };
+
+  const loadExperiments = async (projectId: string): Promise<Experiment[]> => {
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(GetExperimentsTestQuery),
+        variables: { projectId },
+      });
+      const data: GraphQLResponse<{ experiments: Experiment[] }> =
+        JSON.parse(result);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+      return data.data?.experiments || [];
+    } catch (err) {
+      console.error('Error loading experiments:', err);
+      throw err;
+    }
+  };
+
+  const createWorkspace = async (
+    name: string,
+    description?: string
+  ): Promise<void> => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(CreateWorkspaceTestMutation),
+        variables: {
+          input: {
+            name: name.trim(),
+            description: description || null,
+          },
+        },
+      });
+      const data: GraphQLResponse = JSON.parse(result);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create workspace';
+      setError(errorMessage);
+      console.error('Error creating workspace:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createProject = async (
+    workspaceId: string,
+    name: string,
+    description?: string
+  ): Promise<void> => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(CreateProjectTestMutation),
+        variables: {
+          input: {
+            workspaceId,
+            name: name.trim(),
+            description: description || null,
+          },
+        },
+      });
+      const data: GraphQLResponse = JSON.parse(result);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create project';
+      setError(errorMessage);
+      console.error('Error creating project:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createExperiment = async (
+    projectId: string,
+    title: string
+  ): Promise<void> => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await invoke<string>('graphql_query', {
+        query: print(CreateExperimentTestMutation),
+        variables: {
+          input: {
+            projectId,
+            title: title.trim(),
+          },
+        },
+      });
+      const data: GraphQLResponse = JSON.parse(result);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create experiment';
+      setError(errorMessage);
+      console.error('Error creating experiment:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // フォームデータの初期化
   useEffect(() => {
     const fields = getFormFields(selectedCreateType);
@@ -215,10 +491,11 @@ export function GraphQLTest() {
   const loadInitialData = async () => {
     setError('');
     try {
+      setIsLoading(true);
       // Load users and workspaces in parallel
       const [usersResult, workspacesData] = await Promise.all([
         invoke<string>('graphql_query', {
-          query: getQueryString(GetUsersDocument),
+          query: print(GetUsersTestQuery),
           variables: null,
         }),
         loadWorkspaces(),
@@ -243,6 +520,8 @@ export function GraphQLTest() {
       await loadAllProjectsAndExperiments(workspacesData);
     } catch (err) {
       console.error('Error loading initial data:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -343,7 +622,7 @@ export function GraphQLTest() {
     try {
       if (!experimentBlocks[experimentId]) {
         const result = await invoke<string>('graphql_query', {
-          query: getQueryString(GetBlocksDocument),
+          query: print(GetBlocksTestQuery),
           variables: { experimentId },
         });
         const blocksData: GraphQLResponse<{ blocks: Block[] }> =
@@ -381,7 +660,7 @@ export function GraphQLTest() {
         case 'user':
           // User creation uses direct invoke as it's not in useGraphQL hook
           const userResult = await invoke<string>('graphql_query', {
-            query: getQueryString(CreateUserDocument),
+            query: print(CreateUserTestMutation),
             variables: { input },
           });
           const userResponse: GraphQLResponse = JSON.parse(userResult);
@@ -414,7 +693,7 @@ export function GraphQLTest() {
             }
           }
           const blockResult = await invoke<string>('graphql_query', {
-            query: getQueryString(CreateBlockDocument),
+            query: print(CreateBlockTestMutation),
             variables: { input },
           });
           const blockResponse: GraphQLResponse = JSON.parse(blockResult);

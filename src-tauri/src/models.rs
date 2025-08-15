@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-// User model
+/// User model
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase")]
 pub struct User {
@@ -15,9 +15,9 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
-// Hierarchical models
+/// Hierarchical models
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
-#[graphql(rename_fields = "camelCase")]
+#[graphql(rename_fields = "camelCase", complex)]
 pub struct Workspace {
     pub id: Uuid,
     pub name: String,
@@ -27,7 +27,7 @@ pub struct Workspace {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
-#[graphql(rename_fields = "camelCase")]
+#[graphql(rename_fields = "camelCase", complex)]
 pub struct Project {
     pub id: Uuid,
     pub workspace_id: Uuid,
@@ -38,7 +38,7 @@ pub struct Project {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
-#[graphql(rename_fields = "camelCase")]
+#[graphql(rename_fields = "camelCase", complex)]
 pub struct Experiment {
     pub id: Uuid,
     pub project_id: Uuid,
@@ -59,7 +59,7 @@ pub struct Block {
     pub updated_at: DateTime<Utc>,
 }
 
-// Image model
+/// Image model
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
 #[graphql(rename_fields = "camelCase", complex)]
 pub struct Image {
@@ -69,14 +69,12 @@ pub struct Image {
     pub file_path: String,
     pub mime_type: String,
     pub file_size: i64,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
     pub alt_text: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-// Block content types
+/// Block content types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BlockContent {
@@ -99,7 +97,7 @@ pub enum BlockContent {
     },
 }
 
-// Master data models
+/// Master data models
 #[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
 #[graphql(rename_fields = "camelCase")]
 pub struct Sample {
@@ -122,7 +120,7 @@ pub struct Protocol {
     pub updated_at: DateTime<Utc>,
 }
 
-// Request types for new models
+/// Request types for new models
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateUserRequest {
     pub username: String,
@@ -184,8 +182,6 @@ pub struct CreateImageRequest {
     pub file_path: String,
     pub mime_type: String,
     pub file_size: i64,
-    pub width: Option<i32>,
-    pub height: Option<i32>,
     pub alt_text: Option<String>,
 }
 
@@ -197,7 +193,7 @@ pub struct ImageUploadInput {
     pub alt_text: Option<String>,
 }
 
-// GraphQL-specific input types for complex cases
+/// GraphQL-specific input types for complex cases
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateBlockInput {
     pub experiment_id: Uuid,
