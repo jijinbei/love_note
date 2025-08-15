@@ -32,14 +32,15 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   // Custom hooks for state management
   const sidebarState = useSidebarState();
-  const { sidebarWidth, isResizing, startResizing } = useSidebarResize(SIDEBAR_WIDTH);
+  const { sidebarWidth, isResizing, startResizing } =
+    useSidebarResize(SIDEBAR_WIDTH);
 
   const {
     fixedOpen,
     setFixedOpen,
     isSidebarOpen,
     setSidebarHovered,
-    hoverAreaRef
+    hoverAreaRef,
   } = sidebarState;
 
   const handleToggleFixed = () => {
@@ -56,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             exit={{ width: 0, opacity: 0 }}
             transition={{
               type: ANIMATION_CONFIG.type,
-              duration: isResizing ? 0 : ANIMATION_CONFIG.duration
+              duration: isResizing ? 0 : ANIMATION_CONFIG.duration,
             }}
             className={SIDEBAR_STYLES.sidebar}
             onMouseEnter={() => setSidebarHovered(true)}
@@ -86,42 +87,35 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {/* ワークスペースが選択されていない場合 */}
                   {!selectedWorkspaceId && (
                     <li className="text-gray-500 text-xs italic p-2 text-center">
-                      No workspace selected. Please select a workspace from the Home screen.
+                      No workspace selected. Please select a workspace from the
+                      Home screen.
                     </li>
                   )}
                 </ul>
               </div>
-
             </div>
 
             {/* リサイズハンドル */}
-            <ResizeHandle
-              visible={fixedOpen}
-              onStartResize={startResizing}
-            />
+            <ResizeHandle visible={fixedOpen} onStartResize={startResizing} />
           </motion.aside>
         )}
       </AnimatePresence>
 
       {/* ホバーエリア */}
       {!isSidebarOpen && !fixedOpen && (
-        <div
-          className={SIDEBAR_STYLES.hoverArea}
-          ref={hoverAreaRef}
-        />
+        <div className={SIDEBAR_STYLES.hoverArea} ref={hoverAreaRef} />
       )}
 
       {/* メインコンテンツ領域 */}
       <div
-        className={`${SIDEBAR_STYLES.mainContent} ${isResizing ? '' : 'transition-all duration-300'
-          }`}
+        className={`${SIDEBAR_STYLES.mainContent} ${
+          isResizing ? '' : 'transition-all duration-300'
+        }`}
         style={{
-          marginLeft: fixedOpen ? `${sidebarWidth}px` : 0
+          marginLeft: fixedOpen ? `${sidebarWidth}px` : 0,
         }}
       >
-        <div className={SIDEBAR_STYLES.mainContentInner}>
-          {children}
-        </div>
+        <div className={SIDEBAR_STYLES.mainContentInner}>{children}</div>
       </div>
     </div>
   );

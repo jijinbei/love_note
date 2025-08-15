@@ -103,7 +103,10 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
   };
 
   // Create project function
-  const createProject = async (workspaceId: string, name: string): Promise<void> => {
+  const createProject = async (
+    workspaceId: string,
+    name: string
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       const result = await invoke<string>('graphql_query', {
@@ -130,7 +133,10 @@ export const WorkspaceContentItem: React.FC<WorkspaceContentItemProps> = ({
   };
 
   // Create experiment function
-  const createExperiment = async (projectId: string, title: string): Promise<void> => {
+  const createExperiment = async (
+    projectId: string,
+    title: string
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       const result = await invoke<string>('graphql_query', {

@@ -15,10 +15,11 @@ const GetSidebarWorkspacesQuery = graphql(`
   }
 `);
 
-
 export const useSidebarWorkspaces = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
+    null
+  );
   const [refreshLoading, setRefreshLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -40,13 +41,13 @@ export const useSidebarWorkspaces = () => {
       setWorkspaces(workspacesData);
       return workspacesData;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
       setError(errorMessage);
       console.error('Failed to load workspaces:', error);
       return [];
     }
   };
-
 
   // Initial data loading
   useEffect(() => {
@@ -59,7 +60,6 @@ export const useSidebarWorkspaces = () => {
       setSelectedWorkspace(workspaces[0].id);
     }
   }, [workspaces, selectedWorkspace]);
-
 
   const handleRefresh = async () => {
     setRefreshLoading(true);

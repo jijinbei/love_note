@@ -5,7 +5,6 @@ interface SidebarHeaderProps {
   onToggleFixed: () => void;
 }
 
-
 const SidebarIcon: React.FC = () => (
   <svg
     width="24"
@@ -32,8 +31,9 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
       {/* 固定表示切り替えボタン */}
       <button
         onClick={onToggleFixed}
-        className={`p-1.5 rounded hover:bg-gray-100 transition ml-2 ${fixedOpen ? 'text-blue-500' : 'text-gray-400'
-          }`}
+        className={`p-1.5 rounded hover:bg-gray-100 transition ml-2 ${
+          fixedOpen ? 'text-blue-500' : 'text-gray-400'
+        }`}
         title={fixedOpen ? 'サイドバーを閉じる' : 'サイドバーを固定表示'}
       >
         <SidebarIcon />

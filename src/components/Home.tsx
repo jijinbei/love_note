@@ -61,7 +61,9 @@ type Experiment = {
 
 const Home: React.FC<HomeProps> = ({ setCurrentView, onWorkspaceChange }) => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(
+    null
+  );
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(true);
   const [isLoadingExperiments, setIsLoadingExperiments] = useState(false);
@@ -176,7 +178,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentView, onWorkspaceChange }) => {
       await createWorkspace(workspaceName);
       const workspacesData = await loadWorkspaces();
       setWorkspaces(workspacesData);
-      
+
       // 新しく作成されたワークスペースを自動選択（最新のものを選択）
       const newWorkspace = workspacesData.find(ws => ws.name === workspaceName);
       if (newWorkspace) {
@@ -192,7 +194,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentView, onWorkspaceChange }) => {
   useEffect(() => {
     const fetchExperiments = async () => {
       if (workspaces.length === 0) return;
-      
+
       try {
         setIsLoadingExperiments(true);
         const allExperiments: Experiment[] = [];

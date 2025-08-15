@@ -42,7 +42,7 @@ export const WorkspaceManagement: React.FC<WorkspaceManagementProps> = ({
             選択したワークスペースのプロジェクトとエクスペリメントがサイドバーに表示されます
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <WorkspaceSelector
@@ -52,7 +52,7 @@ export const WorkspaceManagement: React.FC<WorkspaceManagementProps> = ({
               onWorkspaceChange={onWorkspaceChange}
             />
           </div>
-          
+
           {/* 新しいワークスペース作成ボタン */}
           <button
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"

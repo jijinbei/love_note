@@ -19,9 +19,9 @@ function App() {
   const [selectedExperimentId, setSelectedExperimentId] = useState<
     string | null
   >(null);
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
-    string | null
-  >(null);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
+    null
+  );
 
   // 状態変化バナー
   const [banner, setBanner] = useState<{
@@ -89,141 +89,141 @@ function App() {
       onExperimentClick={handleExperimentClick}
       selectedWorkspaceId={selectedWorkspaceId}
     >
-          <ConnectionStatus
-            show={banner.show}
-            kind={banner.kind}
-            message={banner.message}
-            onClose={() => setBanner(b => ({ ...b, show: false }))}
-          />
+      <ConnectionStatus
+        show={banner.show}
+        kind={banner.kind}
+        message={banner.message}
+        onClose={() => setBanner(b => ({ ...b, show: false }))}
+      />
 
-          <AutomergeProvider
-            wsUrl={wsUrl}
-            roomName={serverName || 'default'}
-            onStatusChange={status => {
-              console.log('Automerge status:', status);
+      <AutomergeProvider
+        wsUrl={wsUrl}
+        roomName={serverName || 'default'}
+        onStatusChange={status => {
+          console.log('Automerge status:', status);
 
-              const statusVal = status as string | boolean | undefined;
+          const statusVal = status as string | boolean | undefined;
 
-              const isUp =
-                statusVal === 'connected' ||
-                statusVal === 'open' ||
-                statusVal === 'ready' ||
-                statusVal === true;
+          const isUp =
+            statusVal === 'connected' ||
+            statusVal === 'open' ||
+            statusVal === 'ready' ||
+            statusVal === true;
 
-              const isDown =
-                statusVal === 'disconnected' ||
-                statusVal === 'closed' ||
-                statusVal === false;
+          const isDown =
+            statusVal === 'disconnected' ||
+            statusVal === 'closed' ||
+            statusVal === false;
 
-              const isErr = statusVal === 'error' || statusVal === 'failed';
+          const isErr = statusVal === 'error' || statusVal === 'failed';
 
-              if (isUp) {
-                setIsConnected(true);
-                showConnectedBanner();
-                return;
-              }
-              if (isDown) {
-                setIsConnected(false);
-                setBanner({ show: true, kind: 'disconnected', message: '' });
-                return;
-              }
-              if (isErr) {
-                setIsConnected(false);
-                setBanner({
-                  show: true,
-                  kind: 'error',
-                  message: '接続エラーが発生しました',
-                });
-                return;
-              }
+          if (isUp) {
+            setIsConnected(true);
+            showConnectedBanner();
+            return;
+          }
+          if (isDown) {
+            setIsConnected(false);
+            setBanner({ show: true, kind: 'disconnected', message: '' });
+            return;
+          }
+          if (isErr) {
+            setIsConnected(false);
+            setBanner({
+              show: true,
+              kind: 'error',
+              message: '接続エラーが発生しました',
+            });
+            return;
+          }
 
-              console.warn('Unknown status from AutomergeProvider:', status);
-            }}
-          >
-            {/* 表示コンテンツを条件分岐 */}
-            {(() => {
-              switch (currentView) {
-                case 'home':
-                  return (
-                    <Home
-                      setCurrentView={setCurrentView}
-                      onWorkspaceChange={setSelectedWorkspaceId}
+          console.warn('Unknown status from AutomergeProvider:', status);
+        }}
+      >
+        {/* 表示コンテンツを条件分岐 */}
+        {(() => {
+          switch (currentView) {
+            case 'home':
+              return (
+                <Home
+                  setCurrentView={setCurrentView}
+                  onWorkspaceChange={setSelectedWorkspaceId}
+                />
+              );
+
+            case 'markdownPage':
+              return <MarkdownPage experimentId={selectedExperimentId} />;
+
+            case 'graphql':
+              return <GraphQLTest />;
+
+            case 'server':
+              return (
+                <>
+                  {/* Server画面の上部にだけ"接続バナー"を出す */}
+                  {!isConnected && (
+                    <ConnectWidget
+                      connected={false}
+                      show={showConnectBanner}
+                      serverName={serverName}
+                      wsUrl={wsUrl}
+                      onConnect={({ url, name }) => {
+                        setWsUrl(url);
+                        setServerName(name);
+                      }}
+                      onHide={() => setShowConnectBanner(false)}
+                      onShow={() => setShowConnectBanner(true)}
                     />
-                  );
+                  )}
 
-                case 'markdownPage':
-                  return <MarkdownPage experimentId={selectedExperimentId} />;
+                  {!isConnected && (
+                    <div className="text-gray-500 text-center mb-4">
+                      <p>WebSocket 未接続です</p>
+                      <p>
+                        サーバが起動して接続が確立されると、ここにリアルタイム画面が表示されます。
+                      </p>
+                    </div>
+                  )}
 
-                case 'graphql':
-                  return <GraphQLTest />;
+                  <WebSocketClient
+                    url={wsUrl}
+                    onStatusChange={connected => {
+                      setIsConnected(connected);
+                      if (connected) showConnectedBanner();
+                    }}
+                    onDisconnect={reason => {
+                      if (reason === 'manual') {
+                        setIsConnected(false);
+                        setWsUrl('');
+                        setServerName('');
+                        setBanner({
+                          show: true,
+                          kind: 'disconnected',
+                          message: '手動で切断しました。',
+                        });
+                      } else {
+                        setIsConnected(false);
+                        setBanner({
+                          show: true,
+                          kind: 'disconnected',
+                          message: '接続が切断されました。',
+                        });
+                      }
+                    }}
+                  />
+                </>
+              );
 
-                case 'server':
-                  return (
-                    <>
-                      {/* Server画面の上部にだけ"接続バナー"を出す */}
-                      {!isConnected && (
-                        <ConnectWidget
-                          connected={false}
-                          show={showConnectBanner}
-                          serverName={serverName}
-                          wsUrl={wsUrl}
-                          onConnect={({ url, name }) => {
-                            setWsUrl(url);
-                            setServerName(name);
-                          }}
-                          onHide={() => setShowConnectBanner(false)}
-                          onShow={() => setShowConnectBanner(true)}
-                        />
-                      )}
+            case 'schema':
+              return <GraphQLSchemaExport />;
+            case 'image':
+              return <ImageUploadTest />;
 
-                      {!isConnected && (
-                        <div className="text-gray-500 text-center mb-4">
-                          <p>WebSocket 未接続です</p>
-                          <p>
-                            サーバが起動して接続が確立されると、ここにリアルタイム画面が表示されます。
-                          </p>
-                        </div>
-                      )}
-
-                      <WebSocketClient
-                        url={wsUrl}
-                        onStatusChange={connected => {
-                          setIsConnected(connected);
-                          if (connected) showConnectedBanner();
-                        }}
-                        onDisconnect={reason => {
-                          if (reason === 'manual') {
-                            setIsConnected(false);
-                            setWsUrl('');
-                            setServerName('');
-                            setBanner({
-                              show: true,
-                              kind: 'disconnected',
-                              message: '手動で切断しました。',
-                            });
-                          } else {
-                            setIsConnected(false);
-                            setBanner({
-                              show: true,
-                              kind: 'disconnected',
-                              message: '接続が切断されました。',
-                            });
-                          }
-                        }}
-                      />
-                    </>
-                  );
-
-                case 'schema':
-                  return <GraphQLSchemaExport />;
-                case 'image':
-                  return <ImageUploadTest />;
-
-                default:
-                  return null;
-              }
-            })()}
-          </AutomergeProvider>
+            default:
+              return null;
+          }
+        })()}
+      </AutomergeProvider>
     </Sidebar>
   );
 }
