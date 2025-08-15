@@ -1,6 +1,6 @@
 import React from 'react';
-import { WorkspaceSelector } from './Sidebar/components/WorkspaceSelector';
-import type { Workspace } from '../generated/graphql';
+import { WorkspaceSelector } from './WorkspaceSelector';
+import type { Workspace } from '../../generated/graphql';
 
 interface WorkspaceManagementProps {
   workspaces: Workspace[];

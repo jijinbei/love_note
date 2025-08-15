@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import type {
-  Workspace,
-  Project,
-} from '../generated/graphql';
+import type { Workspace, Project } from '../../generated/graphql';
 import RecentFiles from './RecentFiles';
 import { WorkspaceManagement } from './WorkspaceManagement';
-import { graphql } from '../generated/gql';
+import { graphql } from '../../generated/gql';
 import { print } from 'graphql';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -222,7 +219,7 @@ const Home: React.FC<HomeProps> = ({ setCurrentView, onWorkspaceChange }) => {
         workspaces={workspaces}
         selectedWorkspace={selectedWorkspace}
         isLoadingWorkspaces={isLoadingWorkspaces}
-        onWorkspaceChange={workspaceId => {
+        onWorkspaceChange={(workspaceId: string | null) => {
           setSelectedWorkspace(workspaceId || null);
           onWorkspaceChange(workspaceId || null);
         }}

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Workspace } from '../../../generated/graphql';
+import type { Workspace } from '../../generated/graphql';
 
 interface WorkspaceSelectorProps {
   workspaces: Workspace[];
