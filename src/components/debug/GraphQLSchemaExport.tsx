@@ -143,23 +143,10 @@ export function GraphQLSchemaExport() {
         </h3>
         <ul className="m-0 pl-5 list-disc text-gray-700 leading-relaxed">
           <li>
-            <strong>GraphQL Voyager:</strong>{' '}
-            <code>https://graphql-kit.com/graphql-voyager/</code>
-          </li>
-          <li>
             <strong>GraphQL Editor:</strong>{' '}
             <code>https://app.graphqleditor.com/</code>
           </li>
-          <li>
-            <strong>GraphiQL:</strong> Interactive query interface
-          </li>
         </ul>
-
-        <div className="mt-4 p-3 bg-blue-100 rounded-lg text-blue-800 text-sm">
-          💡 <strong>Tips:</strong> After copying, paste the schema into any of
-          these tools to see an interactive graph visualization of your data
-          relationships!
-        </div>
       </div>
     </div>
   );

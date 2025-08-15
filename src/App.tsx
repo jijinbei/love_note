@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GraphQLTest } from './components/debug/GraphQLTest';
 import { ImageUploadTest } from './components/debug/ImageUploadTest';
-import { GraphQLSchemaExport } from './components/GraphQLSchemaExport';
+import { GraphQLSchemaExport } from './components/debug/GraphQLSchemaExport';
 import { WebSocketClient } from './components/WebSocketStatus';
 import ConnectWidget from './components/ConnectWidget';
 import ConnectionStatus from './components/ConnectionStatus';
