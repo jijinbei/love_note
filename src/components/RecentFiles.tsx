@@ -1,5 +1,5 @@
 import React from 'react';
-import MarkdownPage from './MarkdownPage';
+import MarkdownPage from './Markdown/MarkdownPage';
 
 type Experiment = {
   id: string;

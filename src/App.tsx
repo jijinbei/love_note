@@ -10,8 +10,8 @@ import Home from './components/Home';
 import { AutomergeProvider } from './components/AutomergeRepo';
 import type { Workspace } from './generated/graphql';
 import { useGraphQL } from './hooks/useGraphQL';
-import MarkdownEditor from './components/MarkdownEditor';
-import MarkdownPage from './components/MarkdownPage';
+import MarkdownEditor from './components/Markdown/MarkdownEditor';
+import MarkdownPage from './components/Markdown/MarkdownPage';
 import './App.css';
 
 function App() {
