@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GraphQLTest } from './components/debug/GraphQLTest';
 import { ImageUploadTest } from './components/debug/ImageUploadTest';
 import { GraphQLSchemaExport } from './components/debug/GraphQLSchemaExport';
+import { PluginManager } from './components/Plugins';
 import Sidebar from './components/Sidebar';
 import Home from './components/Home';
 import MarkdownPage from './components/Markdown';
@@ -46,6 +47,11 @@ function App() {
           label: 'Image Upload',
           onClick: () => setCurrentView('image'),
         },
+        {
+          icon: '🔌',
+          label: 'Plugin Manager',
+          onClick: () => setCurrentView('plugins'),
+        },
       ]}
       setCurrentView={setCurrentView}
       onExperimentClick={handleExperimentClick}
@@ -72,6 +78,9 @@ function App() {
             return <GraphQLSchemaExport />;
           case 'image':
             return <ImageUploadTest />;
+
+          case 'plugins':
+            return <PluginManager />;
 
           default:
             return null;

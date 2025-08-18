@@ -7,7 +7,9 @@ type MarkdownPageProps = {
   experimentId: string | null;
 };
 
-const MarkdownPage: React.FC<MarkdownPageProps> = ({ experimentId }) => {
+const MarkdownPage: React.FC<MarkdownPageProps> = ({
+  experimentId: _experimentId,
+}) => {
   const [markdown, setMarkdown] = useState<string>('');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
