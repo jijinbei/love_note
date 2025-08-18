@@ -22,7 +22,7 @@ export class ESModuleLoader {
 
       // ファイル拡張子からTypeScriptサポートを判定
       const isTypeScript = this.isTypeScriptFile(file.name);
-      
+
       // ファイル拡張子からJSXサポートを判定
       const isJSX = this.isJSXFile(file.name);
 
@@ -55,7 +55,11 @@ export class ESModuleLoader {
       this.validateCode(code);
 
       // JSXトランスパイルを実行
-      const processedCode = await this.processCode(code, enableTypeScript, enableJSX);
+      const processedCode = await this.processCode(
+        code,
+        enableTypeScript,
+        enableJSX
+      );
 
       // ES Moduleとして実行
       const module = await this.executeModule(processedCode, pluginId);

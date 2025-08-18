@@ -1,7 +1,7 @@
 // Plugin Manager - プラグイン管理のメインコンポーネント
 
 import React, { useState } from 'react';
-import { PluginDropZone } from './PluginDropZone';
+import { PluginFileSelector } from './PluginFileSelector';
 import { PluginList } from './PluginList';
 import { getPluginRegistry } from '../../plugins';
 
@@ -60,7 +60,7 @@ export const PluginManager: React.FC = () => {
         </h2>
 
         <div className="space-y-4">
-          <PluginDropZone onPluginInstalled={handlePluginChange} />
+          <PluginFileSelector onPluginInstalled={handlePluginChange} />
         </div>
       </div>
 

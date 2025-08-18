@@ -1,5 +1,5 @@
 // Plugin Components Export
 
 export { PluginManager } from './PluginManager';
-export { PluginDropZone } from './PluginDropZone';
+export { PluginFileSelector } from './PluginFileSelector';
 export { PluginList } from './PluginList';

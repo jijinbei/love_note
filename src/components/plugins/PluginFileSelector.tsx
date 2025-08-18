@@ -1,13 +1,13 @@
-// Plugin File Selector - プラグインのファイル選択インストール
+// Plugin File Selector - プラグインファイル選択UI
 
 import React, { useState, useCallback } from 'react';
 import { getPluginRegistry } from '../../plugins';
 
-interface PluginDropZoneProps {
+interface PluginFileSelectorProps {
   onPluginInstalled?: (pluginId: string) => void;
 }
 
-export const PluginDropZone: React.FC<PluginDropZoneProps> = ({
+export const PluginFileSelector: React.FC<PluginFileSelectorProps> = ({
   onPluginInstalled,
 }) => {
   const [isInstalling, setIsInstalling] = useState(false);
