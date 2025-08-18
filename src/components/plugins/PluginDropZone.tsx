@@ -84,7 +84,7 @@ export const PluginDropZone: React.FC<PluginDropZoneProps> = ({
             <p className="text-sm text-gray-500 mt-1">
               {isInstalling
                 ? 'Please wait while the plugin is being installed'
-                : 'Click to select JavaScript files'}
+                : 'Click to select JavaScript or TypeScript files'}
             </p>
           </div>
 
@@ -93,7 +93,7 @@ export const PluginDropZone: React.FC<PluginDropZoneProps> = ({
             <div>
               <input
                 type="file"
-                accept=".js,.mjs"
+                accept=".js,.jsx,.ts,.tsx"
                 multiple
                 onChange={handleFileSelect}
                 className="hidden"
@@ -109,7 +109,9 @@ export const PluginDropZone: React.FC<PluginDropZoneProps> = ({
           )}
 
           {/* サポートされるファイル形式 */}
-          <p className="text-xs text-gray-400">Supported formats: .js, .mjs</p>
+          <p className="text-xs text-gray-400">
+            Supported formats: .js, .jsx, .ts, .tsx
+          </p>
         </div>
       </div>
 

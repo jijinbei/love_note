@@ -15,21 +15,6 @@ export const PluginManager: React.FC = () => {
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleInstallFromCode = () => {
-    const code = prompt('Enter plugin code:');
-    if (!code) return;
-
-    pluginRegistry
-      .installFromCode(code, 'Custom Plugin')
-      .then(descriptor => {
-        alert(`Successfully installed plugin: ${descriptor.name}`);
-        handlePluginChange();
-      })
-      .catch(error => {
-        alert(`Failed to install plugin: ${error.message}`);
-      });
-  };
-
   const stats = pluginRegistry.getStats();
 
   return (
@@ -76,16 +61,6 @@ export const PluginManager: React.FC = () => {
 
         <div className="space-y-4">
           <PluginDropZone onPluginInstalled={handlePluginChange} />
-
-          {/* 追加のインストール方法 */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleInstallFromCode}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
-            >
-              Install from Code
-            </button>
-          </div>
         </div>
       </div>
 

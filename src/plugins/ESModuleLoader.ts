@@ -1,10 +1,16 @@
 // ES Module Loader - プラグインの動的読み込み
 
 import { LoveNotePlugin, PluginDescriptor } from './types';
+import { JSXTranspiler, JSXTransformOptions } from './JSXTranspiler';
 
 export class ESModuleLoader {
   private loadedModules = new Map<string, any>();
   private moduleCache = new Map<string, string>();
+  private jsxTranspiler: JSXTranspiler;
+
+  constructor() {
+    this.jsxTranspiler = new JSXTranspiler();
+  }
 
   /**
    * 単一JSファイルからプラグインを読み込み
@@ -14,7 +20,19 @@ export class ESModuleLoader {
       const content = await this.readFileContent(file);
       const pluginId = this.generatePluginId(file.name);
 
-      return await this.loadFromCode(content, pluginId, file.name);
+      // ファイル拡張子からTypeScriptサポートを判定
+      const isTypeScript = this.isTypeScriptFile(file.name);
+      
+      // ファイル拡張子からJSXサポートを判定
+      const isJSX = this.isJSXFile(file.name);
+
+      return await this.loadFromCode(
+        content,
+        pluginId,
+        file.name,
+        isTypeScript,
+        isJSX
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -28,14 +46,19 @@ export class ESModuleLoader {
   async loadFromCode(
     code: string,
     pluginId: string,
-    fileName?: string
+    fileName?: string,
+    enableTypeScript?: boolean,
+    enableJSX?: boolean
   ): Promise<PluginDescriptor> {
     try {
       // コードの基本的な検証
       this.validateCode(code);
 
+      // JSXトランスパイルを実行
+      const processedCode = await this.processCode(code, enableTypeScript, enableJSX);
+
       // ES Moduleとして実行
-      const module = await this.executeModule(code, pluginId);
+      const module = await this.executeModule(processedCode, pluginId);
 
       // export default オブジェクトを取得
       const plugin = this.extractPlugin(module);
@@ -89,7 +112,7 @@ export class ESModuleLoader {
     // 古いモジュールを削除
     this.unloadPlugin(pluginId);
 
-    // 再読み込み
+    // リロード時はTypeScript判定なし（元のファイル拡張子情報が不明のため）
     return await this.loadFromCode(cachedCode, pluginId);
   }
 
@@ -111,6 +134,58 @@ export class ESModuleLoader {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
+  }
+
+  /**
+   * コードの前処理（JSXトランスパイル等）
+   */
+  private async processCode(
+    code: string,
+    enableTypeScript?: boolean,
+    enableJSX?: boolean
+  ): Promise<string> {
+    try {
+      // 拡張子ベースでJSX/TypeScriptを判定
+      const hasJSX = enableJSX || this.jsxTranspiler.containsJSX(code);
+      const hasTypeScript = enableTypeScript || false;
+
+      if (hasJSX || hasTypeScript) {
+        if (hasJSX && enableJSX) {
+          console.log('JSX file detected, transpiling...');
+        } else if (hasJSX) {
+          console.log('JSX syntax detected in code, transpiling...');
+        }
+        if (hasTypeScript) {
+          console.log('TypeScript file detected, transpiling...');
+        }
+
+        const result = await this.jsxTranspiler.transpile(code, {
+          react: {
+            version: '19',
+            runtime: 'classic',
+          },
+          typescript: hasTypeScript,
+          sourceMaps: false,
+        });
+
+        if (result.error) {
+          console.error('Transpilation error:', result.error.message);
+          if (result.error.snippet) {
+            console.error('Error location:\n', result.error.snippet);
+          }
+          throw new Error(`Transpilation Error: ${result.error.message}`);
+        }
+
+        console.log('Transpilation successful');
+        return result.code;
+      }
+
+      return code;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Code processing failed: ${errorMessage}`);
+    }
   }
 
   /**
@@ -146,26 +221,9 @@ export class ESModuleLoader {
    * ES Moduleとしてコードを実行
    */
   private async executeModule(code: string, pluginId: string): Promise<any> {
-    try {
-      // Blob URLを使用してES Moduleとして実行
-      const blob = new Blob([code], { type: 'application/javascript' });
-      const url = URL.createObjectURL(blob);
-
-      try {
-        const module = await import(url);
-        return module;
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      // フォールバック: Function constructorを使用（制限付き）
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      console.warn(
-        `Failed to load as ES Module, falling back to Function constructor: ${errorMessage}`
-      );
-      return this.executeWithFunction(code, pluginId);
-    }
+    // ブラウザ環境では直接Function constructorを使用
+    // ES Module importは複雑なセキュリティ制約があるため
+    return this.executeWithFunction(code, pluginId);
   }
 
   /**
@@ -173,12 +231,57 @@ export class ESModuleLoader {
    */
   private executeWithFunction(code: string, _pluginId: string): any {
     try {
-      // export default を return に変換
-      const transformedCode = code.replace(/export\s+default\s+/, 'return ');
+      // ES Module構文をCommonJS風に変換
+      let transformedCode = code;
 
-      // 安全な実行環境を作成
-      const func = new Function('console', transformedCode);
-      const result = func(console);
+      // export default を return に変換
+      transformedCode = transformedCode.replace(
+        /export\s+default\s+/,
+        'return '
+      );
+
+      // import文を削除または置換（基本的なもののみ）
+      transformedCode = transformedCode.replace(
+        /import\s+.*?from\s+['"][^'"]*['"];?\s*/g,
+        ''
+      );
+
+      // React環境を構築
+      const React = window.React;
+      const ReactDOM = window.ReactDOM;
+
+      if (!React) {
+        throw new Error(
+          'React is not available globally. Please ensure React is loaded.'
+        );
+      }
+
+      // React Hooksを直接利用可能にする
+      const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+      // Reactなどのグローバル変数が使用可能であることを前提とした実行環境を作成
+      const func = new Function(
+        'console',
+        'React',
+        'ReactDOM',
+        'useState',
+        'useEffect',
+        'useRef',
+        'useMemo',
+        'useCallback',
+        transformedCode
+      );
+
+      const result = func(
+        console,
+        React,
+        ReactDOM,
+        useState,
+        useEffect,
+        useRef,
+        useMemo,
+        useCallback
+      );
 
       return { default: result };
     } catch (error) {
@@ -243,5 +346,54 @@ export class ESModuleLoader {
    */
   getCachedCode(pluginId: string): string | undefined {
     return this.moduleCache.get(pluginId);
+  }
+
+  /**
+   * ファイルがTypeScriptファイルかチェック
+   */
+  private isTypeScriptFile(fileName: string): boolean {
+    const tsExtensions = ['.ts', '.tsx'];
+    return tsExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+  }
+
+  /**
+   * ファイルがJSXファイルかチェック
+   */
+  private isJSXFile(fileName: string): boolean {
+    const jsxExtensions = ['.jsx', '.tsx'];
+    return jsxExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+  }
+
+  /**
+   * JSXサポート情報を取得
+   */
+  getJSXSupport(): {
+    isEnabled: boolean;
+    debugInfo: Record<string, any>;
+  } {
+    return {
+      isEnabled: true,
+      debugInfo: this.jsxTranspiler.getDebugInfo(),
+    };
+  }
+
+  /**
+   * カスタムJSXオプションでコードを処理
+   */
+  async processCodeWithOptions(
+    code: string,
+    jsxOptions?: JSXTransformOptions
+  ): Promise<string> {
+    if (!this.jsxTranspiler.containsJSX(code)) {
+      return code;
+    }
+
+    const result = await this.jsxTranspiler.transpile(code, jsxOptions);
+
+    if (result.error) {
+      throw new Error(`JSX processing error: ${result.error.message}`);
+    }
+
+    return result.code;
   }
 }
