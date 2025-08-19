@@ -1,13 +1,13 @@
 // Plugin Registry - プラグインの登録・管理
 
 import { PluginDescriptor, PluginError } from './types';
-import { ESModuleLoader } from './ESModuleLoader';
+import { createESModuleLoader } from './ESModuleLoader';
 import { PluginAPI } from './PluginAPI';
 
 export class PluginRegistry {
   private plugins = new Map<string, PluginDescriptor>();
   private pluginAPIs = new Map<string, PluginAPI>();
-  private moduleLoader = new ESModuleLoader();
+  private moduleLoader = createESModuleLoader();
   private errorHandlers: ((error: PluginError) => void)[] = [];
 
   /**

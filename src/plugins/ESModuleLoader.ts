@@ -3,135 +3,15 @@
 import { LoveNotePlugin, PluginDescriptor } from './types';
 import { JSXTranspiler, JSXTransformOptions } from './JSXTranspiler';
 
-export class ESModuleLoader {
-  private loadedModules = new Map<string, any>();
-  private moduleCache = new Map<string, string>();
-  private jsxTranspiler: JSXTranspiler;
-
-  constructor() {
-    this.jsxTranspiler = new JSXTranspiler();
-  }
-
-  /**
-   * 単一JSファイルからプラグインを読み込み
-   */
-  async loadFromFile(file: File): Promise<PluginDescriptor> {
-    try {
-      const content = await this.readFileContent(file);
-      const pluginId = this.generatePluginId(file.name);
-
-      // ファイル拡張子からTypeScriptサポートを判定
-      const isTypeScript = this.isTypeScriptFile(file.name);
-
-      // ファイル拡張子からJSXサポートを判定
-      const isJSX = this.isJSXFile(file.name);
-
-      return await this.loadFromCode(
-        content,
-        pluginId,
-        file.name,
-        isTypeScript,
-        isJSX
-      );
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to load plugin from file: ${errorMessage}`);
-    }
-  }
-
-  /**
-   * コードからプラグインを読み込み
-   */
-  async loadFromCode(
-    code: string,
-    pluginId: string,
-    fileName?: string,
-    enableTypeScript?: boolean,
-    enableJSX?: boolean
-  ): Promise<PluginDescriptor> {
-    try {
-      // コードの基本的な検証
-      this.validateCode(code);
-
-      // JSXトランスパイルを実行
-      const processedCode = await this.processCode(
-        code,
-        enableTypeScript,
-        enableJSX
-      );
-
-      // ES Moduleとして実行
-      const module = await this.executeModule(processedCode, pluginId);
-
-      // export default オブジェクトを取得
-      const plugin = this.extractPlugin(module);
-
-      // プラグイン名の自動生成
-      const name = plugin.name || this.generatePluginName(fileName || pluginId);
-
-      const descriptor: PluginDescriptor = {
-        id: pluginId,
-        name,
-        version: plugin.version || '1.0.0',
-        description: plugin.description,
-        author: plugin.author,
-        source: 'file',
-        path: fileName || 'inline',
-        module: plugin,
-        status: 'loaded',
-        loadedAt: new Date(),
-      };
-
-      // キャッシュに保存
-      this.loadedModules.set(pluginId, module);
-      this.moduleCache.set(pluginId, code);
-
-      return descriptor;
-    } catch (error) {
-      const descriptor: PluginDescriptor = {
-        id: pluginId,
-        name: this.generatePluginName(fileName || pluginId),
-        version: '1.0.0',
-        source: 'file',
-        path: fileName || 'inline',
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        loadedAt: new Date(),
-      };
-
-      return descriptor;
-    }
-  }
-
-  /**
-   * プラグインをリロード
-   */
-  async reloadPlugin(pluginId: string): Promise<PluginDescriptor> {
-    const cachedCode = this.moduleCache.get(pluginId);
-    if (!cachedCode) {
-      throw new Error(`Plugin ${pluginId} not found in cache`);
-    }
-
-    // 古いモジュールを削除
-    this.unloadPlugin(pluginId);
-
-    // リロード時はTypeScript判定なし（元のファイル拡張子情報が不明のため）
-    return await this.loadFromCode(cachedCode, pluginId);
-  }
-
-  /**
-   * プラグインをアンロード
-   */
-  unloadPlugin(pluginId: string): void {
-    this.loadedModules.delete(pluginId);
-    // キャッシュは保持（リロード用）
-  }
+export function createESModuleLoader() {
+  const loadedModules = new Map<string, any>();
+  const moduleCache = new Map<string, string>();
+  const jsxTranspiler = new JSXTranspiler();
 
   /**
    * ファイル内容を読み取り
    */
-  private async readFileContent(file: File): Promise<string> {
+  async function readFileContent(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = e => resolve(e.target?.result as string);
@@ -141,16 +21,83 @@ export class ESModuleLoader {
   }
 
   /**
+   * コードの基本的な検証
+   */
+  function validateCode(code: string): void {
+    // 基本的な構文チェック
+    if (!code.trim()) {
+      throw new Error('Empty plugin code');
+    }
+
+    // export default の存在チェック
+    if (!code.includes('export default')) {
+      throw new Error('Plugin must have "export default" statement');
+    }
+
+    // 危険なパターンのチェック（基本的なもの）
+    const dangerousPatterns = [
+      /eval\s*\(/,
+      /Function\s*\(/,
+      /document\.write/,
+      /innerHTML\s*=/,
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(code)) {
+        console.warn(`Potentially dangerous pattern detected: ${pattern}`);
+      }
+    }
+  }
+
+  /**
+   * プラグインIDを生成
+   */
+  function generatePluginId(fileName: string): string {
+    const baseName = fileName.replace(/\.[^/.]+$/, ''); // 拡張子を削除
+    const timestamp = Date.now();
+    return `${baseName}-${timestamp}`;
+  }
+
+  /**
+   * プラグイン名を生成
+   */
+  function generatePluginName(fileName: string): string {
+    const baseName = fileName.replace(/\.[^/.]+$/, ''); // 拡張子を削除
+
+    // kebab-case を Title Case に変換
+    return baseName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * ファイルがTypeScriptファイルかチェック
+   */
+  function isTypeScriptFile(fileName: string): boolean {
+    const tsExtensions = ['.ts', '.tsx'];
+    return tsExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+  }
+
+  /**
+   * ファイルがJSXファイルかチェック
+   */
+  function isJSXFile(fileName: string): boolean {
+    const jsxExtensions = ['.jsx', '.tsx'];
+    return jsxExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+  }
+
+  /**
    * コードの前処理（JSXトランスパイル等）
    */
-  private async processCode(
+  async function processCode(
     code: string,
     enableTypeScript?: boolean,
     enableJSX?: boolean
   ): Promise<string> {
     try {
       // 拡張子ベースでJSX/TypeScriptを判定
-      const hasJSX = enableJSX || this.jsxTranspiler.containsJSX(code);
+      const hasJSX = enableJSX || jsxTranspiler.containsJSX(code);
       const hasTypeScript = enableTypeScript || false;
 
       if (hasJSX || hasTypeScript) {
@@ -163,7 +110,7 @@ export class ESModuleLoader {
           console.log('TypeScript file detected, transpiling...');
         }
 
-        const result = await this.jsxTranspiler.transpile(code, {
+        const result = await jsxTranspiler.transpile(code, {
           react: {
             version: '19',
             runtime: 'classic',
@@ -193,47 +140,9 @@ export class ESModuleLoader {
   }
 
   /**
-   * コードの基本的な検証
-   */
-  private validateCode(code: string): void {
-    // 基本的な構文チェック
-    if (!code.trim()) {
-      throw new Error('Empty plugin code');
-    }
-
-    // export default の存在チェック
-    if (!code.includes('export default')) {
-      throw new Error('Plugin must have "export default" statement');
-    }
-
-    // 危険なパターンのチェック（基本的なもの）
-    const dangerousPatterns = [
-      /eval\s*\(/,
-      /Function\s*\(/,
-      /document\.write/,
-      /innerHTML\s*=/,
-    ];
-
-    for (const pattern of dangerousPatterns) {
-      if (pattern.test(code)) {
-        console.warn(`Potentially dangerous pattern detected: ${pattern}`);
-      }
-    }
-  }
-
-  /**
-   * ES Moduleとしてコードを実行
-   */
-  private async executeModule(code: string, pluginId: string): Promise<any> {
-    // ブラウザ環境では直接Function constructorを使用
-    // ES Module importは複雑なセキュリティ制約があるため
-    return this.executeWithFunction(code, pluginId);
-  }
-
-  /**
    * Function constructorを使用した実行（フォールバック）
    */
-  private executeWithFunction(code: string, _pluginId: string): any {
+  function executeWithFunction(code: string, _pluginId: string): any {
     try {
       // ES Module構文をCommonJS風に変換
       let transformedCode = code;
@@ -296,9 +205,18 @@ export class ESModuleLoader {
   }
 
   /**
+   * ES Moduleとしてコードを実行
+   */
+  async function executeModule(code: string, pluginId: string): Promise<any> {
+    // ブラウザ環境では直接Function constructorを使用
+    // ES Module importは複雑なセキュリティ制約があるため
+    return executeWithFunction(code, pluginId);
+  }
+
+  /**
    * export default オブジェクトを抽出
    */
-  private extractPlugin(module: any): LoveNotePlugin {
+  function extractPlugin(module: any): LoveNotePlugin {
     const plugin = module.default;
 
     if (!plugin) {
@@ -317,87 +235,156 @@ export class ESModuleLoader {
   }
 
   /**
-   * プラグインIDを生成
+   * 単一JSファイルからプラグインを読み込み
    */
-  private generatePluginId(fileName: string): string {
-    const baseName = fileName.replace(/\.[^/.]+$/, ''); // 拡張子を削除
-    const timestamp = Date.now();
-    return `${baseName}-${timestamp}`;
+  async function loadFromFile(file: File): Promise<PluginDescriptor> {
+    try {
+      const content = await readFileContent(file);
+      const pluginId = generatePluginId(file.name);
+
+      // ファイル拡張子からTypeScriptサポートを判定
+      const enableTypeScript = isTypeScriptFile(file.name);
+
+      // ファイル拡張子からJSXサポートを判定
+      const enableJSX = isJSXFile(file.name);
+
+      return await loadFromCode(
+        content,
+        pluginId,
+        file.name,
+        enableTypeScript,
+        enableJSX
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to load plugin from file: ${errorMessage}`);
+    }
   }
 
   /**
-   * プラグイン名を生成
+   * コードからプラグインを読み込み
    */
-  private generatePluginName(fileName: string): string {
-    const baseName = fileName.replace(/\.[^/.]+$/, ''); // 拡張子を削除
-
-    // kebab-case を Title Case に変換
-    return baseName
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  }
-
-  /**
-   * 読み込み済みモジュールを取得
-   */
-  getLoadedModule(pluginId: string): any {
-    return this.loadedModules.get(pluginId);
-  }
-
-  /**
-   * キャッシュされたコードを取得
-   */
-  getCachedCode(pluginId: string): string | undefined {
-    return this.moduleCache.get(pluginId);
-  }
-
-  /**
-   * ファイルがTypeScriptファイルかチェック
-   */
-  private isTypeScriptFile(fileName: string): boolean {
-    const tsExtensions = ['.ts', '.tsx'];
-    return tsExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
-  }
-
-  /**
-   * ファイルがJSXファイルかチェック
-   */
-  private isJSXFile(fileName: string): boolean {
-    const jsxExtensions = ['.jsx', '.tsx'];
-    return jsxExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
-  }
-
-  /**
-   * JSXサポート情報を取得
-   */
-  getJSXSupport(): {
-    isEnabled: boolean;
-    debugInfo: Record<string, any>;
-  } {
-    return {
-      isEnabled: true,
-      debugInfo: this.jsxTranspiler.getDebugInfo(),
-    };
-  }
-
-  /**
-   * カスタムJSXオプションでコードを処理
-   */
-  async processCodeWithOptions(
+  async function loadFromCode(
     code: string,
-    jsxOptions?: JSXTransformOptions
-  ): Promise<string> {
-    if (!this.jsxTranspiler.containsJSX(code)) {
-      return code;
+    pluginId: string,
+    fileName?: string,
+    enableTypeScript?: boolean,
+    enableJSX?: boolean
+  ): Promise<PluginDescriptor> {
+    try {
+      // コードの基本的な検証
+      validateCode(code);
+
+      // JSXトランスパイルを実行
+      const processedCode = await processCode(
+        code,
+        enableTypeScript,
+        enableJSX
+      );
+
+      // ES Moduleとして実行
+      const module = await executeModule(processedCode, pluginId);
+
+      // export default オブジェクトを取得
+      const plugin = extractPlugin(module);
+
+      // プラグイン名の自動生成
+      const name = plugin.name || generatePluginName(fileName || pluginId);
+
+      const descriptor: PluginDescriptor = {
+        id: pluginId,
+        name,
+        version: plugin.version || '1.0.0',
+        description: plugin.description,
+        author: plugin.author,
+        source: 'file',
+        path: fileName || 'inline',
+        module: plugin,
+        status: 'loaded',
+        loadedAt: new Date(),
+      };
+
+      // キャッシュに保存
+      loadedModules.set(pluginId, module);
+      moduleCache.set(pluginId, code);
+
+      return descriptor;
+    } catch (error) {
+      const descriptor: PluginDescriptor = {
+        id: pluginId,
+        name: generatePluginName(fileName || pluginId),
+        version: '1.0.0',
+        source: 'file',
+        path: fileName || 'inline',
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        loadedAt: new Date(),
+      };
+
+      return descriptor;
     }
-
-    const result = await this.jsxTranspiler.transpile(code, jsxOptions);
-
-    if (result.error) {
-      throw new Error(`JSX processing error: ${result.error.message}`);
-    }
-
-    return result.code;
   }
+
+  /**
+   * プラグインをリロード
+   */
+  async function reloadPlugin(pluginId: string): Promise<PluginDescriptor> {
+    const cachedCode = moduleCache.get(pluginId);
+    if (!cachedCode) {
+      throw new Error(`Plugin ${pluginId} not found in cache`);
+    }
+
+    // 古いモジュールを削除
+    unloadPlugin(pluginId);
+
+    // リロード時はTypeScript判定なし（元のファイル拡張子情報が不明のため）
+    return await loadFromCode(cachedCode, pluginId);
+  }
+
+  /**
+   * プラグインをアンロード
+   */
+  function unloadPlugin(pluginId: string): void {
+    loadedModules.delete(pluginId);
+    // キャッシュは保持（リロード用）
+  }
+
+  return {
+    loadFromFile,
+    loadFromCode,
+    reloadPlugin,
+    unloadPlugin,
+    getLoadedModule: (pluginId: string): any => {
+      return loadedModules.get(pluginId);
+    },
+    getCachedCode: (pluginId: string): string | undefined => {
+      return moduleCache.get(pluginId);
+    },
+    getJSXSupport: (): {
+      isEnabled: boolean;
+      debugInfo: Record<string, any>;
+    } => {
+      return {
+        isEnabled: true,
+        debugInfo: jsxTranspiler.getDebugInfo(),
+      };
+    },
+    processCodeWithOptions: async (
+      code: string,
+      jsxOptions?: JSXTransformOptions
+    ): Promise<string> => {
+      if (!jsxTranspiler.containsJSX(code)) {
+        return code;
+      }
+
+      const result = await jsxTranspiler.transpile(code, jsxOptions);
+
+      if (result.error) {
+        throw new Error(`JSX processing error: ${result.error.message}`);
+      }
+
+      return result.code;
+    },
+  };
 }

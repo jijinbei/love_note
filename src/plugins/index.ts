@@ -1,7 +1,7 @@
 // Plugin System Entry Point
 
 export { PluginRegistry } from './PluginRegistry';
-export { ESModuleLoader } from './ESModuleLoader';
+export { createESModuleLoader } from './ESModuleLoader';
 export { PluginAPI } from './PluginAPI';
 export * from './types';
 
