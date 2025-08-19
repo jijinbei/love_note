@@ -2,9 +2,7 @@
 
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { invoke } from '@tauri-apps/api/core';
-import { print } from 'graphql';
-import { graphql } from '../generated/gql';
+import { blockService, executeGraphQL } from '../services';
 import { LoveNotePluginAPI, MessageType, Block } from './types';
 
 // Error Boundary Component for Plugin Components
@@ -64,64 +62,6 @@ function PluginErrorBoundary({
   }
 
   return children;
-}
-
-// GraphQL queries and mutations for block operations
-const GetBlocksQuery = graphql(`
-  query GetBlocks($experimentId: UUID!) {
-    blocks(experimentId: $experimentId) {
-      id
-      experimentId
-      blockType
-      content
-      orderIndex
-      createdAt
-      updatedAt
-    }
-  }
-`);
-
-const CreateBlockMutation = graphql(`
-  mutation CreateBlock($input: CreateBlockInput!) {
-    createBlock(input: $input) {
-      id
-      experimentId
-      blockType
-      content
-      orderIndex
-      createdAt
-      updatedAt
-    }
-  }
-`);
-
-const UpdateBlockMutation = graphql(`
-  mutation UpdateBlock($id: UUID!, $input: UpdateBlockInput!) {
-    updateBlock(id: $id, input: $input) {
-      id
-      experimentId
-      blockType
-      content
-      orderIndex
-      createdAt
-      updatedAt
-    }
-  }
-`);
-
-const DeleteBlockMutation = graphql(`
-  mutation DeleteBlock($id: UUID!) {
-    deleteBlock(id: $id)
-  }
-`);
-
-interface GraphQLResponse<T = any> {
-  data?: T;
-  errors?: Array<{
-    message: string;
-    locations?: Array<{ line: number; column: number }>;
-    path?: string[];
-  }>;
 }
 
 interface PluginPanel {
@@ -213,34 +153,11 @@ export class PluginAPI implements LoveNotePluginAPI {
     get: async (experimentId?: string): Promise<Block[]> => {
       try {
         if (!experimentId) {
-          // デフォルトのエクスペリメントIDを取得する必要があるが、
-          // 現在は実装されていないのでエラーを返す
           throw new Error('Experiment ID is required');
         }
 
-        const result = await invoke<string>('graphql_query', {
-          query: print(GetBlocksQuery),
-          variables: { experimentId },
-        });
-
-        const response: GraphQLResponse = JSON.parse(result);
-        if (response.errors) {
-          throw new Error(response.errors[0].message);
-        }
-
-        // GraphQLのレスポンスをBlock型に変換
-        const blocks = response.data?.blocks || [];
-        return blocks.map((block: any) => ({
-          id: block.id,
-          type: block.blockType,
-          content: JSON.parse(block.content),
-          metadata: {
-            experimentId: block.experimentId,
-            orderIndex: block.orderIndex,
-          },
-          createdAt: new Date(block.createdAt),
-          updatedAt: new Date(block.updatedAt),
-        }));
+        const serviceBlocks = await blockService.getBlocks(experimentId);
+        return serviceBlocks;
       } catch (error) {
         console.error(`Plugin ${this.pluginId}: Failed to get blocks:`, error);
         throw error;
@@ -260,39 +177,12 @@ export class PluginAPI implements LoveNotePluginAPI {
           throw new Error('Experiment ID is required');
         }
 
-        // 現在のブロック数を取得してorder_indexを設定
-        const currentBlocks = await this.blocks.get(experimentId);
-        const orderIndex = currentBlocks.length;
-
-        const result = await invoke<string>('graphql_query', {
-          query: print(CreateBlockMutation),
-          variables: {
-            input: {
-              experimentId,
-              blockType: type,
-              content: JSON.stringify(content),
-              orderIndex,
-            },
-          },
+        const serviceBlock = await blockService.createBlock({
+          type,
+          content,
+          experimentId,
         });
-
-        const response: GraphQLResponse = JSON.parse(result);
-        if (response.errors) {
-          throw new Error(response.errors[0].message);
-        }
-
-        const block = response.data?.createBlock;
-        return {
-          id: block.id,
-          type: block.blockType,
-          content: JSON.parse(block.content),
-          metadata: {
-            experimentId: block.experimentId,
-            orderIndex: block.orderIndex,
-          },
-          createdAt: new Date(block.createdAt),
-          updatedAt: new Date(block.updatedAt),
-        };
+        return serviceBlock;
       } catch (error) {
         console.error(
           `Plugin ${this.pluginId}: Failed to create block:`,
@@ -307,37 +197,11 @@ export class PluginAPI implements LoveNotePluginAPI {
      */
     update: async (id: string, content: any): Promise<Block> => {
       try {
-        const result = await invoke<string>('graphql_query', {
-          query: print(UpdateBlockMutation),
-          variables: {
-            id,
-            input: {
-              content: JSON.stringify(content),
-            },
-          },
+        const serviceBlock = await blockService.updateBlock({
+          id,
+          content,
         });
-
-        const response: GraphQLResponse = JSON.parse(result);
-        if (response.errors) {
-          throw new Error(response.errors[0].message);
-        }
-
-        const block = response.data?.updateBlock;
-        if (!block) {
-          throw new Error(`Block with ID ${id} not found`);
-        }
-
-        return {
-          id: block.id,
-          type: block.blockType,
-          content: JSON.parse(block.content),
-          metadata: {
-            experimentId: block.experimentId,
-            orderIndex: block.orderIndex,
-          },
-          createdAt: new Date(block.createdAt),
-          updatedAt: new Date(block.updatedAt),
-        };
+        return serviceBlock;
       } catch (error) {
         console.error(
           `Plugin ${this.pluginId}: Failed to update block:`,
@@ -352,19 +216,7 @@ export class PluginAPI implements LoveNotePluginAPI {
      */
     delete: async (id: string): Promise<void> => {
       try {
-        const result = await invoke<string>('graphql_query', {
-          query: print(DeleteBlockMutation),
-          variables: { id },
-        });
-
-        const response: GraphQLResponse = JSON.parse(result);
-        if (response.errors) {
-          throw new Error(response.errors[0].message);
-        }
-
-        if (!response.data?.deleteBlock) {
-          throw new Error(`Block with ID ${id} not found`);
-        }
+        await blockService.deleteBlock(id);
       } catch (error) {
         console.error(
           `Plugin ${this.pluginId}: Failed to delete block:`,
@@ -396,18 +248,9 @@ export class PluginAPI implements LoveNotePluginAPI {
      */
     query: async <T = any>(query: string, variables?: any): Promise<T> => {
       try {
-        const result = await invoke<string>('graphql_query', {
-          query,
-          variables: variables || {},
-        });
-
-        const response: GraphQLResponse = JSON.parse(result);
-        if (response.errors) {
-          throw new Error(response.errors[0].message);
-        }
-
-        console.log(`Plugin ${this.pluginId}: GraphQL response:`, response);
-        return response.data as T;
+        const result = await executeGraphQL<T>(query, variables);
+        console.log(`Plugin ${this.pluginId}: GraphQL response:`, result);
+        return result;
       } catch (error) {
         console.error(`Plugin ${this.pluginId}: GraphQL query error:`, error);
         throw error;

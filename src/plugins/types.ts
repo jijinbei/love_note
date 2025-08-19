@@ -1,6 +1,7 @@
 // プラグインシステムの型定義
 
 import React from 'react';
+import { Block } from '../services/types';
 
 export interface LoveNotePlugin {
   name?: string;
@@ -73,17 +74,10 @@ export interface LoveNotePluginAPI {
 }
 
 export type MessageType = 'info' | 'success' | 'warning' | 'error';
-
-export interface Block {
-  id: string;
-  type: string;
-  content: any;
-  metadata?: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export type BlockEvent = 'change' | 'create' | 'delete' | 'select';
+
+// Block型を再エクスポート
+export type { Block };
 
 export interface ButtonConfig {
   label: string;

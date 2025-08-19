@@ -6,6 +6,8 @@ import { PluginManager } from './components/Plugins';
 import Sidebar from './components/Sidebar';
 import Home from './components/Home';
 import MarkdownPage from './components/Markdown';
+import BlockList from './components/BlockList';
+import { Block } from './services/types';
 import './App.css';
 
 function App() {
@@ -16,12 +18,22 @@ function App() {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
     null
   );
+  const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
 
   // エクスペリメントクリック時の処理
   const handleExperimentClick = (experimentId: string) => {
     console.log('Experiment clicked from sidebar:', experimentId);
     setSelectedExperimentId(experimentId);
-    setCurrentView('markdownPage');
+    setCurrentView('blockList');
+  };
+
+  // ブロッククリック時の処理
+  const handleBlockClick = (block: Block) => {
+    console.log('Block clicked:', block.id, block.type);
+    setSelectedBlock(block);
+    if (block.type === 'markdown') {
+      setCurrentView('markdownPage');
+    }
   };
 
   return (
@@ -68,8 +80,16 @@ function App() {
               />
             );
 
+          case 'blockList':
+            return (
+              <BlockList
+                experimentId={selectedExperimentId}
+                onBlockClick={handleBlockClick}
+              />
+            );
+
           case 'markdownPage':
-            return <MarkdownPage experimentId={selectedExperimentId} />;
+            return <MarkdownPage experimentId={selectedExperimentId} selectedBlock={selectedBlock} />;
 
           case 'graphql':
             return <GraphQLTest />;
