@@ -1,5 +1,7 @@
 // プラグインシステムの型定義
 
+import React from 'react';
+
 export interface LoveNotePlugin {
   name?: string;
   version?: string;
@@ -29,6 +31,13 @@ export interface LoveNotePluginAPI {
   // レベル1: 基本API
   addButton(label: string, onClick: () => void): string;
   showMessage(text: string, type?: MessageType): void;
+
+  // レベル2: React コンポーネント統合
+  addPanel(
+    title: string,
+    component: React.ComponentType<any>,
+    props?: any
+  ): string;
 
   // レベル2: ブロック操作（後で実装）
   blocks?: {

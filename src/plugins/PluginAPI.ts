@@ -1,10 +1,80 @@
 // Plugin API - プラグインが使用するAPI実装
 
+import React from 'react';
+import { createRoot, Root } from 'react-dom/client';
 import { LoveNotePluginAPI, MessageType } from './types';
+
+// Error Boundary Component for Plugin Components
+function PluginErrorBoundary({
+  children,
+  pluginId,
+  onError,
+}: {
+  children: React.ReactNode;
+  pluginId: string;
+  onError: (error: Error) => void;
+}) {
+  const [hasError, setHasError] = React.useState(false);
+  const [error, setError] = React.useState<Error | undefined>(undefined);
+
+  React.useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      setHasError(true);
+      setError(new Error(event.message));
+      console.error(`Plugin ${pluginId} component error:`, event.error);
+      onError(event.error);
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, [pluginId, onError]);
+
+  if (hasError) {
+    return React.createElement(
+      'div',
+      {
+        className: 'p-4 bg-red-50 border border-red-200 rounded-lg',
+      },
+      React.createElement(
+        'h3',
+        { className: 'text-lg font-medium text-red-800 mb-2' },
+        `Plugin Error: ${pluginId}`
+      ),
+      React.createElement(
+        'p',
+        { className: 'text-red-600 text-sm' },
+        error?.message || 'Unknown error occurred'
+      ),
+      React.createElement(
+        'button',
+        {
+          className:
+            'mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700',
+          onClick: () => {
+            setHasError(false);
+            setError(undefined);
+          },
+        },
+        'Retry'
+      )
+    );
+  }
+
+  return children;
+}
+
+interface PluginPanel {
+  id: string;
+  title: string;
+  component: React.ComponentType<any>;
+  container: HTMLElement;
+  root: Root;
+}
 
 export class PluginAPI implements LoveNotePluginAPI {
   private pluginId: string;
   private buttonElements = new Map<string, HTMLElement>();
+  private panelElements = new Map<string, PluginPanel>();
   private messageContainer: HTMLElement | null = null;
 
   constructor(pluginId: string) {
@@ -48,6 +118,31 @@ export class PluginAPI implements LoveNotePluginAPI {
   }
 
   /**
+   * Reactコンポーネントパネルを追加（レベル2 API）
+   */
+  addPanel(
+    title: string,
+    component: React.ComponentType<any>,
+    props?: any
+  ): string {
+    const panelId = `plugin-panel-${this.pluginId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    try {
+      const panel = this.createPanel(panelId, title, component, props);
+      this.addPanelToDOM(panel);
+      this.panelElements.set(panelId, panel);
+
+      console.log(
+        `Plugin ${this.pluginId}: Added panel "${title}" with ID ${panelId}`
+      );
+      return panelId;
+    } catch (error) {
+      console.error(`Plugin ${this.pluginId}: Failed to add panel:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * ユーティリティ
    */
   utils = {
@@ -61,7 +156,7 @@ export class PluginAPI implements LoveNotePluginAPI {
    */
   cleanup(): void {
     console.log(
-      `Plugin ${this.pluginId}: Starting cleanup, ${this.buttonElements.size} buttons to remove`
+      `Plugin ${this.pluginId}: Starting cleanup, ${this.buttonElements.size} buttons and ${this.panelElements.size} panels to remove`
     );
 
     // ボタンを削除
@@ -76,6 +171,13 @@ export class PluginAPI implements LoveNotePluginAPI {
       }
     });
     this.buttonElements.clear();
+
+    // パネルを削除
+    this.panelElements.forEach((panel, panelId) => {
+      this.removePanel(panel);
+      console.log(`Plugin ${this.pluginId}: Removed panel ${panelId}`);
+    });
+    this.panelElements.clear();
 
     console.log(`Plugin ${this.pluginId}: Cleanup completed`);
   }
@@ -265,5 +367,137 @@ export class PluginAPI implements LoveNotePluginAPI {
         message.remove();
       }
     }, 5000);
+  }
+
+  /**
+   * Reactコンポーネントパネルを作成
+   */
+  private createPanel(
+    panelId: string,
+    title: string,
+    component: React.ComponentType<any>,
+    props?: any
+  ): PluginPanel {
+    // パネルコンテナを作成
+    const container = document.createElement('div');
+    container.id = panelId;
+    container.className =
+      'plugin-panel bg-white border border-gray-200 rounded-lg shadow-sm mb-4';
+
+    // ヘッダー部分を作成
+    const header = document.createElement('div');
+    header.className =
+      'flex items-center justify-between p-4 border-b border-gray-200';
+
+    const titleElement = document.createElement('h3');
+    titleElement.className = 'text-lg font-medium text-gray-900';
+    titleElement.textContent = title;
+    header.appendChild(titleElement);
+
+    // 閉じるボタンを作成
+    const closeButton = document.createElement('button');
+    closeButton.className =
+      'text-gray-400 hover:text-gray-600 transition-colors';
+    closeButton.innerHTML = '×';
+    closeButton.addEventListener('click', () => {
+      const panel = this.panelElements.get(panelId);
+      if (panel) {
+        this.removePanel(panel);
+        this.panelElements.delete(panelId);
+      }
+    });
+    header.appendChild(closeButton);
+
+    // コンテンツ部分を作成
+    const content = document.createElement('div');
+    content.className = 'p-4';
+
+    container.appendChild(header);
+    container.appendChild(content);
+
+    // React rootを作成
+    const root = createRoot(content);
+
+    // エラーバウンダリでコンポーネントをラップ
+    const WrappedComponent = React.createElement(PluginErrorBoundary, {
+      pluginId: this.pluginId,
+      onError: (error: Error) => {
+        this.showMessage(`Panel error: ${error.message}`, 'error');
+      },
+      children: React.createElement(component, {
+        api: this,
+        ...props,
+      }),
+    });
+
+    // コンポーネントをレンダリング
+    root.render(WrappedComponent);
+
+    return {
+      id: panelId,
+      title,
+      component,
+      container,
+      root,
+    };
+  }
+
+  /**
+   * パネルをDOMに追加
+   */
+  private addPanelToDOM(panel: PluginPanel): void {
+    // パネルコンテナを探す（存在しない場合は作成）
+    let panelContainer = document.getElementById('plugin-panels');
+
+    if (!panelContainer) {
+      panelContainer = this.createPanelContainer();
+    }
+
+    panelContainer.appendChild(panel.container);
+  }
+
+  /**
+   * パネルコンテナを作成
+   */
+  private createPanelContainer(): HTMLElement {
+    const container = document.createElement('div');
+    container.id = 'plugin-panels';
+    container.className = 'space-y-4 p-4';
+
+    // アプリのメイン要素に追加
+    const app = document.getElementById('root');
+    if (app) {
+      // ツールバーの後に配置
+      const toolbar = document.getElementById('plugin-toolbar');
+      if (toolbar && toolbar.nextSibling) {
+        app.insertBefore(container, toolbar.nextSibling);
+      } else {
+        app.appendChild(container);
+      }
+    } else {
+      document.body.appendChild(container);
+    }
+
+    return container;
+  }
+
+  /**
+   * パネルを削除
+   */
+  private removePanel(panel: PluginPanel): void {
+    try {
+      // React rootを unmount
+      panel.root.unmount();
+
+      // DOM要素を削除
+      if (panel.container.parentNode) {
+        panel.container.remove();
+      }
+    } catch (error) {
+      console.error(
+        `Plugin ${this.pluginId}: Error removing panel ${panel.id}:`,
+        error
+      );
+    }
   }
 }
