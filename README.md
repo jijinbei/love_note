@@ -59,7 +59,7 @@ bun run tauri dev
 - `bun run tauri dev` - Start the full Tauri application in development mode
 - `bun run codegen` - Generate TypeScript types from GraphQL schema
 
-### Code Generation
+### GraphQL Development
 
 The project includes TypeScript type generation from the GraphQL schema:
 
@@ -67,6 +67,32 @@ The project includes TypeScript type generation from the GraphQL schema:
 # Generate TypeScript types from GraphQL schema (run when schema changes)
 bun run codegen
 ```
+
+#### GraphQL Schema Visualization with Rover
+
+For GraphQL schema development and visualization, you can use Apollo Rover Studio:
+
+```bash
+# Start GraphQL HTTP server
+bun run graphql:server
+
+# Start Rover Studio (in another terminal)
+bun run rover:dev
+```
+
+This will start:
+- **GraphQL Server**: `http://127.0.0.1:4000/api/graphql`
+- **GraphQL Playground**: `http://127.0.0.1:4000`
+- **Rover Studio**: `http://localhost:4001`
+
+**Prerequisites for Rover**:
+Install [Apollo Rover](https://www.apollographql.com/docs/rover/getting-started/) CLI:
+
+Rover Studio provides:
+- Visual GraphQL schema exploration
+- Interactive query playground
+- Schema composition and validation
+- Federation support for future microservices
 
 **Important**: Run `bun run codegen` after:
 
