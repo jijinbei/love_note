@@ -74,52 +74,6 @@ pub struct Image {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Block content types
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum BlockContent {
-    NoteBlock {
-        text: String,
-    },
-    SampleRefBlock {
-        sample_id: Uuid,
-    },
-    ProtocolRefBlock {
-        protocol_id: Uuid,
-    },
-    ImageBlock {
-        image_id: Uuid,
-        alt: Option<String>,
-    },
-    TableBlock {
-        headers: Vec<String>,
-        rows: Vec<Vec<String>>,
-    },
-}
-
-/// Master data models
-#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
-#[graphql(rename_fields = "camelCase")]
-pub struct Sample {
-    pub id: Uuid,
-    pub workspace_id: Uuid,
-    pub name: String,
-    pub properties: String, // JSON serialized properties
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
-#[graphql(rename_fields = "camelCase")]
-pub struct Protocol {
-    pub id: Uuid,
-    pub workspace_id: Uuid,
-    pub name: String,
-    pub steps: String, // JSON serialized steps
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
 /// Request types for new models
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateUserRequest {
@@ -151,28 +105,30 @@ pub struct CreateExperimentRequest {
 pub struct CreateBlockRequest {
     pub experiment_id: Uuid,
     pub block_type: String,
-    pub content: BlockContent,
+    pub content: serde_json::Value, // 任意のJSON構造を許可
     pub order_index: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, InputObject)]
+pub struct UpdateBlockInput {
+    pub content: String, // JSON string representation of BlockContent
+    pub order_index: Option<i32>,
+}
+
+impl UpdateBlockInput {
+    pub fn to_request(self) -> Result<UpdateBlockRequest, serde_json::Error> {
+        let content: serde_json::Value = serde_json::from_str(&self.content)?;
+        Ok(UpdateBlockRequest {
+            content,
+            order_index: self.order_index,
+        })
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateBlockRequest {
-    pub content: BlockContent,
+    pub content: serde_json::Value, // 任意のJSON構造を許可
     pub order_index: Option<i32>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateSampleRequest {
-    pub workspace_id: Uuid,
-    pub name: String,
-    pub properties: serde_json::Value,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateProtocolRequest {
-    pub workspace_id: Uuid,
-    pub name: String,
-    pub steps: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -204,7 +160,7 @@ pub struct CreateBlockInput {
 
 impl CreateBlockInput {
     pub fn to_request(self) -> Result<CreateBlockRequest, serde_json::Error> {
-        let content: BlockContent = serde_json::from_str(&self.content)?;
+        let content: serde_json::Value = serde_json::from_str(&self.content)?;
         Ok(CreateBlockRequest {
             experiment_id: self.experiment_id,
             block_type: self.block_type,

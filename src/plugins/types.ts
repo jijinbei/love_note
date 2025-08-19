@@ -39,10 +39,10 @@ export interface LoveNotePluginAPI {
     props?: any
   ): string;
 
-  // レベル2: ブロック操作（後で実装）
-  blocks?: {
-    get(): Promise<Block[]>;
-    create(type: string, content: any): Promise<Block>;
+  // レベル2: ブロック操作
+  blocks: {
+    get(experimentId?: string): Promise<Block[]>;
+    create(type: string, content: any, experimentId?: string): Promise<Block>;
     update(id: string, content: any): Promise<Block>;
     delete(id: string): Promise<void>;
     on(event: BlockEvent, callback: (block: Block) => void): () => void;
@@ -54,6 +54,16 @@ export interface LoveNotePluginAPI {
     addSidePanel(config: PanelConfig): string;
     addBlockType(config: BlockTypeConfig): string;
     removeElement(id: string): void;
+  };
+
+  // レベル4: GraphQL直接アクセス
+  graphql: {
+    query<T>(query: string, variables?: any): Promise<T>;
+    mutate<T>(mutation: string, variables?: any): Promise<T>;
+    subscribe<T>(
+      subscription: string,
+      variables?: any
+    ): Promise<AsyncIterator<T>>;
   };
 
   // ユーティリティ

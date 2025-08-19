@@ -2,7 +2,10 @@
 
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-import { LoveNotePluginAPI, MessageType } from './types';
+import { invoke } from '@tauri-apps/api/core';
+import { print } from 'graphql';
+import { graphql } from '../generated/gql';
+import { LoveNotePluginAPI, MessageType, Block } from './types';
 
 // Error Boundary Component for Plugin Components
 function PluginErrorBoundary({
@@ -61,6 +64,64 @@ function PluginErrorBoundary({
   }
 
   return children;
+}
+
+// GraphQL queries and mutations for block operations
+const GetBlocksQuery = graphql(`
+  query GetBlocks($experimentId: UUID!) {
+    blocks(experimentId: $experimentId) {
+      id
+      experimentId
+      blockType
+      content
+      orderIndex
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const CreateBlockMutation = graphql(`
+  mutation CreateBlock($input: CreateBlockInput!) {
+    createBlock(input: $input) {
+      id
+      experimentId
+      blockType
+      content
+      orderIndex
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const UpdateBlockMutation = graphql(`
+  mutation UpdateBlock($id: UUID!, $input: UpdateBlockInput!) {
+    updateBlock(id: $id, input: $input) {
+      id
+      experimentId
+      blockType
+      content
+      orderIndex
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+const DeleteBlockMutation = graphql(`
+  mutation DeleteBlock($id: UUID!) {
+    deleteBlock(id: $id)
+  }
+`);
+
+interface GraphQLResponse<T = any> {
+  data?: T;
+  errors?: Array<{
+    message: string;
+    locations?: Array<{ line: number; column: number }>;
+    path?: string[];
+  }>;
 }
 
 interface PluginPanel {
@@ -141,6 +202,238 @@ export class PluginAPI implements LoveNotePluginAPI {
       throw error;
     }
   }
+
+  /**
+   * ブロック操作API（レベル2 API）
+   */
+  blocks = {
+    /**
+     * 指定されたエクスペリメントのブロックを取得
+     */
+    get: async (experimentId?: string): Promise<Block[]> => {
+      try {
+        if (!experimentId) {
+          // デフォルトのエクスペリメントIDを取得する必要があるが、
+          // 現在は実装されていないのでエラーを返す
+          throw new Error('Experiment ID is required');
+        }
+
+        const result = await invoke<string>('graphql_query', {
+          query: print(GetBlocksQuery),
+          variables: { experimentId },
+        });
+
+        const response: GraphQLResponse = JSON.parse(result);
+        if (response.errors) {
+          throw new Error(response.errors[0].message);
+        }
+
+        // GraphQLのレスポンスをBlock型に変換
+        const blocks = response.data?.blocks || [];
+        return blocks.map((block: any) => ({
+          id: block.id,
+          type: block.blockType,
+          content: JSON.parse(block.content),
+          metadata: {
+            experimentId: block.experimentId,
+            orderIndex: block.orderIndex,
+          },
+          createdAt: new Date(block.createdAt),
+          updatedAt: new Date(block.updatedAt),
+        }));
+      } catch (error) {
+        console.error(`Plugin ${this.pluginId}: Failed to get blocks:`, error);
+        throw error;
+      }
+    },
+
+    /**
+     * 新しいブロックを作成
+     */
+    create: async (
+      type: string,
+      content: any,
+      experimentId?: string
+    ): Promise<Block> => {
+      try {
+        if (!experimentId) {
+          throw new Error('Experiment ID is required');
+        }
+
+        // 現在のブロック数を取得してorder_indexを設定
+        const currentBlocks = await this.blocks.get(experimentId);
+        const orderIndex = currentBlocks.length;
+
+        const result = await invoke<string>('graphql_query', {
+          query: print(CreateBlockMutation),
+          variables: {
+            input: {
+              experimentId,
+              blockType: type,
+              content: JSON.stringify(content),
+              orderIndex,
+            },
+          },
+        });
+
+        const response: GraphQLResponse = JSON.parse(result);
+        if (response.errors) {
+          throw new Error(response.errors[0].message);
+        }
+
+        const block = response.data?.createBlock;
+        return {
+          id: block.id,
+          type: block.blockType,
+          content: JSON.parse(block.content),
+          metadata: {
+            experimentId: block.experimentId,
+            orderIndex: block.orderIndex,
+          },
+          createdAt: new Date(block.createdAt),
+          updatedAt: new Date(block.updatedAt),
+        };
+      } catch (error) {
+        console.error(
+          `Plugin ${this.pluginId}: Failed to create block:`,
+          error
+        );
+        throw error;
+      }
+    },
+
+    /**
+     * 既存のブロックを更新
+     */
+    update: async (id: string, content: any): Promise<Block> => {
+      try {
+        const result = await invoke<string>('graphql_query', {
+          query: print(UpdateBlockMutation),
+          variables: {
+            id,
+            input: {
+              content: JSON.stringify(content),
+            },
+          },
+        });
+
+        const response: GraphQLResponse = JSON.parse(result);
+        if (response.errors) {
+          throw new Error(response.errors[0].message);
+        }
+
+        const block = response.data?.updateBlock;
+        if (!block) {
+          throw new Error(`Block with ID ${id} not found`);
+        }
+
+        return {
+          id: block.id,
+          type: block.blockType,
+          content: JSON.parse(block.content),
+          metadata: {
+            experimentId: block.experimentId,
+            orderIndex: block.orderIndex,
+          },
+          createdAt: new Date(block.createdAt),
+          updatedAt: new Date(block.updatedAt),
+        };
+      } catch (error) {
+        console.error(
+          `Plugin ${this.pluginId}: Failed to update block:`,
+          error
+        );
+        throw error;
+      }
+    },
+
+    /**
+     * ブロックを削除
+     */
+    delete: async (id: string): Promise<void> => {
+      try {
+        const result = await invoke<string>('graphql_query', {
+          query: print(DeleteBlockMutation),
+          variables: { id },
+        });
+
+        const response: GraphQLResponse = JSON.parse(result);
+        if (response.errors) {
+          throw new Error(response.errors[0].message);
+        }
+
+        if (!response.data?.deleteBlock) {
+          throw new Error(`Block with ID ${id} not found`);
+        }
+      } catch (error) {
+        console.error(
+          `Plugin ${this.pluginId}: Failed to delete block:`,
+          error
+        );
+        throw error;
+      }
+    },
+
+    /**
+     * ブロック変更イベントのリスナー（将来実装予定）
+     */
+    on: (
+      _event: 'change' | 'create' | 'delete' | 'select',
+      _callback: (block: Block) => void
+    ): (() => void) => {
+      console.warn(`Plugin ${this.pluginId}: Block events not yet implemented`);
+      // 現在は何もしない関数を返す
+      return () => {};
+    },
+  };
+
+  /**
+   * GraphQL直接アクセス（レベル4 API）
+   */
+  graphql = {
+    /**
+     * GraphQLクエリを実行
+     */
+    query: async <T = any>(query: string, variables?: any): Promise<T> => {
+      try {
+        const result = await invoke<string>('graphql_query', {
+          query,
+          variables: variables || {},
+        });
+
+        const response: GraphQLResponse = JSON.parse(result);
+        if (response.errors) {
+          throw new Error(response.errors[0].message);
+        }
+
+        console.log(`Plugin ${this.pluginId}: GraphQL response:`, response);
+        return response.data as T;
+      } catch (error) {
+        console.error(`Plugin ${this.pluginId}: GraphQL query error:`, error);
+        throw error;
+      }
+    },
+
+    /**
+     * GraphQLミューテーションを実行
+     */
+    mutate: async <T = any>(mutation: string, variables?: any): Promise<T> => {
+      return this.graphql.query<T>(mutation, variables);
+    },
+
+    /**
+     * GraphQLサブスクリプション（将来実装予定）
+     */
+    subscribe: async <T = any>(
+      _subscription: string,
+      _variables?: any
+    ): Promise<AsyncIterator<T>> => {
+      console.warn(
+        `Plugin ${this.pluginId}: GraphQL subscriptions not yet implemented`
+      );
+      throw new Error('GraphQL subscriptions not yet implemented');
+    },
+  };
 
   /**
    * ユーティリティ

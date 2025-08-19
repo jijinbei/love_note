@@ -5,7 +5,8 @@ use crate::loader::{
 };
 use crate::models::{
     Block, CreateBlockInput, CreateExperimentRequest, CreateProjectRequest, CreateUserRequest,
-    CreateWorkspaceRequest, Experiment, Image, ImageUploadInput, Project, User, Workspace,
+    CreateWorkspaceRequest, Experiment, Image, ImageUploadInput, Project, UpdateBlockInput, User,
+    Workspace,
 };
 use async_graphql::{dataloader::DataLoader, ComplexObject, Context, Object, Result, Schema};
 use base64::prelude::*;
@@ -270,6 +271,69 @@ impl Mutation {
             .map_err(|e| async_graphql::Error::new(e.to_string()))?;
 
         Ok(block)
+    }
+
+    async fn update_block(
+        &self,
+        ctx: &Context<'_>,
+        id: Uuid,
+        input: UpdateBlockInput,
+    ) -> Result<Option<Block>> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let now = Utc::now();
+
+        let request = input
+            .to_request()
+            .map_err(|e| async_graphql::Error::new(format!("Invalid block content: {}", e)))?;
+
+        let content_json = serde_json::to_string(&request.content).map_err(|e| {
+            async_graphql::Error::new(format!("Content serialization error: {}", e))
+        })?;
+
+        let result = if let Some(order_index) = request.order_index {
+            sqlx::query(
+                "UPDATE blocks SET content = ?, order_index = ?, updated_at = ? WHERE id = ?",
+            )
+            .bind(&content_json)
+            .bind(order_index)
+            .bind(&now)
+            .bind(&id)
+            .execute(pool)
+            .await
+        } else {
+            sqlx::query("UPDATE blocks SET content = ?, updated_at = ? WHERE id = ?")
+                .bind(&content_json)
+                .bind(&now)
+                .bind(&id)
+                .execute(pool)
+                .await
+        }
+        .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        if result.rows_affected() > 0 {
+            // 更新されたブロックを取得
+            let block: Option<Block> = sqlx::query_as("SELECT * FROM blocks WHERE id = ?")
+                .bind(&id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+            Ok(block)
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn delete_block(&self, ctx: &Context<'_>, id: Uuid) -> Result<bool> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let result = sqlx::query("DELETE FROM blocks WHERE id = ?")
+            .bind(&id)
+            .execute(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        Ok(result.rows_affected() > 0)
     }
 
     async fn upload_image(&self, ctx: &Context<'_>, input: ImageUploadInput) -> Result<Image> {
