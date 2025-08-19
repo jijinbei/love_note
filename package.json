@@ -12,7 +12,9 @@
     "codegen:watch": "bun run codegen && bunx graphql-codegen --config codegen.ts --watch",
     "type-check": "(tsc --noEmit || true) && cd src-tauri && cargo check",
     "fmt": "bunx prettier --write . && cd src-tauri && cargo fmt",
-    "fmt:check": "bunx prettier --check . && cd src-tauri && cargo fmt -- --check"
+    "fmt:check": "bunx prettier --check . && cd src-tauri && cargo fmt -- --check",
+    "graphql:server": "cd src-tauri && cargo run --bin graphql_server",
+    "rover:dev": "bun run codegen && rover dev --name love-note-api --schema src-tauri/schema.graphql --url http://localhost:4000/api/graphql --supergraph-port 4001"
   },
   "dependencies": {
     "@automerge/automerge": "^3.1.1",

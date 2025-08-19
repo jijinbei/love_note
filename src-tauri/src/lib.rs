@@ -3,7 +3,7 @@ use tauri::Manager;
 pub mod graphql;
 mod image_utils;
 mod loader;
-mod models;
+pub mod models;
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use graphql::{create_schema_for_sdl, create_schema_with_loaders, LoveNoteSchema};
 
