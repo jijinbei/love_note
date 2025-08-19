@@ -1,12 +1,12 @@
 // ES Module Loader - プラグインの動的読み込み
 
 import { LoveNotePlugin, PluginDescriptor } from './types';
-import { JSXTranspiler, JSXTransformOptions } from './JSXTranspiler';
+import { createJSXTranspiler, JSXTransformOptions } from './JSXTranspiler';
 
 export function createESModuleLoader() {
   const loadedModules = new Map<string, any>();
   const moduleCache = new Map<string, string>();
-  const jsxTranspiler = new JSXTranspiler();
+  const jsxTranspiler = createJSXTranspiler();
 
   /**
    * ファイル内容を読み取り

@@ -21,8 +21,8 @@ export interface JSXTransformResult {
   };
 }
 
-export class JSXTranspiler {
-  private defaultOptions: JSXTransformOptions = {
+export function createJSXTranspiler() {
+  const defaultOptions: JSXTransformOptions = {
     react: {
       version: '19',
       runtime: 'classic',
@@ -32,78 +32,9 @@ export class JSXTranspiler {
   };
 
   /**
-   * JSX構文を含むコードをトランスパイル
-   */
-  async transpile(
-    code: string,
-    options: JSXTransformOptions = {}
-  ): Promise<JSXTransformResult> {
-    try {
-      const mergedOptions = { ...this.defaultOptions, ...options };
-
-      // React importが不要な場合は自動注入
-      const codeWithImports = this.injectReactImports(code, mergedOptions);
-
-      const result = await this.transformWithBabel(
-        codeWithImports,
-        mergedOptions
-      );
-
-      return {
-        code: result,
-      };
-    } catch (error) {
-      return {
-        code: code, // 元のコードを返す
-        error: this.formatError(error, code),
-      };
-    }
-  }
-
-  /**
-   * JSXが含まれているかチェック
-   */
-  containsJSX(code: string): boolean {
-    // JSX要素のパターンを検出（より厳密に）
-    const jsxPatterns = [
-      /<[A-Z][a-zA-Z0-9]*[\s\/>]/, // 大文字で始まるタグ（React コンポーネント）
-      /<[a-z][a-zA-Z0-9]*[\s\/>][^>]*>/, // 小文字HTMLタグ（属性あり）
-      /<[a-z]+>/, // シンプルなHTMLタグ
-      /<\/[a-zA-Z][a-zA-Z0-9]*>/, // 終了タグ
-      /jsx\s*`/, // JSX template literal
-    ];
-
-    // React.createElementは除外（JSXではない）
-    return jsxPatterns.some(pattern => pattern.test(code));
-  }
-
-  /**
-   * React importsを自動注入
-   */
-  private injectReactImports(
-    code: string,
-    _options: JSXTransformOptions
-  ): string {
-    // 既にReact importがある場合はスキップ
-    if (this.hasReactImport(code)) {
-      return code;
-    }
-
-    // JSXが含まれていない場合はスキップ
-    if (!this.containsJSX(code)) {
-      return code;
-    }
-
-    // クラシックランタイムの場合はReact importが必要
-    // ただし、プラグイン実行環境ではグローバルReactを使用するため、
-    // importは削除されるのでここでは何もしない
-    return code;
-  }
-
-  /**
    * React importの存在チェック
    */
-  private hasReactImport(code: string): boolean {
+  function hasReactImport(code: string): boolean {
     const importPatterns = [
       /import\s+React\s+from\s+['"]react['"]/,
       /import\s*\{\s*[^}]*React[^}]*\s*\}\s*from\s+['"]react['"]/,
@@ -115,27 +46,32 @@ export class JSXTranspiler {
   }
 
   /**
-   * Babelを使用してトランスパイル
+   * React importsを自動注入
    */
-  private async transformWithBabel(
+  function injectReactImports(
     code: string,
-    options: JSXTransformOptions
-  ): Promise<string> {
-    const babelOptions = this.getBabelOptions(options);
-
-    const result = transform(code, babelOptions);
-
-    if (!result.code) {
-      throw new Error('Babel transformation failed: No output generated');
+    _options: JSXTransformOptions
+  ): string {
+    // 既にReact importがある場合はスキップ
+    if (hasReactImport(code)) {
+      return code;
     }
 
-    return result.code;
+    // JSXが含まれていない場合はスキップ
+    if (!containsJSX(code)) {
+      return code;
+    }
+
+    // クラシックランタイムの場合はReact importが必要
+    // ただし、プラグイン実行環境ではグローバルReactを使用するため、
+    // importは削除されるのでここでは何もしない
+    return code;
   }
 
   /**
    * Babel設定オプションを生成
    */
-  private getBabelOptions(options: JSXTransformOptions) {
+  function getBabelOptions(options: JSXTransformOptions) {
     const presets: any[] = [];
     const plugins: any[] = [];
 
@@ -175,47 +111,27 @@ export class JSXTranspiler {
   }
 
   /**
-   * エラーを整形
+   * Babelを使用してトランスパイル
    */
-  private formatError(error: any, originalCode: string) {
-    if (!error) {
-      return {
-        message: 'Unknown error occurred during JSX transpilation',
-      };
+  async function transformWithBabel(
+    code: string,
+    options: JSXTransformOptions
+  ): Promise<string> {
+    const babelOptions = getBabelOptions(options);
+
+    const result = transform(code, babelOptions);
+
+    if (!result.code) {
+      throw new Error('Babel transformation failed: No output generated');
     }
 
-    let message = 'JSX Syntax Error';
-    let line: number | undefined;
-    let column: number | undefined;
-    let snippet: string | undefined;
-
-    if (error.message) {
-      message = error.message;
-    }
-
-    // Babelエラーの場合
-    if (error.loc) {
-      line = error.loc.line;
-      column = error.loc.column;
-    }
-
-    // エラー行のコードスニペットを生成
-    if (line) {
-      snippet = this.generateErrorSnippet(originalCode, line, column);
-    }
-
-    return {
-      message,
-      line,
-      column,
-      snippet,
-    };
+    return result.code;
   }
 
   /**
    * エラー箇所のコードスニペットを生成
    */
-  private generateErrorSnippet(
+  function generateErrorSnippet(
     code: string,
     errorLine: number,
     errorColumn?: number
@@ -249,26 +165,47 @@ export class JSXTranspiler {
   }
 
   /**
-   * デバッグ情報を取得
+   * エラーを整形
    */
-  getDebugInfo(): Record<string, any> {
+  function formatError(error: any, originalCode: string) {
+    if (!error) {
+      return {
+        message: 'Unknown error occurred during JSX transpilation',
+      };
+    }
+
+    let message = 'JSX Syntax Error';
+    let line: number | undefined;
+    let column: number | undefined;
+    let snippet: string | undefined;
+
+    if (error.message) {
+      message = error.message;
+    }
+
+    // Babelエラーの場合
+    if (error.loc) {
+      line = error.loc.line;
+      column = error.loc.column;
+    }
+
+    // エラー行のコードスニペットを生成
+    if (line) {
+      snippet = generateErrorSnippet(originalCode, line, column);
+    }
+
     return {
-      defaultOptions: this.defaultOptions,
-      babelVersion: this.getBabelVersion(),
-      supportedFeatures: [
-        'JSX syntax',
-        'React 19 automatic runtime',
-        'TypeScript support',
-        'Error reporting with line numbers',
-        'Automatic React imports',
-      ],
+      message,
+      line,
+      column,
+      snippet,
     };
   }
 
   /**
    * Babelバージョンを取得
    */
-  private getBabelVersion(): string {
+  function getBabelVersion(): string {
     try {
       // @babel/standaloneはバージョン情報を公開していないため、
       // パッケージ情報から推定またはデフォルト値を返す
@@ -277,4 +214,65 @@ export class JSXTranspiler {
       return 'unknown';
     }
   }
+
+  /**
+   * JSX構文を含むコードをトランスパイル
+   */
+  async function transpile(
+    code: string,
+    options: JSXTransformOptions = {}
+  ): Promise<JSXTransformResult> {
+    try {
+      const mergedOptions = { ...defaultOptions, ...options };
+
+      // React importが不要な場合は自動注入
+      const codeWithImports = injectReactImports(code, mergedOptions);
+
+      const result = await transformWithBabel(codeWithImports, mergedOptions);
+
+      return {
+        code: result,
+      };
+    } catch (error) {
+      return {
+        code: code, // 元のコードを返す
+        error: formatError(error, code),
+      };
+    }
+  }
+
+  /**
+   * JSXが含まれているかチェック
+   */
+  function containsJSX(code: string): boolean {
+    // JSX要素のパターンを検出（より厳密に）
+    const jsxPatterns = [
+      /<[A-Z][a-zA-Z0-9]*[\s\/>]/, // 大文字で始まるタグ（React コンポーネント）
+      /<[a-z][a-zA-Z0-9]*[\s\/>][^>]*>/, // 小文字HTMLタグ（属性あり）
+      /<[a-z]+>/, // シンプルなHTMLタグ
+      /<\/[a-zA-Z][a-zA-Z0-9]*>/, // 終了タグ
+      /jsx\s*`/, // JSX template literal
+    ];
+
+    // React.createElementは除外（JSXではない）
+    return jsxPatterns.some(pattern => pattern.test(code));
+  }
+
+  return {
+    transpile,
+    containsJSX,
+    getDebugInfo: (): Record<string, any> => {
+      return {
+        defaultOptions,
+        babelVersion: getBabelVersion(),
+        supportedFeatures: [
+          'JSX syntax',
+          'React 19 automatic runtime',
+          'TypeScript support',
+          'Error reporting with line numbers',
+          'Automatic React imports',
+        ],
+      };
+    },
+  };
 }
