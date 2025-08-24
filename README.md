@@ -81,6 +81,7 @@ bun run rover:dev
 ```
 
 This will start:
+
 - **GraphQL Server**: `http://127.0.0.1:4000/api/graphql`
 - **GraphQL Playground**: `http://127.0.0.1:4000`
 - **Rover Studio**: `http://localhost:4001`
@@ -89,6 +90,7 @@ This will start:
 Install [Apollo Rover](https://www.apollographql.com/docs/rover/getting-started/) CLI:
 
 Rover Studio provides:
+
 - Visual GraphQL schema exploration
 - Interactive query playground
 - Schema composition and validation
