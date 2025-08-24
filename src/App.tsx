@@ -93,6 +93,7 @@ function App() {
               <MarkdownPage
                 experimentId={selectedExperimentId}
                 selectedBlock={selectedBlock}
+                onBack={() => setCurrentView('blockList')}
               />
             );
 

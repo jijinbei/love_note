@@ -8,11 +8,13 @@ import './styles.css';
 type MarkdownPageProps = {
   experimentId: string | null;
   selectedBlock?: Block | null;
+  onBack?: () => void;
 };
 
 const MarkdownPage: React.FC<MarkdownPageProps> = ({
   experimentId,
   selectedBlock,
+  onBack,
 }) => {
   const [markdown, setMarkdown] = useState<string>('');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
@@ -73,6 +75,15 @@ const MarkdownPage: React.FC<MarkdownPageProps> = ({
       {/* ヘッダー: モード切り替えボタン */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <div className="flex items-center space-x-4">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="px-3 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+              title="ブロック一覧に戻る"
+            >
+              ← Back
+            </button>
+          )}
           <h2 className="font-bold text-lg">Markdown エディタ</h2>
           {error && <div className="text-sm text-red-500">Error: {error}</div>}
         </div>
