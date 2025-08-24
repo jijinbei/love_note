@@ -2,6 +2,8 @@ import React from 'react';
 import { useBlocks } from '../../hooks/useBlocks';
 import { Block } from '../../services/types';
 import MarkdownPreview from '../Markdown/MarkdownPreview';
+import EmptyState from './EmptyState';
+import AddBlockButton from './AddBlockButton';
 
 type BlockListProps = {
   experimentId: string | null;
@@ -12,7 +14,12 @@ const BlockList: React.FC<BlockListProps> = ({
   experimentId,
   onBlockClick,
 }) => {
-  const { blocks, loading, error } = useBlocks(experimentId);
+  const { blocks, loading, error, loadBlocks } = useBlocks(experimentId);
+
+  const handleBlockCreated = () => {
+    // ブロック一覧を再取得してUIを更新
+    loadBlocks();
+  };
 
   if (loading) {
     return (
@@ -32,10 +39,11 @@ const BlockList: React.FC<BlockListProps> = ({
 
   if (!blocks || blocks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-        <div className="text-6xl mb-4">📝</div>
-        <div className="text-lg font-medium mb-2">No blocks yet</div>
-        <div className="text-sm">Create your first block to get started</div>
+      <div className="p-6">
+        <EmptyState
+          experimentId={experimentId}
+          onBlockCreated={handleBlockCreated}
+        />
       </div>
     );
   }
@@ -86,6 +94,11 @@ const BlockList: React.FC<BlockListProps> = ({
             {renderBlockContent(block)}
           </div>
         ))}
+
+        <AddBlockButton
+          experimentId={experimentId}
+          onBlockCreated={handleBlockCreated}
+        />
       </div>
     </div>
   );
