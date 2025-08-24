@@ -89,7 +89,12 @@ function App() {
             );
 
           case 'markdownPage':
-            return <MarkdownPage experimentId={selectedExperimentId} selectedBlock={selectedBlock} />;
+            return (
+              <MarkdownPage
+                experimentId={selectedExperimentId}
+                selectedBlock={selectedBlock}
+              />
+            );
 
           case 'graphql':
             return <GraphQLTest />;

@@ -9,9 +9,9 @@ interface MarkdownPreviewProps {
   className?: string;
 }
 
-const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ 
-  markdown, 
-  className = ''
+const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
+  markdown,
+  className = '',
 }) => {
   return (
     <div className={`markdown-preview-compact ${className}`}>

@@ -10,7 +10,10 @@ type MarkdownPageProps = {
   selectedBlock?: Block | null;
 };
 
-const MarkdownPage: React.FC<MarkdownPageProps> = ({ experimentId, selectedBlock }) => {
+const MarkdownPage: React.FC<MarkdownPageProps> = ({
+  experimentId,
+  selectedBlock,
+}) => {
   const [markdown, setMarkdown] = useState<string>('');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
 
@@ -20,7 +23,11 @@ const MarkdownPage: React.FC<MarkdownPageProps> = ({ experimentId, selectedBlock
 
   // 選択されたブロック または 既存のMarkdownブロックを読み込み
   React.useEffect(() => {
-    if (selectedBlock && selectedBlock.type === 'markdown' && selectedBlock.content?.text) {
+    if (
+      selectedBlock &&
+      selectedBlock.type === 'markdown' &&
+      selectedBlock.content?.text
+    ) {
       // 特定のブロックが選択されている場合はそれを使用
       setMarkdown(selectedBlock.content.text);
     } else if (blocks.length > 0 && !loading) {
@@ -41,7 +48,8 @@ const MarkdownPage: React.FC<MarkdownPageProps> = ({ experimentId, selectedBlock
     if (!markdown.trim() || !experimentId) return;
 
     // 選択されたブロックがある場合はそれを更新、なければ最初のmarkdownブロックを探す
-    const targetBlock = selectedBlock || blocks.find(block => block.type === 'markdown');
+    const targetBlock =
+      selectedBlock || blocks.find(block => block.type === 'markdown');
 
     if (targetBlock) {
       // 既存のmarkdownブロックを更新
