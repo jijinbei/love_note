@@ -72,11 +72,19 @@ interface PluginPanel {
   root: Root;
 }
 
+interface PluginSidebarItem {
+  id: string;
+  icon: string;
+  label: string;
+  view: React.ComponentType<any>;
+}
+
 export class PluginAPI implements LoveNotePluginAPI {
   private pluginId: string;
   private buttonElements = new Map<string, HTMLElement>();
   private panelElements = new Map<string, PluginPanel>();
   private messageContainer: HTMLElement | null = null;
+  private sidebarItems = new Map<string, PluginSidebarItem>();
 
   constructor(pluginId: string) {
     this.pluginId = pluginId;
@@ -115,6 +123,67 @@ export class PluginAPI implements LoveNotePluginAPI {
       console.log(`Plugin ${this.pluginId}: Showed message:`, text);
     } catch (error) {
       console.error(`Plugin ${this.pluginId}: Failed to show message:`, error);
+    }
+  }
+
+  /**
+   * サイドバーにアイテムを追加（新機能）
+   */
+  addSidebarItem(
+    icon: string,
+    label: string,
+    view: React.ComponentType<any>
+  ): string {
+    const itemId = `plugin-sidebar-${this.pluginId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    try {
+      const sidebarItem: PluginSidebarItem = {
+        id: itemId,
+        icon,
+        label,
+        view,
+      };
+
+      this.sidebarItems.set(itemId, sidebarItem);
+
+      // viewコンポーネントをapiと一緒にラップ
+      const WrappedView = (props: any) => {
+        return React.createElement(view, { ...props, api: this });
+      };
+
+      const wrappedSidebarItem: PluginSidebarItem = {
+        id: itemId,
+        icon,
+        label,
+        view: WrappedView,
+      };
+
+      // グローバルなプラグインビューマネージャーに登録
+      if (window.pluginViewManager) {
+        window.pluginViewManager.registerPluginView(
+          this.pluginId,
+          itemId,
+          wrappedSidebarItem
+        );
+        console.log(
+          `Plugin ${this.pluginId}: Added sidebar item "${label}" with ID ${itemId}`
+        );
+      } else {
+        console.error(
+          `Plugin ${this.pluginId}: PluginViewManager not available when trying to add sidebar item "${label}"`
+        );
+        throw new Error(
+          'PluginViewManager is not initialized. Please ensure the plugin system is properly initialized.'
+        );
+      }
+
+      return itemId;
+    } catch (error) {
+      console.error(
+        `Plugin ${this.pluginId}: Failed to add sidebar item:`,
+        error
+      );
+      throw error;
     }
   }
 
@@ -292,7 +361,7 @@ export class PluginAPI implements LoveNotePluginAPI {
    */
   cleanup(): void {
     console.log(
-      `Plugin ${this.pluginId}: Starting cleanup, ${this.buttonElements.size} buttons and ${this.panelElements.size} panels to remove`
+      `Plugin ${this.pluginId}: Starting cleanup, ${this.buttonElements.size} buttons, ${this.panelElements.size} panels, and ${this.sidebarItems.size} sidebar items to remove`
     );
 
     // ボタンを削除
@@ -314,6 +383,15 @@ export class PluginAPI implements LoveNotePluginAPI {
       console.log(`Plugin ${this.pluginId}: Removed panel ${panelId}`);
     });
     this.panelElements.clear();
+
+    // サイドバーアイテムを削除
+    this.sidebarItems.forEach((_, itemId) => {
+      if (window.pluginViewManager) {
+        window.pluginViewManager.unregisterPluginView(this.pluginId, itemId);
+      }
+      console.log(`Plugin ${this.pluginId}: Removed sidebar item ${itemId}`);
+    });
+    this.sidebarItems.clear();
 
     console.log(`Plugin ${this.pluginId}: Cleanup completed`);
   }

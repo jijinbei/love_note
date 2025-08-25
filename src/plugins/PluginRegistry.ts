@@ -136,6 +136,15 @@ export class PluginRegistry {
 
       // Plugin APIを作成
       const api = new PluginAPI(pluginId);
+
+      // デバッグ: APIメソッドの存在を確認
+      console.log(`Plugin ${pluginId}: API methods available:`, {
+        addButton: typeof api.addButton,
+        addSidebarItem: typeof api.addSidebarItem,
+        showMessage: typeof api.showMessage,
+        addPanel: typeof api.addPanel,
+      });
+
       this.pluginAPIs.set(pluginId, api);
 
       // onLoad を実行

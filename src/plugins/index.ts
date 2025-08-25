@@ -3,10 +3,15 @@
 export { PluginRegistry } from './PluginRegistry';
 export { createESModuleLoader } from './ESModuleLoader';
 export { PluginAPI } from './PluginAPI';
+export {
+  PluginViewManager,
+  createGlobalPluginViewManager,
+} from './PluginViewManager';
 export * from './types';
 
 // プラグインシステムのシングルトンインスタンス
 import { PluginRegistry } from './PluginRegistry';
+import { createGlobalPluginViewManager } from './PluginViewManager';
 
 let pluginRegistryInstance: PluginRegistry | null = null;
 
@@ -35,6 +40,10 @@ export function getPluginRegistry(): PluginRegistry {
 export async function initializePluginSystem(): Promise<void> {
   console.log('Initializing Plugin System...');
 
+  // プラグインビューマネージャーを初期化
+  const viewManager = createGlobalPluginViewManager();
+  console.log('Plugin View Manager initialized');
+
   // プラグインレジストリを初期化
   const registry = getPluginRegistry();
 
@@ -51,6 +60,7 @@ export async function initializePluginSystem(): Promise<void> {
 
     // グローバルオブジェクトに追加（デバッグ用）
     (window as any).pluginRegistry = registry;
+    (window as any).pluginViewManager = viewManager;
   }
 
   console.log('Plugin System ready');

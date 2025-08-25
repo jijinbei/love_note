@@ -1,4 +1,8 @@
 // Block Manager Plugin - ブロック操作APIのテスト用プラグイン
+
+// プラグインの最上位でAPI参照を保存
+let pluginAPI = null; // TODO: グローバル変数として保存するのはbad code
+
 export default {
   name: 'Block Manager',
   version: '1.0.0',
@@ -6,6 +10,7 @@ export default {
   author: 'Love Note Plugin System',
 
   async onLoad(api) {
+    pluginAPI = api; // グローバルに保存
     console.log('Block Manager Plugin loaded');
 
     // 実際のExperiment IDを動的に取得
@@ -14,7 +19,7 @@ export default {
     try {
       // テスト用のワークスペース・プロジェクト・エクスペリメントを作成
       console.log('Creating test workspace...');
-      const workspace = await api.graphql.query(`
+      const workspace = await pluginAPI.graphql.query(`
         mutation {
           createWorkspace(input: { name: "Plugin Test Workspace", description: "For testing block operations" }) {
             id
@@ -25,7 +30,7 @@ export default {
       console.log('Workspace response:', workspace);
 
       console.log('Creating test project...');
-      const project = await api.graphql.query(
+      const project = await pluginAPI.graphql.query(
         `
         mutation CreateProject($workspaceId: UUID!) {
           createProject(input: { workspaceId: $workspaceId, name: "Plugin Test Project" }) {
@@ -39,7 +44,7 @@ export default {
       console.log('Project response:', project);
 
       console.log('Creating test experiment...');
-      const experiment = await api.graphql.query(
+      const experiment = await pluginAPI.graphql.query(
         `
         mutation CreateExperiment($projectId: UUID!) {
           createExperiment(input: { projectId: $projectId, title: "Plugin Test Experiment" }) {
@@ -54,23 +59,15 @@ export default {
 
       TEST_EXPERIMENT_ID = experiment.createExperiment.id;
       console.log('Created test experiment:', TEST_EXPERIMENT_ID);
-      api.showMessage(
-        `Test environment ready: ${TEST_EXPERIMENT_ID}`,
-        'success'
-      );
     } catch (error) {
       console.error('Failed to setup test environment:', error);
-      api.showMessage(
-        `Failed to setup test environment: ${error.message}`,
-        'error'
-      );
       return;
     }
 
     let currentBlocks = [];
 
     // ブロック管理UIをパネルとして追加
-    const BlockManagerUI = ({ api }) => {
+    const BlockManagerUI = () => {
       const [blocks, setBlocks] = React.useState([]);
       const [newBlockType, setNewBlockType] = React.useState('NoteBlock');
       const [newBlockContent, setNewBlockContent] =
@@ -83,13 +80,12 @@ export default {
       const loadBlocks = async () => {
         setLoading(true);
         try {
-          const blockList = await api.blocks.get(TEST_EXPERIMENT_ID);
+          const blockList = await pluginAPI.blocks.get(TEST_EXPERIMENT_ID);
           setBlocks(blockList);
           currentBlocks = blockList;
-          api.showMessage(`${blockList.length} blocks loaded`, 'success');
+          console.log(`${blockList.length} blocks loaded`);
         } catch (error) {
-          api.showMessage(`Failed to load blocks: ${error.message}`, 'error');
-          console.error('Load blocks error:', error);
+          console.error('Failed to load blocks:', error);
         } finally {
           setLoading(false);
         }
@@ -98,23 +94,22 @@ export default {
       // ブロックを作成
       const createBlock = async () => {
         if (!newBlockContent.trim()) {
-          api.showMessage('Content is required', 'warning');
+          console.warn('Content is required');
           return;
         }
 
         setLoading(true);
         try {
           const content = JSON.parse(newBlockContent);
-          const newBlock = await api.blocks.create(
+          const newBlock = await pluginAPI.blocks.create(
             newBlockType,
             content,
             TEST_EXPERIMENT_ID
           );
-          api.showMessage(`Block created: ${newBlock.id}`, 'success');
+          console.log(`Block created: ${newBlock.id}`);
           await loadBlocks(); // リフレッシュ
         } catch (error) {
-          api.showMessage(`Failed to create block: ${error.message}`, 'error');
-          console.error('Create block error:', error);
+          console.error('Failed to create block:', error);
         } finally {
           setLoading(false);
         }
@@ -123,22 +118,21 @@ export default {
       // ブロックを更新
       const updateBlock = async () => {
         if (!selectedBlockId || !updateContent.trim()) {
-          api.showMessage('Block ID and content are required', 'warning');
+          console.warn('Block ID and content are required');
           return;
         }
 
         setLoading(true);
         try {
           const content = JSON.parse(updateContent);
-          const updatedBlock = await api.blocks.update(
+          const updatedBlock = await pluginAPI.blocks.update(
             selectedBlockId,
             content
           );
-          api.showMessage(`Block updated: ${updatedBlock.id}`, 'success');
+          console.log(`Block updated: ${updatedBlock.id}`);
           await loadBlocks(); // リフレッシュ
         } catch (error) {
-          api.showMessage(`Failed to update block: ${error.message}`, 'error');
-          console.error('Update block error:', error);
+          console.error('Failed to update block:', error);
         } finally {
           setLoading(false);
         }
@@ -148,12 +142,11 @@ export default {
       const deleteBlock = async blockId => {
         setLoading(true);
         try {
-          await api.blocks.delete(blockId);
-          api.showMessage(`Block deleted: ${blockId}`, 'success');
+          await pluginAPI.blocks.delete(blockId);
+          console.log(`Block deleted: ${blockId}`);
           await loadBlocks(); // リフレッシュ
         } catch (error) {
-          api.showMessage(`Failed to delete block: ${error.message}`, 'error');
-          console.error('Delete block error:', error);
+          console.error('Failed to delete block:', error);
         } finally {
           setLoading(false);
         }
@@ -361,28 +354,11 @@ export default {
       );
     };
 
-    // UIパネルを追加
-    api.addPanel('Block Manager', BlockManagerUI);
+    // サイドバーアイテムとして追加
+    api.addSidebarItem('📦', 'Block Manager', BlockManagerUI);
 
-    // ツールバーにクイックアクションボタンを追加
-    api.addButton('Quick Block', async () => {
-      try {
-        const quickBlock = await api.blocks.create(
-          'NoteBlock',
-          { text: `Quick note created at ${new Date().toLocaleTimeString()}` },
-          TEST_EXPERIMENT_ID
-        );
-        api.showMessage(`Quick block created: ${quickBlock.id}`, 'success');
-      } catch (error) {
-        api.showMessage(
-          `Failed to create quick block: ${error.message}`,
-          'error'
-        );
-      }
-    });
-
-    // イベントリスナーのテスト（まだ実装されていない）
-    const unsubscribe = api.blocks.on('change', block => {
+    // TODO: イベントリスナーのテストの実装 
+    pluginAPI.blocks.on('change', block => {
       console.log('Block changed:', block);
     });
 

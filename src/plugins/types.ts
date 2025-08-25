@@ -41,6 +41,11 @@ export interface LoveNotePluginAPI {
     component: React.ComponentType<any>,
     props?: any
   ): string;
+  addSidebarItem(
+    icon: string,
+    label: string,
+    view: React.ComponentType<any>
+  ): string;
 
   // レベル2: ブロック操作
   blocks: {
