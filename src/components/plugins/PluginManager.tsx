@@ -68,32 +68,6 @@ export const PluginManager: React.FC = () => {
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <PluginList key={refreshKey} onPluginChange={handlePluginChange} />
       </div>
-
-      {/* 開発者情報 */}
-      <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-3">
-          For Developers
-        </h3>
-        <div className="text-sm text-gray-600 space-y-2">
-          <p>
-            <strong>Minimum Plugin Example:</strong>
-          </p>
-          <pre className="bg-white p-3 rounded border text-xs overflow-x-auto">
-            {`export default {
-  name: 'My Plugin',
-  onLoad(api) {
-    api.addButton('Hello', () => {
-      api.showMessage('Hello from plugin!');
-    });
-  }
-};`}
-          </pre>
-          <p className="mt-2">
-            Save this as a <code className="bg-white px-1 rounded">.js</code>{' '}
-            file and use the file selector above.
-          </p>
-        </div>
-      </div>
     </div>
   );
 };
