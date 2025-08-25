@@ -58,7 +58,8 @@ export default {
             'button',
             {
               onClick: sayHello,
-              className: 'w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold',
+              className:
+                'w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold',
             },
             '🎉 Say Hello'
           ),
@@ -67,36 +68,40 @@ export default {
             'button',
             {
               onClick: showInfo,
-              className: 'w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold',
+              className:
+                'w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold',
             },
             'ℹ️ Show Info'
           ),
 
-          message && React.createElement(
-            'button',
-            {
-              onClick: clearMessage,
-              className: 'w-full px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors text-sm',
-            },
-            '❌ Clear Message'
-          )
+          message &&
+            React.createElement(
+              'button',
+              {
+                onClick: clearMessage,
+                className:
+                  'w-full px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors text-sm',
+              },
+              '❌ Clear Message'
+            )
         ),
 
-        message && React.createElement(
-          'div',
-          {
-            className: `p-3 rounded-lg border ${
-              messageType === 'success'
-                ? 'bg-green-50 border-green-200 text-green-800'
-                : 'bg-blue-50 border-blue-200 text-blue-800'
-            }`,
-          },
+        message &&
           React.createElement(
-            'p',
-            { className: 'text-sm font-medium' },
-            message
-          )
-        ),
+            'div',
+            {
+              className: `p-3 rounded-lg border ${
+                messageType === 'success'
+                  ? 'bg-green-50 border-green-200 text-green-800'
+                  : 'bg-blue-50 border-blue-200 text-blue-800'
+              }`,
+            },
+            React.createElement(
+              'p',
+              { className: 'text-sm font-medium' },
+              message
+            )
+          ),
 
         React.createElement(
           'div',

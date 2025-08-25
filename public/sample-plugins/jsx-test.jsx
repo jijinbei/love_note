@@ -26,11 +26,11 @@ export default {
               🎉 Welcome to JSX!
             </h2>
             <p className="mb-4 text-gray-700 leading-relaxed">
-              This component is written with JSX syntax and demonstrates how JSX 
+              This component is written with JSX syntax and demonstrates how JSX
               transpilation works seamlessly in our plugin system.
             </p>
             <div className="p-3 bg-blue-100 rounded-lg text-sm border border-blue-200">
-              <strong>💡 Pro Tip:</strong> JSX makes React components much more 
+              <strong>💡 Pro Tip:</strong> JSX makes React components much more
               readable and maintainable compared to React.createElement calls!
             </div>
             <div className="mt-4 text-sm text-blue-600">
@@ -43,16 +43,24 @@ export default {
       // プロパティを受け取るJSXコンポーネント
       const StatusCard = ({ title, status, message, color }) => {
         return (
-          <div className="border-2 rounded-lg p-4 m-2 bg-white shadow-md"
-               style={{ borderColor: color }}>
-            <h3 className="flex items-center gap-2 mb-2 font-semibold"
-                style={{ color: color }}>
-              <span className="w-2 h-2 rounded-full inline-block"
-                    style={{ backgroundColor: color }}></span>
+          <div
+            className="border-2 rounded-lg p-4 m-2 bg-white shadow-md"
+            style={{ borderColor: color }}
+          >
+            <h3
+              className="flex items-center gap-2 mb-2 font-semibold"
+              style={{ color: color }}
+            >
+              <span
+                className="w-2 h-2 rounded-full inline-block"
+                style={{ backgroundColor: color }}
+              ></span>
               {title}
             </h3>
-            <div className="text-sm font-bold mb-2 uppercase"
-                 style={{ color: color }}>
+            <div
+              className="text-sm font-bold mb-2 uppercase"
+              style={{ color: color }}
+            >
               Status: {status}
             </div>
             <p className="text-gray-600 text-sm">{message}</p>
@@ -65,10 +73,10 @@ export default {
         const [count, setCount] = React.useState(0);
         const [history, setHistory] = React.useState([]);
 
-        const handleAction = (type) => {
+        const handleAction = type => {
           const timestamp = new Date().toLocaleTimeString();
           const action = { type, timestamp, count };
-          
+
           if (type === 'increment') {
             setCount(prev => prev + 1);
           } else if (type === 'decrement') {
@@ -76,7 +84,7 @@ export default {
           } else {
             setCount(0);
           }
-          
+
           setHistory(prev => [action, ...prev.slice(0, 4)]);
         };
 
@@ -87,10 +95,15 @@ export default {
             </h3>
 
             <div className="text-center mb-6">
-              <div className={`text-6xl font-bold mb-2 ${
-                count > 0 ? 'text-green-500' : 
-                count < 0 ? 'text-red-500' : 'text-gray-500'
-              }`}>
+              <div
+                className={`text-6xl font-bold mb-2 ${
+                  count > 0
+                    ? 'text-green-500'
+                    : count < 0
+                      ? 'text-red-500'
+                      : 'text-gray-500'
+                }`}
+              >
                 {count}
               </div>
               <p className="text-sm text-gray-600">Current Value</p>
@@ -118,30 +131,48 @@ export default {
             </div>
 
             {count !== 0 && (
-              <div className={`p-3 rounded-lg text-center mb-4 ${
-                count > 0 
-                  ? 'bg-green-100 border border-green-200 text-green-800'
-                  : 'bg-red-100 border border-red-200 text-red-800'
-              }`}>
-                {count > 0 ? '📈' : '📉'} Value is {count > 0 ? 'positive' : 'negative'}
+              <div
+                className={`p-3 rounded-lg text-center mb-4 ${
+                  count > 0
+                    ? 'bg-green-100 border border-green-200 text-green-800'
+                    : 'bg-red-100 border border-red-200 text-red-800'
+                }`}
+              >
+                {count > 0 ? '📈' : '📉'} Value is{' '}
+                {count > 0 ? 'positive' : 'negative'}
               </div>
             )}
 
             {history.length > 0 && (
               <div>
-                <h4 className="font-semibold mb-2 text-gray-700">📋 Recent Activity:</h4>
+                <h4 className="font-semibold mb-2 text-gray-700">
+                  📋 Recent Activity:
+                </h4>
                 <div className="max-h-24 overflow-y-auto">
                   {history.map((item, index) => (
-                    <div key={index} 
-                         className="flex justify-between items-center p-2 mb-1 bg-white rounded text-sm">
-                      <span className={
-                        item.type === 'increment' ? 'text-green-600' :
-                        item.type === 'decrement' ? 'text-red-600' : 'text-gray-600'
-                      }>
-                        {item.type === 'increment' ? '➕' : 
-                         item.type === 'decrement' ? '➖' : '🔄'} {item.type}
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-2 mb-1 bg-white rounded text-sm"
+                    >
+                      <span
+                        className={
+                          item.type === 'increment'
+                            ? 'text-green-600'
+                            : item.type === 'decrement'
+                              ? 'text-red-600'
+                              : 'text-gray-600'
+                        }
+                      >
+                        {item.type === 'increment'
+                          ? '➕'
+                          : item.type === 'decrement'
+                            ? '➖'
+                            : '🔄'}{' '}
+                        {item.type}
                       </span>
-                      <span className="text-gray-500 text-xs">{item.timestamp}</span>
+                      <span className="text-gray-500 text-xs">
+                        {item.timestamp}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -152,7 +183,7 @@ export default {
       };
 
       // デモ選択関数
-      const showDemo = (demo) => {
+      const showDemo = demo => {
         setSelectedDemo(demo);
         setStatus(`Switched to ${demo} demo`);
         setStatusType('success');
@@ -169,7 +200,7 @@ export default {
               <p>This is a JSX syntax test!</p>
             </div>
           );
-          
+
           console.log('JSX Test Element:', testElement);
           setStatus('JSX syntax test successful! 🎉');
           setStatusType('success');
@@ -235,13 +266,15 @@ export default {
 
           {/* ステータス表示 */}
           {status && (
-            <div className={`p-3 rounded-lg border text-center ${
-              statusType === 'success'
-                ? 'bg-green-50 border-green-200 text-green-800'
-                : statusType === 'error'
-                ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-blue-50 border-blue-200 text-blue-800'
-            }`}>
+            <div
+              className={`p-3 rounded-lg border text-center ${
+                statusType === 'success'
+                  ? 'bg-green-50 border-green-200 text-green-800'
+                  : statusType === 'error'
+                    ? 'bg-red-50 border-red-200 text-red-800'
+                    : 'bg-blue-50 border-blue-200 text-blue-800'
+              }`}
+            >
               <p className="text-sm font-medium">{status}</p>
             </div>
           )}
@@ -279,7 +312,10 @@ export default {
 
           {/* フッター情報 */}
           <div className="text-center text-xs text-gray-500 border-t pt-4">
-            <p>Pure JSX Plugin | Demonstrating JSX transpilation with new sidebar API</p>
+            <p>
+              Pure JSX Plugin | Demonstrating JSX transpilation with new sidebar
+              API
+            </p>
             <p className="mt-1">All components written in JSX syntax</p>
           </div>
         </div>
