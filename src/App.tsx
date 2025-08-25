@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { GraphQLTest } from './components/debug/GraphQLTest';
 import { ImageUploadTest } from './components/debug/ImageUploadTest';
 import { GraphQLSchemaExport } from './components/debug/GraphQLSchemaExport';
-import { PluginManager } from './components/Plugins';
+import { PluginManager } from './components/plugins';
 import Sidebar from './components/Sidebar';
 import Home from './components/Home';
 import MarkdownPage from './components/Markdown';
