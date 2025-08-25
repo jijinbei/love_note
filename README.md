@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src-tauri/icons/icon.png" alt="Love Note Logo" width="100" height="100">
+  <img src="src-tauri/icons/icon.png" alt="Love Note Logo" width="40%">
   <h1>Love Note</h1>
 </div>
 
