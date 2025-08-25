@@ -139,10 +139,10 @@ export class PluginRegistry {
 
       // デバッグ: APIメソッドの存在を確認
       console.log(`Plugin ${pluginId}: API methods available:`, {
-        addButton: typeof api.addButton,
         addSidebarItem: typeof api.addSidebarItem,
-        showMessage: typeof api.showMessage,
         addPanel: typeof api.addPanel,
+        graphql: typeof api.graphql,
+        blocks: typeof api.blocks,
       });
 
       this.pluginAPIs.set(pluginId, api);

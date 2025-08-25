@@ -31,23 +31,18 @@ export interface PluginDescriptor {
 }
 
 export interface LoveNotePluginAPI {
-  // レベル1: 基本API
-  addButton(label: string, onClick: () => void): string;
-  showMessage(text: string, type?: MessageType): void;
-
-  // レベル2: React コンポーネント統合
   addPanel(
     title: string,
     component: React.ComponentType<any>,
     props?: any
   ): string;
+
   addSidebarItem(
     icon: string,
     label: string,
     view: React.ComponentType<any>
   ): string;
 
-  // レベル2: ブロック操作
   blocks: {
     get(experimentId?: string): Promise<Block[]>;
     create(type: string, content: any, experimentId?: string): Promise<Block>;
@@ -56,7 +51,7 @@ export interface LoveNotePluginAPI {
     on(event: BlockEvent, callback: (block: Block) => void): () => void;
   };
 
-  // レベル3: 高度なUI（後で実装）
+  // 高度なUI TODO: 未実装
   ui?: {
     addToolbarButton(config: ButtonConfig): string;
     addSidePanel(config: PanelConfig): string;
@@ -64,7 +59,6 @@ export interface LoveNotePluginAPI {
     removeElement(id: string): void;
   };
 
-  // レベル4: GraphQL直接アクセス
   graphql: {
     query<T>(query: string, variables?: any): Promise<T>;
     mutate<T>(mutation: string, variables?: any): Promise<T>;
