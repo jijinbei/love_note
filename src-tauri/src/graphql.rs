@@ -1,13 +1,6 @@
 use crate::image_utils;
-use crate::loader::{
-    BlockLoader, ExperimentLoader, ImageByIdLoader, ImageLoader, ProjectLoader, UserLoader,
-    WorkspaceLoader,
-};
-use crate::models::{
-    Block, CreateBlockInput, CreateExperimentRequest, CreateProjectRequest, CreateUserRequest,
-    CreateWorkspaceRequest, Experiment, Image, ImageUploadInput, Project, UpdateBlockInput, User,
-    Workspace,
-};
+use crate::loader::*;
+use crate::models::*;
 use async_graphql::{dataloader::DataLoader, ComplexObject, Context, Object, Result, Schema};
 use base64::prelude::*;
 use chrono::Utc;
@@ -107,6 +100,18 @@ impl Query {
         let loader = ctx.data::<DataLoader<ImageByIdLoader>>()?;
         let image = loader.load_one(id).await?.unwrap_or_default();
         Ok(image)
+    }
+
+    async fn plugins(&self, ctx: &Context<'_>) -> Result<Vec<Plugin>> {
+        let loader = ctx.data::<DataLoader<PluginLoader>>()?;
+        let plugins = loader.load_one(()).await?.unwrap_or_default();
+        Ok(plugins)
+    }
+
+    async fn plugin(&self, ctx: &Context<'_>, id: Uuid) -> Result<Option<Plugin>> {
+        let loader = ctx.data::<DataLoader<PluginByIdLoader>>()?;
+        let plugin = loader.load_one(id).await?.unwrap_or_default();
+        Ok(plugin)
     }
 }
 
@@ -416,6 +421,111 @@ impl Mutation {
             Ok(false)
         }
     }
+
+    async fn install_plugin(&self, ctx: &Context<'_>, input: InstallPluginInput) -> Result<Plugin> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let id = Uuid::new_v4();
+        let now = Utc::now();
+
+        let plugin = Plugin {
+            id,
+            name: input.name.clone(),
+            version: input.version.clone(),
+            description: input.description.clone(),
+            author: input.author.clone(),
+            source_code: input.source_code.clone(),
+            is_enabled: true, // Default to enabled
+            installed_at: now,
+            updated_at: now,
+        };
+
+        println!(
+            "Installing plugin to database: {} ({})",
+            plugin.name, plugin.id
+        );
+
+        sqlx::query("INSERT INTO plugins (id, name, version, description, author, source_code, is_enabled, installed_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            .bind(&plugin.id)
+            .bind(&plugin.name)
+            .bind(&plugin.version)
+            .bind(&plugin.description)
+            .bind(&plugin.author)
+            .bind(&plugin.source_code)
+            .bind(&plugin.is_enabled)
+            .bind(&plugin.installed_at)
+            .bind(&now)
+            .execute(pool)
+            .await
+            .map_err(|e| {
+                println!("Database insertion failed: {}", e);
+                async_graphql::Error::new(e.to_string())
+            })?;
+
+        println!("Successfully installed plugin to database: {}", plugin.name);
+        Ok(plugin)
+    }
+
+    async fn uninstall_plugin(&self, ctx: &Context<'_>, id: Uuid) -> Result<bool> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let result = sqlx::query("DELETE FROM plugins WHERE id = ?")
+            .bind(&id)
+            .execute(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    async fn enable_plugin(&self, ctx: &Context<'_>, id: Uuid) -> Result<Option<Plugin>> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let now = Utc::now();
+
+        let result = sqlx::query("UPDATE plugins SET is_enabled = ?, updated_at = ? WHERE id = ?")
+            .bind(true)
+            .bind(&now)
+            .bind(&id)
+            .execute(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        if result.rows_affected() > 0 {
+            let plugin: Option<Plugin> = sqlx::query_as("SELECT * FROM plugins WHERE id = ?")
+                .bind(&id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+            Ok(plugin)
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn disable_plugin(&self, ctx: &Context<'_>, id: Uuid) -> Result<Option<Plugin>> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let now = Utc::now();
+
+        let result = sqlx::query("UPDATE plugins SET is_enabled = ?, updated_at = ? WHERE id = ?")
+            .bind(false)
+            .bind(&now)
+            .bind(&id)
+            .execute(pool)
+            .await
+            .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+        if result.rows_affected() > 0 {
+            let plugin: Option<Plugin> = sqlx::query_as("SELECT * FROM plugins WHERE id = ?")
+                .bind(&id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+
+            Ok(plugin)
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 // GraphQL Schema type
@@ -450,6 +560,14 @@ pub fn create_schema_with_loaders(
         ))
         .data(DataLoader::new(
             ImageByIdLoader::new(pool.clone()),
+            tokio::spawn,
+        ))
+        .data(DataLoader::new(
+            PluginLoader::new(pool.clone()),
+            tokio::spawn,
+        ))
+        .data(DataLoader::new(
+            PluginByIdLoader::new(pool.clone()),
             tokio::spawn,
         ))
         .data(pool)

@@ -22,6 +22,8 @@ export interface PluginDescriptor {
   author?: string;
   source: 'file' | 'directory' | 'url' | 'github';
   path: string;
+  sourceCode?: string;
+  dbId?: string;
   module?: LoveNotePlugin;
   status: 'loaded' | 'error' | 'disabled';
   error?: string;

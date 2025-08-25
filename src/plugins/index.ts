@@ -32,11 +32,18 @@ export function getPluginRegistry(): PluginRegistry {
 /**
  * プラグインシステムを初期化
  */
-export function initializePluginSystem(): void {
+export async function initializePluginSystem(): Promise<void> {
   console.log('Initializing Plugin System...');
 
   // プラグインレジストリを初期化
   const registry = getPluginRegistry();
+
+  // データベースから既存プラグインを読み込み
+  try {
+    await registry.initializeFromDatabase();
+  } catch (error) {
+    console.error('Failed to initialize plugins from database:', error);
+  }
 
   // 開発モードでのデバッグ情報
   if (import.meta.env.DEV) {

@@ -1,4 +1,4 @@
-use crate::models::{Block, Experiment, Image, Project, User, Workspace};
+use crate::models::{Block, Experiment, Image, Plugin, Project, User, Workspace};
 use async_graphql::{dataloader::Loader, FieldError};
 use sqlx::SqlitePool;
 use std::collections::HashMap;
@@ -212,5 +212,59 @@ impl Loader<Uuid> for ImageByIdLoader {
         }
 
         Ok(images_map)
+    }
+}
+
+/// PluginLoader - loads all plugins
+pub struct PluginLoader(SqlitePool);
+
+impl PluginLoader {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self(pool)
+    }
+}
+
+impl Loader<()> for PluginLoader {
+    type Value = Vec<Plugin>;
+    type Error = FieldError;
+
+    async fn load(&self, _keys: &[()]) -> Result<HashMap<(), Self::Value>, Self::Error> {
+        let plugins =
+            sqlx::query_as::<_, Plugin>("SELECT * FROM plugins ORDER BY installed_at DESC")
+                .fetch_all(&self.0)
+                .await?;
+
+        let mut result = HashMap::new();
+        result.insert((), plugins);
+        Ok(result)
+    }
+}
+
+/// PluginByIdLoader - loads individual plugins by ID
+pub struct PluginByIdLoader(SqlitePool);
+
+impl PluginByIdLoader {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self(pool)
+    }
+}
+
+impl Loader<Uuid> for PluginByIdLoader {
+    type Value = Option<Plugin>;
+    type Error = FieldError;
+
+    async fn load(&self, plugin_ids: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
+        let mut plugins_map = HashMap::new();
+
+        for plugin_id in plugin_ids {
+            let plugin = sqlx::query_as::<_, Plugin>("SELECT * FROM plugins WHERE id = ?")
+                .bind(plugin_id)
+                .fetch_optional(&self.0)
+                .await?;
+
+            plugins_map.insert(*plugin_id, plugin);
+        }
+
+        Ok(plugins_map)
     }
 }

@@ -300,6 +300,7 @@ export function createESModuleLoader() {
         author: plugin.author,
         source: 'file',
         path: fileName || 'inline',
+        sourceCode: code,
         module: plugin,
         status: 'loaded',
         loadedAt: new Date(),

@@ -16,11 +16,19 @@ declare global {
 window.React = React;
 window.ReactDOM = { ...ReactDOM, ...ReactDOMAll };
 
-// プラグインシステムを初期化
-initializePluginSystem();
+// プラグインシステムを非同期で初期化
+async function initApp() {
+  try {
+    await initializePluginSystem();
+  } catch (error) {
+    console.error('Failed to initialize plugin system:', error);
+  }
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+  ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
+
+initApp();

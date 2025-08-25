@@ -3,12 +3,20 @@
 import { PluginDescriptor, PluginError } from './types';
 import { createESModuleLoader } from './ESModuleLoader';
 import { PluginAPI } from './PluginAPI';
+import {
+  getInstalledPlugins,
+  installPlugin,
+  uninstallPlugin,
+  enablePlugin,
+  disablePlugin,
+} from '../services/pluginService';
 
 export class PluginRegistry {
   private plugins = new Map<string, PluginDescriptor>();
   private pluginAPIs = new Map<string, PluginAPI>();
   private moduleLoader = createESModuleLoader();
   private errorHandlers: ((error: PluginError) => void)[] = [];
+  private initialized = false;
 
   /**
    * ファイルからプラグインをインストール
@@ -76,6 +84,24 @@ export class PluginRegistry {
       // 既存のプラグインがある場合はアンロード
       if (this.plugins.has(descriptor.id)) {
         await this.unloadPlugin(descriptor.id);
+      }
+
+      // DBにプラグインを保存
+      if (descriptor.module && descriptor.sourceCode) {
+        try {
+          const dbPlugin = await installPlugin({
+            name: descriptor.name,
+            version: descriptor.version || '1.0.0',
+            description: descriptor.description,
+            author: descriptor.author,
+            sourceCode: descriptor.sourceCode,
+          });
+
+          descriptor.dbId = dbPlugin.id;
+          console.log(`Plugin saved to database: ${dbPlugin.id}`);
+        } catch (error) {
+          console.warn(`Failed to save plugin to database:`, error);
+        }
       }
 
       // プラグインを登録
@@ -245,9 +271,79 @@ export class PluginRegistry {
    * プラグインを削除
    */
   async removePlugin(pluginId: string): Promise<void> {
+    const descriptor = this.plugins.get(pluginId);
+
+    // DBからプラグインを削除
+    if (descriptor?.dbId) {
+      try {
+        await uninstallPlugin(descriptor.dbId);
+        console.log(`Plugin removed from database: ${descriptor.dbId}`);
+      } catch (error) {
+        console.warn(`Failed to remove plugin from database:`, error);
+      }
+    }
+
     await this.unloadPlugin(pluginId);
     this.plugins.delete(pluginId);
     console.log(`Removed plugin: ${pluginId}`);
+  }
+
+  /**
+   * プラグインを有効化
+   */
+  async enablePluginById(pluginId: string): Promise<void> {
+    const descriptor = this.plugins.get(pluginId);
+    if (!descriptor) {
+      throw new Error(`Plugin ${pluginId} not found`);
+    }
+
+    try {
+      // DBで有効化
+      if (descriptor.dbId) {
+        await enablePlugin(descriptor.dbId);
+        console.log(`Plugin enabled in database: ${descriptor.dbId}`);
+      }
+
+      // プラグインを読み込み
+      if (descriptor.module) {
+        await this.loadPlugin(pluginId);
+      } else {
+        // モジュールがない場合は状態だけ更新
+        descriptor.status = 'loaded';
+        this.plugins.set(pluginId, descriptor);
+      }
+    } catch (error) {
+      console.error(`Failed to enable plugin ${pluginId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * プラグインを無効化
+   */
+  async disablePluginById(pluginId: string): Promise<void> {
+    const descriptor = this.plugins.get(pluginId);
+    if (!descriptor) {
+      throw new Error(`Plugin ${pluginId} not found`);
+    }
+
+    try {
+      // DBで無効化
+      if (descriptor.dbId) {
+        await disablePlugin(descriptor.dbId);
+        console.log(`Plugin disabled in database: ${descriptor.dbId}`);
+      }
+
+      // プラグインをアンロード
+      await this.unloadPlugin(pluginId);
+
+      // 状態を明示的に無効化に更新
+      descriptor.status = 'disabled';
+      this.plugins.set(pluginId, descriptor);
+    } catch (error) {
+      console.error(`Failed to disable plugin ${pluginId}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -310,5 +406,108 @@ export class PluginRegistry {
       error: plugins.filter(p => p.status === 'error').length,
       disabled: plugins.filter(p => p.status === 'disabled').length,
     };
+  }
+
+  /**
+   * データベースから既存プラグインを復元
+   */
+  async initializeFromDatabase(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    try {
+      console.log('Loading plugins from database...');
+      const dbPlugins = await getInstalledPlugins();
+
+      for (const dbPlugin of dbPlugins) {
+        if (dbPlugin.isEnabled) {
+          try {
+            console.log(`Loading plugin from DB: ${dbPlugin.name}`);
+
+            // DescriptorをDBプラグインから作成
+            const descriptor: PluginDescriptor = {
+              id: dbPlugin.id,
+              name: dbPlugin.name,
+              version: dbPlugin.version,
+              description: dbPlugin.description,
+              author: dbPlugin.author,
+              source: 'url' as const,
+              path: `db://${dbPlugin.id}`,
+              sourceCode: dbPlugin.sourceCode,
+              dbId: dbPlugin.id,
+              status: 'disabled',
+            };
+
+            // ソースコードからモジュールを読み込み
+            const moduleDescriptor = await this.moduleLoader.loadFromCode(
+              dbPlugin.sourceCode,
+              dbPlugin.id,
+              dbPlugin.name
+            );
+
+            if (moduleDescriptor.status === 'loaded') {
+              descriptor.module = moduleDescriptor.module;
+              descriptor.status = 'loaded';
+
+              this.plugins.set(dbPlugin.id, descriptor);
+              await this.loadPlugin(dbPlugin.id);
+
+              console.log(
+                `Successfully loaded plugin from DB: ${dbPlugin.name}`
+              );
+            } else {
+              descriptor.status = 'error';
+              descriptor.error =
+                moduleDescriptor.error || 'Failed to load module';
+              this.plugins.set(dbPlugin.id, descriptor);
+              console.error(
+                `Failed to load plugin module: ${dbPlugin.name}`,
+                moduleDescriptor.error
+              );
+            }
+          } catch (error) {
+            console.error(`Error loading plugin ${dbPlugin.name}:`, error);
+            // エラーがあってもプラグインリストに追加（無効状態で）
+            const errorDescriptor: PluginDescriptor = {
+              id: dbPlugin.id,
+              name: dbPlugin.name,
+              version: dbPlugin.version,
+              description: dbPlugin.description,
+              author: dbPlugin.author,
+              source: 'url' as const,
+              path: `db://${dbPlugin.id}`,
+              sourceCode: dbPlugin.sourceCode,
+              dbId: dbPlugin.id,
+              status: 'error',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+            this.plugins.set(dbPlugin.id, errorDescriptor);
+          }
+        } else {
+          // 無効なプラグインもリストに追加（無効状態で）
+          const descriptor: PluginDescriptor = {
+            id: dbPlugin.id,
+            name: dbPlugin.name,
+            version: dbPlugin.version,
+            description: dbPlugin.description,
+            author: dbPlugin.author,
+            source: 'url' as const,
+            path: `db://${dbPlugin.id}`,
+            sourceCode: dbPlugin.sourceCode,
+            dbId: dbPlugin.id,
+            status: 'disabled',
+          };
+          this.plugins.set(dbPlugin.id, descriptor);
+          console.log(`Plugin ${dbPlugin.name} is disabled, added to registry`);
+        }
+      }
+
+      this.initialized = true;
+      console.log(`Loaded ${dbPlugins.length} plugins from database`);
+    } catch (error) {
+      console.error('Failed to load plugins from database:', error);
+      this.initialized = true; // エラーがあっても初期化完了とする
+    }
   }
 }

@@ -31,9 +31,11 @@ export const PluginList: React.FC<PluginListProps> = ({ onPluginChange }) => {
 
     try {
       if (currentStatus === 'loaded') {
-        await pluginRegistry.unloadPlugin(pluginId);
+        // プラグインを無効化（DB更新 + アンロード）
+        await pluginRegistry.disablePluginById(pluginId);
       } else {
-        await pluginRegistry.loadPlugin(pluginId);
+        // プラグインを有効化（DB更新 + ロード）
+        await pluginRegistry.enablePluginById(pluginId);
       }
 
       loadPlugins();

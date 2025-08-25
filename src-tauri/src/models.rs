@@ -74,6 +74,21 @@ pub struct Image {
     pub updated_at: DateTime<Utc>,
 }
 
+/// Plugin model
+#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject, sqlx::FromRow)]
+#[graphql(rename_fields = "camelCase")]
+pub struct Plugin {
+    pub id: Uuid,
+    pub name: String,
+    pub version: String,
+    pub description: Option<String>,
+    pub author: Option<String>,
+    pub source_code: String,
+    pub is_enabled: bool,
+    pub installed_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 /// Request types for new models
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateUserRequest {
@@ -167,5 +182,36 @@ impl CreateBlockInput {
             content,
             order_index: self.order_index,
         })
+    }
+}
+
+/// Plugin request types
+#[derive(Debug, Serialize, Deserialize, InputObject)]
+pub struct InstallPluginInput {
+    pub name: String,
+    pub version: String,
+    pub description: Option<String>,
+    pub author: Option<String>,
+    pub source_code: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreatePluginRequest {
+    pub name: String,
+    pub version: String,
+    pub description: Option<String>,
+    pub author: Option<String>,
+    pub source_code: String,
+}
+
+impl From<InstallPluginInput> for CreatePluginRequest {
+    fn from(input: InstallPluginInput) -> Self {
+        Self {
+            name: input.name,
+            version: input.version,
+            description: input.description,
+            author: input.author,
+            source_code: input.source_code,
+        }
     }
 }
