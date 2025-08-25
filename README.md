@@ -1,144 +1,68 @@
-# Love Note
+<div align="center">
+  <img src="src-tauri/icons/icon.png" alt="Love Note Logo" width="100" height="100">
+  <h1>Love Note</h1>
+</div>
 
-A desktop application built with Tauri, React, and TypeScript using Vite as the build tool.
+An open-source electronic lab notebook (ELN) for researchers and scientists, built with Tauri v2, React 19, and TypeScript.
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend**: React 19 + TypeScript
-- **Desktop Framework**: Tauri v2
-- **Database**: SQLite with SQLx 0.8
-- **API Layer**: GraphQL with async-graphql 7.0
-- **Build Tool**: Vite
-- **Package Manager**: Bun (fast JavaScript runtime and package manager)
+- **Cross-platform**: Works on Windows, macOS, and Linux
+- **Modern Stack**: React 19, TypeScript, GraphQL, SQLite
+- **Fast Performance**: Built with Tauri v2 and Bun
+- **Type Safety**: Full TypeScript integration with GraphQL CodeGen
 
-## Prerequisites
+## 🚀 Quick Start
 
-Before running this project, make sure you have the following installed:
+### Prerequisites
 
-- [Bun](https://bun.sh/) - Fast JavaScript runtime and package manager
+- [Bun](https://bun.sh/) - JavaScript runtime and package manager
 - [Rust](https://rustup.rs/) - Required for Tauri backend
 
-## Installation
-
-1. Clone the repository:
+### Installation
 
 ```bash
+# Clone and enter the project
 git clone https://github.com/jijinbei/love_note.git
 cd love_note
-```
 
-2. Install dependencies using Bun:
-
-```bash
+# Install dependencies
 bun install
-```
 
-3. Generate TypeScript types from GraphQL schema:
-
-```bash
+# Generate TypeScript types (important!)
 bun run codegen
-```
 
-4. Ready to run! The database will be automatically created and configured.
-
-> **Note**: Step 3 is crucial for TypeScript development. The `codegen` command generates TypeScript types from the Rust GraphQL schema, ensuring type safety across the frontend and backend. Generated files are not committed to version control, so each developer must run this command after cloning or when GraphQL schema changes.
-
-## Development
-
-To run the application in development mode:
-
-```bash
+# Start development server
 bun run tauri dev
 ```
 
-## Available Scripts
+> **💡 Note**: The `codegen` command is essential - it generates TypeScript types from the GraphQL schema for type safety.
 
-### Development
+## 🏗️ Tech Stack
 
-- `bun run dev` - Start the Vite development server only
-- `bun run tauri dev` - Start the full Tauri application in development mode
-- `bun run codegen` - Generate TypeScript types from GraphQL schema
+- **Frontend**: React 19 + TypeScript + Vite
+- **Backend**: Rust + Tauri v2 + SQLite
+- **API**: GraphQL (async-graphql)
+- **Package Manager**: Bun
 
-### GraphQL Development
-
-The project includes TypeScript type generation from the GraphQL schema:
-
-```bash
-# Generate TypeScript types from GraphQL schema (run when schema changes)
-bun run codegen
-```
-
-#### GraphQL Schema Visualization with Rover
-
-For GraphQL schema development and visualization, you can use Apollo Rover Studio:
+## 🔧 Essential Commands
 
 ```bash
-# Start GraphQL HTTP server
-bun run graphql:server
+# Development
+bun run tauri dev      # Start full application
+bun run codegen       # Generate GraphQL types
 
-# Start Rover Studio (in another terminal)
-bun run rover:dev
+# Production
+bun run build         # Build frontend
+bun run tauri build   # Build desktop app
 ```
 
-This will start:
+## 🤝 Contributing
 
-- **GraphQL Server**: `http://127.0.0.1:4000/api/graphql`
-- **GraphQL Playground**: `http://127.0.0.1:4000`
-- **Rover Studio**: `http://localhost:4001`
+1. Read [DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed setup instructions
+2. Check existing [issues](https://github.com/jijinbei/love_note/issues)
+3. Follow the development workflow in our documentation
 
-**Prerequisites for Rover**:
-Install [Apollo Rover](https://www.apollographql.com/docs/rover/getting-started/) CLI:
+## 📄 License
 
-Rover Studio provides:
-
-- Visual GraphQL schema exploration
-- Interactive query playground
-- Schema composition and validation
-- Federation support for future microservices
-
-**Important**: Run `bun run codegen` after:
-
-- Cloning the repository for the first time
-- Making changes to GraphQL schema in Rust code
-- Switching branches that might have schema changes
-
-This command will:
-
-1. Export the GraphQL schema from Rust code to `src-tauri/schema.graphql`
-2. Generate TypeScript types to `src/generated/graphql.ts`
-
-The generated types include:
-
-- All GraphQL types (User, Workspace, Project, Experiment, Block)
-- Input types for mutations (CreateUserRequest, CreateWorkspaceRequest, etc.)
-- Query and Mutation resolvers with proper TypeScript types
-- Scalar mappings (UUID -> string, DateTime -> string)
-
-### Database
-
-- Database is automatically created in application data directory
-- Migrations run automatically on application startup
-- Database location: Tauri data directory (platform-specific)
-  - Linux: `.local/share/com.xxxxxxx.love-note/love_note.db`
-- To reset database: Delete the database file and restart the application
-
-### Code Quality
-
-- `bun run fmt` - Format code using Prettier (TypeScript/JavaScript) and cargo fmt (Rust)
-- `bun run fmt:check` - Check code formatting without making changes
-- `bun run type-check` - Run TypeScript type checking
-
-### Build
-
-- `bun run build` - Build the project for production
-- `bun run preview` - Preview the production build
-- `bun run tauri build` - Build the desktop application for distribution
-
-## Building for Production
-
-To create a production build:
-
-```bash
-bun run build
-bun run tauri build
-```
+MIT License
