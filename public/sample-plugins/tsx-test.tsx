@@ -1,6 +1,8 @@
-// TypeScript + JSX Sample Plugin - 完全な型安全性を持つReactプラグイン
+// TypeScript + JSX Sample Plugin - 完全な型安全性を持つReactプラグイン（新API対応）
 
 import React from 'react';
+
+let pluginAPI: LoveNotePluginAPI | null = null;
 
 interface ButtonProps {
   text: string;
@@ -28,26 +30,38 @@ interface CounterState {
   }>;
 }
 
+// 新しいプラグインAPIの型定義
 type LoveNotePluginAPI = {
-  addButton: (label: string, onClick: () => void) => string;
-  showMessage: (
-    text: string,
-    type?: 'info' | 'success' | 'warning' | 'error'
-  ) => void;
-  utils: {
-    generateId: () => string;
-  };
+  addSidebarItem: (
+    icon: string,
+    label: string,
+    view: React.ComponentType<any>
+  ) => string;
+  addPanel: (
+    title: string,
+    component: React.ComponentType<any>,
+    props?: any
+  ) => string;
+  graphql?: any;
+  blocks?: any;
 };
 
 export default {
   name: 'TypeScript JSX Advanced',
   version: '2.0.0',
   description:
-    'TypeScript + JSX構文を使用した高度なプラグインサンプル（完全型安全）',
+    'TypeScript + JSX構文を使用した高度なプラグインサンプル（完全型安全・新API対応）',
   author: 'Love Note Team',
 
   onLoad(api: LoveNotePluginAPI) {
-    console.log('TypeScript JSX Advanced Plugin loaded with full type safety!');
+    pluginAPI = api;
+    console.log('TypeScript JSX Advanced Plugin loaded with full type safety and new API!');
+
+    // メインのTypeScriptデモコンポーネント
+    const TypeScriptDemoComponent: React.FC<{ api?: LoveNotePluginAPI }> = ({ api: apiProp }) => {
+      const [selectedDemo, setSelectedDemo] = React.useState<'buttons' | 'users' | 'counter'>('buttons');
+      const [status, setStatus] = React.useState<string>('TypeScript system ready with full type safety!');
+      const [statusType, setStatusType] = React.useState<'info' | 'success' | 'warning' | 'error'>('info');
 
     // 型安全なボタンコンポーネント
     const TypedButton: React.FC<ButtonProps> = ({
@@ -417,89 +431,208 @@ export default {
       },
     ];
 
-    // プラグインボタンを追加
-    api.addButton('TypeScript Counter', () => {
-      console.log('AdvancedCounter component:', AdvancedCounter);
-      api.showMessage('TypeScript counter component loaded!', 'success');
-    });
+      // デモ選択と状態管理
+      const showDemo = (demo: 'buttons' | 'users' | 'counter'): void => {
+        setSelectedDemo(demo);
+        setStatus(`Switched to ${demo} demo with full TypeScript type safety`);
+        setStatusType('success');
+        console.log(`TypeScript Demo: Showing ${demo} component with type safety`);
+      };
 
-    api.addButton('Show TypeScript Users', () => {
-      sampleUsers.forEach((user: User) => {
-        console.log(
-          'TypeScript User Component:',
-          React.createElement(UserCard, {
-            user,
-            onEdit: (editUser: User) => {
-              console.log('Edit user:', editUser);
-              api.showMessage(`Editing user: ${editUser.name}`, 'info');
-            },
-          })
-        );
-      });
-      api.showMessage('TypeScript user components created!', 'success');
-    });
+      const testTypeSafety = (): void => {
+        try {
+          // TypeScriptの型チェック機能のデモ
+          const validUser: User = {
+            id: 999,
+            name: 'TypeScript Test User',
+            email: 'typescript@example.com',
+            role: 'user', // 型安全：'admin' | 'user' | 'guest'のみ受け入れ
+            createdAt: new Date(),
+          };
 
-    api.addButton('Type Safety Demo', () => {
-      try {
-        // TypeScriptの型チェック機能のデモ
-        const validUser: User = {
-          id: 999,
-          name: 'TypeScript Test User',
-          email: 'typescript@example.com',
-          role: 'user',
-          createdAt: new Date(),
-        };
+          // 型安全なボタンの作成テスト
+          const typedButtonElement = (
+            <TypedButton
+              text="Type Safe Button"
+              color="purple" // 型安全：定義された色のみ
+              size="large"   // 型安全：定義されたサイズのみ
+              onClick={() => setStatus('TypeScript button works!')}
+            />
+          );
 
-        // 型安全なボタンの作成
-        const typedButtonElement = (
-          <TypedButton
-            text="Type Safe Button"
-            color="purple"
-            size="large"
-            onClick={() =>
-              api.showMessage('TypeScript button works!', 'success')
-            }
-          />
-        );
+          console.log('Valid TypeScript user:', validUser);
+          console.log('Type-safe button element:', typedButtonElement);
+          setStatus('TypeScript type safety validation passed! 🎯');
+          setStatusType('success');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          setStatus(`Type error: ${errorMessage}`);
+          setStatusType('error');
+        }
+      };
 
-        console.log('Valid TypeScript user:', validUser);
-        console.log('Type-safe button element:', typedButtonElement);
+      // メインレンダリング（TSX構文）
+      return (
+        <div className="p-4 space-y-6">
+          {/* ヘッダー */}
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              📐 TypeScript + JSX Demo
+            </h1>
+            <p className="text-gray-600">
+              Complete type safety with advanced TypeScript features
+            </p>
+          </div>
 
-        api.showMessage(
-          'TypeScript type safety validation passed! 🎯',
-          'success'
-        );
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        api.showMessage(`Type error: ${errorMessage}`, 'error');
-      }
-    });
+          {/* デモ選択ボタン */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => showDemo('buttons')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                selectedDemo === 'buttons'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
+              🔘 Typed Buttons
+            </button>
+            <button
+              onClick={() => showDemo('users')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                selectedDemo === 'users'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              }`}
+            >
+              👥 User Cards
+            </button>
+            <button
+              onClick={() => showDemo('counter')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                selectedDemo === 'counter'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+              }`}
+            >
+              🔢 TS Counter
+            </button>
+            <button
+              onClick={testTypeSafety}
+              className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors font-semibold"
+            >
+              🎯 Type Test
+            </button>
+          </div>
 
-    api.addButton('TSX Rendering Test', () => {
-      try {
-        // 完全なTSX要素の作成とレンダリングテスト
-        const counterElement = <AdvancedCounter initialValue={5} />;
-        const userElement = (
-          <UserCard
-            user={sampleUsers[0]}
-            onEdit={(user: User) => console.log('Editing:', user.name)}
-          />
-        );
+          {/* ステータス表示 */}
+          <div className={`p-3 rounded-lg border text-center ${
+            statusType === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : statusType === 'error'
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : statusType === 'warning'
+              ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+              : 'bg-blue-50 border-blue-200 text-blue-800'
+          }`}>
+            <p className="text-sm font-medium">{status}</p>
+          </div>
 
-        console.log('TSX Elements created:', {
-          counter: counterElement,
-          user: userElement,
-        });
+          {/* 選択されたデモを表示 */}
+          <div className="border-t pt-6">
+            {selectedDemo === 'buttons' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-center text-gray-700">
+                  🔘 Type-Safe Buttons
+                </h3>
+                <div className="text-center space-x-2">
+                  <TypedButton
+                    text="Small Blue"
+                    color="blue"
+                    size="small"
+                    onClick={() => setStatus('Small blue button clicked!')}
+                  />
+                  <TypedButton
+                    text="Medium Green"
+                    color="green"
+                    size="medium"
+                    onClick={() => setStatus('Medium green button clicked!')}
+                  />
+                  <TypedButton
+                    text="Large Red"
+                    color="red"
+                    size="large"
+                    onClick={() => setStatus('Large red button clicked!')}
+                  />
+                  <TypedButton
+                    text="Disabled"
+                    color="gray"
+                    size="medium"
+                    onClick={() => {}}
+                    disabled={true}
+                  />
+                </div>
+                <div className="text-center">
+                  <TypedButton
+                    text="Purple Large"
+                    color="purple"
+                    size="large"
+                    onClick={() => setStatus('TypeScript ensures type safety! 🎯')}
+                  />
+                </div>
+              </div>
+            )}
 
-        api.showMessage('TSX rendering test successful! ✨', 'success');
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        console.error('TSX rendering error:', errorMessage);
-        api.showMessage(`TSX Error: ${errorMessage}`, 'error');
-      }
-    });
+            {selectedDemo === 'users' && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-center text-gray-700">
+                  👥 Type-Safe User Cards
+                </h3>
+                {sampleUsers.map((user: User) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onEdit={(editUser: User) => {
+                      setStatus(`Editing user: ${editUser.name} (${editUser.role})`);
+                      setStatusType('info');
+                      console.log('Edit user with type safety:', editUser);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {selectedDemo === 'counter' && (
+              <div className="flex justify-center">
+                <AdvancedCounter initialValue={0} />
+              </div>
+            )}
+          </div>
+
+          {/* TypeScript機能の説明 */}
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h4 className="font-semibold text-gray-700 mb-2">🔍 TypeScript Features Demonstrated:</h4>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• <strong>Interface definitions</strong> - ButtonProps, User, CounterState</li>
+              <li>• <strong>Type unions</strong> - Role types ('admin' | 'user' | 'guest')</li>
+              <li>• <strong>Generic types</strong> - React.FC&lt;Props&gt;</li>
+              <li>• <strong>Optional properties</strong> - email?, size?, disabled?</li>
+              <li>• <strong>Type guards</strong> - Error handling with instanceof</li>
+              <li>• <strong>Strict typing</strong> - All function parameters and returns</li>
+            </ul>
+          </div>
+
+          {/* フッター */}
+          <div className="text-center text-xs text-gray-500 border-t pt-4">
+            <p>TypeScript + JSX Plugin | Complete type safety with new sidebar API</p>
+            <p className="mt-1">All components and functions are fully typed</p>
+          </div>
+        </div>
+      );
+    };
+
+    // サイドバーアイテムとして登録
+    api.addSidebarItem('📐', 'TypeScript', TypeScriptDemoComponent);
+    console.log('TypeScript JSX Advanced Plugin: Sidebar item registered with full type safety');
   },
 
   onUnload() {
@@ -507,7 +640,7 @@ export default {
   },
 
   onReload(api: LoveNotePluginAPI) {
-    console.log('TypeScript JSX Advanced Plugin reloaded with type safety');
+    console.log('TypeScript JSX Advanced Plugin reloaded with type safety and new API');
     this.onLoad(api);
   },
 };
