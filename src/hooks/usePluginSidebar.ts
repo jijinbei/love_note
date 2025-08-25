@@ -5,7 +5,9 @@ import { type SidebarItem } from '../components/Sidebar';
  * プラグインサイドバーアイテムを管理するカスタムフック
  */
 export function usePluginSidebar() {
-  const [pluginSidebarItems, setPluginSidebarItems] = useState<SidebarItem[]>([]);
+  const [pluginSidebarItems, setPluginSidebarItems] = useState<SidebarItem[]>(
+    []
+  );
 
   useEffect(() => {
     const updatePluginSidebarItems = () => {
@@ -16,9 +18,11 @@ export function usePluginSidebar() {
           label: item.label,
           onClick: () => {
             // カスタムイベントを発行してApp.tsxに通知
-            window.dispatchEvent(new CustomEvent('pluginViewRequested', {
-              detail: { viewId: `plugin:${item.id}` }
-            }));
+            window.dispatchEvent(
+              new CustomEvent('pluginViewRequested', {
+                detail: { viewId: `plugin:${item.id}` },
+              })
+            );
           },
         }));
         setPluginSidebarItems(mappedItems);
@@ -31,13 +35,17 @@ export function usePluginSidebar() {
     // プラグインビューマネージャーの変更を監視
     let unsubscribe: (() => void) | undefined;
     if (window.pluginViewManager) {
-      unsubscribe = window.pluginViewManager.addChangeListener(updatePluginSidebarItems);
+      unsubscribe = window.pluginViewManager.addChangeListener(
+        updatePluginSidebarItems
+      );
     }
 
     // 定期的にチェック（pluginViewManagerが後から利用可能になる場合に対応）TODO:bad code
     const interval = setInterval(() => {
       if (window.pluginViewManager && !unsubscribe) {
-        unsubscribe = window.pluginViewManager.addChangeListener(updatePluginSidebarItems);
+        unsubscribe = window.pluginViewManager.addChangeListener(
+          updatePluginSidebarItems
+        );
         updatePluginSidebarItems();
       }
     }, 1000);

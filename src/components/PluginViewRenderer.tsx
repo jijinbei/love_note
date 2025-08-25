@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface PluginViewRendererProps {
   currentView: string;
   onNavigateHome: () => void;
@@ -8,7 +6,10 @@ interface PluginViewRendererProps {
 /**
  * プラグインビューのレンダリング処理を担当するコンポーネント
  */
-export function PluginViewRenderer({ currentView, onNavigateHome }: PluginViewRendererProps) {
+export function PluginViewRenderer({
+  currentView,
+  onNavigateHome,
+}: PluginViewRendererProps) {
   // プラグインビューの表示
   if (currentView.startsWith('plugin:')) {
     const pluginViewId = currentView.replace('plugin:', '');

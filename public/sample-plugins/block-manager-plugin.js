@@ -357,7 +357,7 @@ export default {
     // サイドバーアイテムとして追加
     api.addSidebarItem('📦', 'Block Manager', BlockManagerUI);
 
-    // TODO: イベントリスナーのテストの実装 
+    // TODO: イベントリスナーのテストの実装
     pluginAPI.blocks.on('change', block => {
       console.log('Block changed:', block);
     });

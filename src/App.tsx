@@ -22,20 +22,28 @@ function App() {
     null
   );
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
-  
+
   // カスタムフックでプラグインサイドバーアイテムを取得
   const pluginSidebarItems = usePluginSidebar();
 
   // プラグインビューリクエストイベントの監視
   useEffect(() => {
-    const handlePluginViewRequest = (event: CustomEvent<{ viewId: string }>) => {
+    const handlePluginViewRequest = (
+      event: CustomEvent<{ viewId: string }>
+    ) => {
       setCurrentView(event.detail.viewId);
     };
 
-    window.addEventListener('pluginViewRequested', handlePluginViewRequest as EventListener);
+    window.addEventListener(
+      'pluginViewRequested',
+      handlePluginViewRequest as EventListener
+    );
 
     return () => {
-      window.removeEventListener('pluginViewRequested', handlePluginViewRequest as EventListener);
+      window.removeEventListener(
+        'pluginViewRequested',
+        handlePluginViewRequest as EventListener
+      );
     };
   }, []);
 
@@ -141,7 +149,7 @@ function App() {
                 onNavigateHome={() => setCurrentView('home')}
               />
             );
-            
+
             if (pluginView && currentView.startsWith('plugin:')) {
               return pluginView;
             }
