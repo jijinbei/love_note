@@ -62,6 +62,7 @@ love_note/
 3. After switching branches with schema changes
 
 This command:
+
 - Exports GraphQL schema to `src-tauri/schema.graphql`
 - Generates TypeScript types to `src/generated/graphql.ts`
 

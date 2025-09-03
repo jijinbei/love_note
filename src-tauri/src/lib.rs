@@ -76,6 +76,7 @@ async fn export_graphql_schema() -> Result<String, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_graphql::init_plugin())
         .setup(|app| {
             let handle = app.handle().clone();
 
