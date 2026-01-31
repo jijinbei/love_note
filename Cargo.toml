@@ -1,0 +1,10 @@
+[package]
+name = "love-note"
+version = "0.1.0"
+edition = "2024"
+authors = ["jijinbei"]
+description = "A collaborative block editor for researchers"
+license = "MIT"
+
+[dependencies]
+gpui = "0.2"
