@@ -2937,6 +2937,16 @@ name = "love-note"
 version = "0.1.0"
 dependencies = [
  "gpui",
+ "love-note-plugin-api",
+]
+
+[[package]]
+name = "love-note-plugin-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]

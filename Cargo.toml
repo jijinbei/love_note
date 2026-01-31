@@ -1,10 +1,20 @@
-[package]
-name = "love-note"
+[workspace]
+resolver = "2"
+members = [
+    "crates/love-note",
+    "crates/love-note-plugin-api",
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 authors = ["jijinbei"]
-description = "A collaborative block editor for researchers"
 license = "MIT"
 
-[dependencies]
+[workspace.dependencies]
 gpui = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4"] }
+thiserror = "2.0"
+anyhow = "1.0"

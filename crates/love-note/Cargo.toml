@@ -1,0 +1,11 @@
+[package]
+name = "love-note"
+description = "A collaborative block editor for researchers"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+gpui.workspace = true
+love-note-plugin-api = { path = "../love-note-plugin-api" }
