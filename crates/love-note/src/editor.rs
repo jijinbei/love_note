@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{
     button::{Button, ButtonVariants},
     Sizable,
@@ -85,6 +85,58 @@ impl LoveNote {
         cx.notify();
     }
 
+    fn remove_block(&mut self, index: usize, cx: &mut Context<Self>) {
+        if index < self.blocks.len() {
+            self.blocks.remove(index);
+            self.save_document(cx);
+            cx.notify();
+        }
+    }
+
+    fn render_block_row(
+        &self,
+        _index: usize,
+        block: &Block,
+        window: &Window,
+        cx: &App,
+    ) -> AnyElement {
+        block.render(window, cx)
+    }
+
+    /// Get the index of the currently focused block
+    fn focused_block_index(&self, window: &Window, cx: &App) -> Option<usize> {
+        self.blocks.iter().position(|block| {
+            let input_state = block.input.read(cx);
+            input_state.focus_handle(cx).is_focused(window)
+        })
+    }
+
+    fn render_toolbar(&self, focused_index: Option<usize>, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .absolute()
+            .top_2()
+            .right_2()
+            .flex()
+            .items_center()
+            .gap_1()
+            .px_2()
+            .py_1()
+            .bg(rgb(0x313244))
+            .rounded_md()
+            .shadow_md()
+            .when_some(focused_index, |this, index| {
+                this.child(
+                    Button::new(("delete", index))
+                        .label("🗑")
+                        .xsmall()
+                        .ghost()
+                        .on_click(cx.listener(move |this, _, _window, cx| {
+                            this.remove_block(index, cx);
+                        }))
+                )
+            })
+    }
+
     fn set_hovered_insert_line(&mut self, index: Option<usize>, cx: &mut Context<Self>) {
         if self.hovered_insert_line != index {
             self.hovered_insert_line = index;
@@ -156,6 +208,9 @@ impl Render for LoveNote {
         }
         self.had_focus = has_focus;
 
+        // Get focused block for toolbar
+        let focused_index = self.focused_block_index(window, cx);
+
         let mut children: Vec<AnyElement> = Vec::new();
 
         // Insert line at the very top (index 0)
@@ -163,7 +218,7 @@ impl Render for LoveNote {
 
         // Render blocks with insert lines between them
         for (i, block) in self.blocks.iter().enumerate() {
-            children.push(block.render(window, cx));
+            children.push(self.render_block_row(i, block, window, cx));
             // Insert line after each block
             children.push(self.render_insert_line(i + 1, cx));
         }
@@ -197,15 +252,18 @@ impl Render for LoveNote {
                             .child("Love Note"),
                     ),
             )
-            // Content area with blocks
+            // Content area with blocks and toolbar
             .child(
                 div()
+                    .relative()
                     .flex()
                     .flex_1()
                     .flex_col()
                     .p_4()
                     .gap_1()
-                    .children(children),
+                    .children(children)
+                    // Toolbar in top-right
+                    .child(self.render_toolbar(focused_index, cx)),
             )
     }
 }
