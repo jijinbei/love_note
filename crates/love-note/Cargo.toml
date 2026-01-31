@@ -11,3 +11,4 @@ gpui.workspace = true
 gpui-component.workspace = true
 gpui-component-assets.workspace = true
 love-note-plugin-api = { path = "../love-note-plugin-api" }
+uuid.workspace = true

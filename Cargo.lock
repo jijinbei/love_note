@@ -3190,6 +3190,7 @@ dependencies = [
  "gpui-component",
  "gpui-component-assets",
  "love-note-plugin-api",
+ "uuid",
 ]
 
 [[package]]
