@@ -1,23 +1,73 @@
+use std::sync::Arc;
+
 use gpui::*;
 use gpui_component::{
     button::{Button, ButtonVariants},
     Sizable,
 };
+use uuid::Uuid;
 
 use crate::block::{Block, BlockKind};
+use crate::storage::{Document, Storage};
 
 /// The main Love Note editor component
 pub struct LoveNote {
     blocks: Vec<Block>,
     hovered_insert_line: Option<usize>,
+    document_id: Uuid,
+    storage: Arc<Storage>,
+    /// Track if any block was previously focused (for auto-save on blur)
+    had_focus: bool,
 }
 
 impl LoveNote {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let first_block = BlockKind::Text.create_block(window, cx);
+    pub fn new(storage: Arc<Storage>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        // Load or create default document
+        let document = storage
+            .get_or_create_default()
+            .expect("Failed to load or create document");
+
+        let document_id = document.id;
+
+        // Convert stored blocks to UI blocks
+        let blocks: Vec<Block> = if document.blocks.is_empty() {
+            // Create a default text block if document is empty
+            vec![BlockKind::Text.create_block(window, cx)]
+        } else {
+            document
+                .blocks
+                .iter()
+                .map(|stored| Block::from_stored(stored, window, cx))
+                .collect()
+        };
+
         Self {
-            blocks: vec![first_block],
+            blocks,
             hovered_insert_line: None,
+            document_id,
+            storage,
+            had_focus: false,
+        }
+    }
+
+    /// Check if any block currently has focus
+    fn any_block_focused(&self, window: &Window, cx: &App) -> bool {
+        self.blocks.iter().any(|block| {
+            let input_state = block.input.read(cx);
+            input_state.focus_handle(cx).is_focused(window)
+        })
+    }
+
+    /// Save the current document to storage
+    fn save_document(&self, cx: &App) {
+        let stored_blocks: Vec<_> = self.blocks.iter().map(|b| b.to_stored(cx)).collect();
+
+        let mut document = Document::new("Untitled");
+        document.id = self.document_id;
+        document.blocks = stored_blocks;
+
+        if let Err(e) = self.storage.save_document(&document) {
+            eprintln!("Failed to save document: {}", e);
         }
     }
 
@@ -31,6 +81,7 @@ impl LoveNote {
         let new_block = kind.create_block(window, cx);
         self.blocks.insert(index, new_block);
         self.hovered_insert_line = None;
+        self.save_document(cx);
         cx.notify();
     }
 
@@ -97,6 +148,14 @@ impl LoveNote {
 
 impl Render for LoveNote {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Auto-save when focus leaves any block
+        let has_focus = self.any_block_focused(window, cx);
+        if self.had_focus && !has_focus {
+            // Focus just left a block, save the document
+            self.save_document(cx);
+        }
+        self.had_focus = has_focus;
+
         let mut children: Vec<AnyElement> = Vec::new();
 
         // Insert line at the very top (index 0)
@@ -115,6 +174,13 @@ impl Render for LoveNote {
             .size_full()
             .bg(rgb(0x1e1e2e))
             .text_color(rgb(0xcdd6f4))
+            .on_key_down(cx.listener(|this, event: &KeyDownEvent, _window, cx| {
+                // Handle Ctrl+S for save
+                if event.keystroke.modifiers.control && event.keystroke.key == "s" {
+                    this.save_document(cx);
+                    println!("Document saved!");
+                }
+            }))
             // Title bar
             .child(
                 div()

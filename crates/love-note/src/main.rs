@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use gpui::*;
 use gpui_component::{
     theme::{Theme, ThemeMode},
     Root,
 };
-use love_note::LoveNote;
+use love_note::{LoveNote, Storage};
 
 fn main() {
     Application::new()
@@ -12,6 +14,11 @@ fn main() {
             gpui_component::init(cx);
             // Force dark mode
             Theme::change(ThemeMode::Dark, None, cx);
+
+            // Initialize storage
+            let storage = Arc::new(
+                Storage::open().expect("Failed to open database")
+            );
 
             let bounds = Bounds::centered(None, size(px(1200.0), px(800.0)), cx);
             cx.open_window(
@@ -24,7 +31,8 @@ fn main() {
                     ..Default::default()
                 },
                 |window, cx| {
-                    let view = cx.new(|cx| LoveNote::new(window, cx));
+                    let storage = storage.clone();
+                    let view = cx.new(|cx| LoveNote::new(storage, window, cx));
                     cx.new(|cx| Root::new(view, window, cx))
                 },
             )

@@ -12,3 +12,9 @@ gpui-component.workspace = true
 gpui-component-assets.workspace = true
 love-note-plugin-api = { path = "../love-note-plugin-api" }
 uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+redb.workspace = true
+chrono.workspace = true
+directories.workspace = true
+anyhow.workspace = true

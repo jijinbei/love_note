@@ -19,6 +19,16 @@ cargo test     # Test
 3. **Ask**: If unsure about design or implementation, ask immediately.
 4. **Style**: Prefer functional style in Rust (not mandatory, choose what's optimal).
 
+## Debugging
+
+### Database Reset
+
+Delete the redb database to start fresh:
+
+```bash
+rm -rf ~/.local/share/lovenote/documents.redb
+```
+
 ## Architecture
 
 See `docs/architecture-v2.md` for details.

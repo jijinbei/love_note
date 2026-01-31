@@ -4,6 +4,8 @@
 
 pub mod block;
 pub mod editor;
+pub mod storage;
 
 pub use block::{Block, BlockContent, BlockKind, HeadingBlock, TextBlock};
 pub use editor::LoveNote;
+pub use storage::{Document, Storage, StoredBlock};
