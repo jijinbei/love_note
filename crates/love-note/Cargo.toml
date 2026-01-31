@@ -8,4 +8,6 @@ license.workspace = true
 
 [dependencies]
 gpui.workspace = true
+gpui-component.workspace = true
+gpui-component-assets.workspace = true
 love-note-plugin-api = { path = "../love-note-plugin-api" }

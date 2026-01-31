@@ -1,11 +1,23 @@
 use gpui::*;
+use gpui_component::{
+    input::{Input, InputState},
+    Root,
+};
 
 // TODO: GPUI Wayland support on GNOME is not working properly.
-//       Currently requires X11 mode: WAYLAND_DISPLAY="" cargo run
-//       See: https://github.com/zed-industries/zed/issues/37918
+//       Use x11 feature only for now.
 
 struct LoveNote {
-    title: SharedString,
+    text_input: Entity<InputState>,
+}
+
+impl LoveNote {
+    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let text_input = cx.new(|cx| {
+            InputState::new(window, cx).placeholder("Type something here...")
+        });
+        Self { text_input }
+    }
 }
 
 impl Render for LoveNote {
@@ -37,39 +49,39 @@ impl Render for LoveNote {
                     .flex()
                     .flex_1()
                     .flex_col()
-                    .justify_center()
-                    .items_center()
+                    .p_4()
                     .gap_4()
                     .child(
                         div()
-                            .text_3xl()
-                            .child(format!("Welcome to {}", self.title)),
+                            .text_xl()
+                            .child("Text Block Demo"),
                     )
-                    .child(
-                        div()
-                            .text_sm()
-                            .text_color(rgb(0x6c7086))
-                            .child("A collaborative block editor for researchers"),
-                    ),
+                    .child(Input::new(&self.text_input)),
             )
     }
 }
 
 fn main() {
-    Application::new().run(|cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(600.0), px(400.0)), cx);
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                is_minimizable: true,
-                is_movable: true,
-                is_resizable: true,
-                window_min_size: Some(size(px(400.0), px(300.0))),
-                window_decorations: Some(WindowDecorations::Server),
-                ..Default::default()
-            },
-            |_, cx| cx.new(|_| LoveNote { title: "Love Note".into() }),
-        )
-        .unwrap();
-    });
+    Application::new()
+        .with_assets(gpui_component_assets::Assets)
+        .run(|cx: &mut App| {
+            gpui_component::init(cx);
+
+            let bounds = Bounds::centered(None, size(px(600.0), px(400.0)), cx);
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(bounds)),
+                    is_minimizable: true,
+                    is_movable: true,
+                    is_resizable: true,
+                    window_min_size: Some(size(px(400.0), px(300.0))),
+                    ..Default::default()
+                },
+                |window, cx| {
+                    let view = cx.new(|cx| LoveNote::new(window, cx));
+                    cx.new(|cx| Root::new(view, window, cx))
+                },
+            )
+            .unwrap();
+        });
 }
