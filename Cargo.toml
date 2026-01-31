@@ -12,7 +12,7 @@ authors = ["jijinbei"]
 license = "MIT"
 
 [workspace.dependencies]
-gpui = "0.2"
+gpui = { git = "https://github.com/zed-industries/zed", branch = "main", default-features = false, features = ["x11"] } # TODO: switch Wayland when supported
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4"] }
