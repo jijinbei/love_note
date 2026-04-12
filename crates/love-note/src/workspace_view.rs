@@ -120,22 +120,68 @@ impl Render for WorkspaceView {
                             .child("Love Note"),
                     )
                     .child(
+                        // Window control buttons
                         div()
-                            .id("close-btn")
-                            .w(px(28.0))
-                            .h(px(20.0))
                             .flex()
-                            .items_center()
-                            .justify_center()
-                            .rounded_sm()
-                            .cursor_pointer()
-                            .text_sm()
-                            .text_color(rgb(0x888888))
-                            .hover(|s| s.bg(rgb(0xcc4444)).text_color(rgb(0xffffff)))
-                            .child("x")
-                            .on_click(cx.listener(|_this, _event, _window, cx| {
-                                cx.quit();
-                            })),
+                            .flex_row()
+                            .gap_1()
+                            .child(
+                                // Minimize button
+                                div()
+                                    .id("minimize-btn")
+                                    .w(px(28.0))
+                                    .h(px(20.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded_sm()
+                                    .cursor_pointer()
+                                    .text_xs()
+                                    .text_color(rgb(0x888888))
+                                    .hover(|s| s.bg(rgb(0x444466)).text_color(rgb(0xffffff)))
+                                    .child("\u{2014}") // — (em dash, standard minimize icon)
+                                    .on_click(|_event, window, _cx| {
+                                        window.minimize_window();
+                                    }),
+                            )
+                            .child(
+                                // Maximize button
+                                div()
+                                    .id("maximize-btn")
+                                    .w(px(28.0))
+                                    .h(px(20.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded_sm()
+                                    .cursor_pointer()
+                                    .text_xs()
+                                    .text_color(rgb(0x888888))
+                                    .hover(|s| s.bg(rgb(0x444466)).text_color(rgb(0xffffff)))
+                                    .child("\u{25a1}") // □ (white square, standard maximize icon)
+                                    .on_click(|_event, window, _cx| {
+                                        window.zoom_window();
+                                    }),
+                            )
+                            .child(
+                                // Close button
+                                div()
+                                    .id("close-btn")
+                                    .w(px(28.0))
+                                    .h(px(20.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded_sm()
+                                    .cursor_pointer()
+                                    .text_sm()
+                                    .text_color(rgb(0x888888))
+                                    .hover(|s| s.bg(rgb(0xcc4444)).text_color(rgb(0xffffff)))
+                                    .child("x")
+                                    .on_click(cx.listener(|_this, _event, _window, cx| {
+                                        cx.quit();
+                                    })),
+                            ),
                     ),
             )
             .child(
