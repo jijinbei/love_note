@@ -41,18 +41,18 @@ fn snippet_image(filename: &str) -> String {
 }
 
 fn snippet_csv(filename: &str) -> String {
+    let var = safe_var_name(filename);
     format!(
         r#"#let {var} = csv("{filename}")
 
-#figure(
-  table(
-    columns: {var}.first().len(),
-    ..{var}.flatten().map(c => [#c]),
-  ),
-  caption: [{filename}],
+#table(
+  columns: {var}.first().len(),
+  // Header row (bold)
+  ..{var}.first().map(h => [*#h*]),
+  // Data rows
+  ..{var}.slice(1).flatten().map(c => [#c]),
 )
-"#,
-        var = safe_var_name(filename),
+"#
     )
 }
 
