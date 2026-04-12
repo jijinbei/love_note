@@ -29,6 +29,8 @@ pub struct ExperimentList {
     rename_input: Option<Entity<InputState>>,
     /// Slug that was right-clicked (for context menu target).
     context_menu_slug: Option<String>,
+    /// File that was right-clicked (experiment_slug, filename).
+    context_menu_file: Option<(String, String)>,
 }
 
 impl ExperimentList {
@@ -41,6 +43,7 @@ impl ExperimentList {
             renaming_slug: None,
             rename_input: None,
             context_menu_slug: None,
+            context_menu_file: None,
         }
     }
 
@@ -232,26 +235,43 @@ impl Render for ExperimentList {
 
                     for file in &files {
                         let icon = if file.is_image { "\u{1f5bc}" } else { "\u{1f4c4}" };
-                        file_list = file_list.child(
-                            div()
-                                .text_xs()
-                                .text_color(rgb(0x777799))
-                                .flex()
-                                .items_center()
-                                .gap_1()
-                                .child(icon)
-                                .child(
-                                    div()
-                                        .text_ellipsis()
-                                        .overflow_hidden()
-                                        .child(file.filename.clone()),
-                                )
-                                .child(
-                                    div()
-                                        .text_color(rgb(0x555555))
-                                        .child(file.size_display()),
-                                ),
-                        );
+                        let file_slug = slug.clone();
+                        let file_name = file.filename.clone();
+
+                        let file_row = div()
+                            .id(ElementId::Name(format!("file-{}", file.filename).into()))
+                            .text_xs()
+                            .text_color(rgb(0x777799))
+                            .flex()
+                            .items_center()
+                            .gap_1()
+                            .py_px()
+                            .rounded_sm()
+                            .hover(|s| s.bg(rgb(0x2a2a3a)))
+                            .child(icon)
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .text_ellipsis()
+                                    .overflow_hidden()
+                                    .child(file.filename.clone()),
+                            )
+                            .child(
+                                div()
+                                    .text_color(rgb(0x555555))
+                                    .child(file.size_display()),
+                            )
+                            .on_mouse_down(
+                                MouseButton::Right,
+                                cx.listener(move |this, _event: &MouseDownEvent, _window, _cx| {
+                                    this.context_menu_file = Some((file_slug.clone(), file_name.clone()));
+                                }),
+                            )
+                            .context_menu(move |menu, _window, _cx| {
+                                menu.menu("Delete", DeleteFile.boxed_clone())
+                            });
+
+                        file_list = file_list.child(file_row);
                     }
 
                     list = list.child(file_list);
@@ -278,6 +298,15 @@ impl Render for ExperimentList {
             .on_action(cx.listener(|this, _action: &CancelRename, _window, cx| {
                 this.cancel_rename();
                 cx.notify();
+            }))
+            .on_action(cx.listener(|this, _action: &DeleteFile, _window, cx| {
+                if let Some((ref exp_slug, ref filename)) = this.context_menu_file.take() {
+                    match this.workspace.delete_file(exp_slug, filename) {
+                        Ok(()) => tracing::info!(file = %filename, "File deleted"),
+                        Err(e) => tracing::error!(error = %e, "Failed to delete file"),
+                    }
+                    cx.notify();
+                }
             }))
             .child(
                 div()
@@ -321,7 +350,7 @@ impl Render for ExperimentList {
     }
 }
 
-actions!(experiment_list, [StartRename, ConfirmRename, CancelRename]);
+actions!(experiment_list, [StartRename, ConfirmRename, CancelRename, DeleteFile]);
 
 pub fn init(cx: &mut App) {
     cx.bind_keys([

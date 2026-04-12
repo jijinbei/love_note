@@ -1,4 +1,5 @@
 use chrono::{Datelike, Timelike};
+use std::path::PathBuf;
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Bytes, Datetime};
 use typst::syntax::{FileId, Source, VirtualPath};
@@ -10,12 +11,14 @@ use typst_kit::fonts::{FontSearcher, FontSlot, Fonts};
 /// A minimal World implementation for Love Note.
 ///
 /// Manages the main Typst source, fonts, and the standard library.
-/// File resolution (for #import and #image) will be extended in later phases.
+/// Resolves file references (images, CSV) relative to the experiment directory.
 pub struct LoveNoteWorld {
     main_source: Source,
     library: LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Vec<FontSlot>,
+    /// The directory containing the current experiment's files.
+    root_dir: Option<PathBuf>,
 }
 
 impl LoveNoteWorld {
@@ -35,12 +38,27 @@ impl LoveNoteWorld {
             library: LazyHash::new(Library::default()),
             book: LazyHash::new(book),
             fonts,
+            root_dir: None,
         }
+    }
+
+    /// Set the root directory for file resolution.
+    pub fn set_root_dir(&mut self, dir: PathBuf) {
+        self.root_dir = Some(dir);
     }
 
     /// Update the source text (for incremental compilation).
     pub fn set_source(&mut self, text: &str) {
         self.main_source.replace(text);
+    }
+
+    /// Resolve a virtual path to a real file path.
+    fn resolve_path(&self, id: FileId) -> Option<PathBuf> {
+        let root = self.root_dir.as_ref()?;
+        let vpath = id.vpath().as_rooted_path();
+        // Strip the leading "/" from the rooted path
+        let relative = vpath.strip_prefix("/").unwrap_or(vpath);
+        Some(root.join(relative))
     }
 }
 
@@ -66,6 +84,13 @@ impl World for LoveNoteWorld {
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
+        if let Some(path) = self.resolve_path(id) {
+            if path.exists() {
+                let data = std::fs::read(&path)
+                    .map_err(|_| FileError::AccessDenied)?;
+                return Ok(Bytes::new(data));
+            }
+        }
         Err(FileError::NotFound(id.vpath().as_rooted_path().into()))
     }
 

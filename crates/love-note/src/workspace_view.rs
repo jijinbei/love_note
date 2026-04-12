@@ -34,6 +34,7 @@ impl WorkspaceView {
 
         // When sidebar changes (selection or new experiment), load the selected experiment
         let editor_handle = editor.clone();
+        let preview_for_sidebar = preview.clone();
         let ws = workspace.clone();
         let last_slug: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);
         cx.observe(&sidebar, move |_this, sidebar, cx| {
@@ -44,9 +45,14 @@ impl WorkspaceView {
                     *last = Some(slug.clone());
                     if let Ok(content) = ws.read_experiment(slug) {
                         let slug_owned = slug.clone();
+                        let root_dir = ws.root_dir().join(slug);
                         editor_handle.update(cx, |editor, _cx| {
                             editor.set_content(&content);
                             editor.set_current_experiment(slug_owned);
+                        });
+                        preview_for_sidebar.update(cx, |preview, cx| {
+                            preview.set_root_dir(root_dir);
+                            cx.notify();
                         });
                     }
                 }
@@ -80,9 +86,14 @@ impl WorkspaceView {
             if let Some(first) = experiments.first() {
                 let slug = first.slug.clone();
                 if let Ok(content) = workspace.read_experiment(&slug) {
+                    let root_dir = workspace.root_dir().join(&slug);
                     editor.update(cx, |editor, _cx| {
                         editor.set_content(&content);
                         editor.set_current_experiment(slug.clone());
+                    });
+                    preview.update(cx, |preview, cx| {
+                        preview.set_root_dir(root_dir);
+                        cx.notify();
                     });
                 }
                 sidebar.update(cx, |list, _cx| {

@@ -35,6 +35,15 @@ impl ExperimentFile {
     }
 }
 
+impl ExperimentFile {
+    /// Get the file extension, lowercase.
+    pub fn extension(&self) -> Option<String> {
+        self.path.extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_lowercase())
+    }
+}
+
 /// Manages the workspace directory containing experiment folders.
 pub struct Workspace {
     root_dir: PathBuf,
@@ -250,6 +259,31 @@ impl Workspace {
         let final_name = dest.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
         tracing::info!(file = %final_name, experiment = dir_name, "File added to experiment");
         Ok(final_name)
+    }
+
+    /// Delete a file from an experiment directory.
+    pub fn delete_file(&self, dir_name: &str, filename: &str) -> Result<()> {
+        let file_path = self.root_dir.join(dir_name).join(filename);
+        if file_path.exists() {
+            fs::remove_file(&file_path)
+                .with_context(|| format!("Failed to delete {}", file_path.display()))?;
+            tracing::info!(file = filename, experiment = dir_name, "File deleted");
+        }
+        Ok(())
+    }
+
+    /// Rename a file in an experiment directory.
+    pub fn rename_file(&self, dir_name: &str, old_name: &str, new_name: &str) -> Result<String> {
+        let old_path = self.root_dir.join(dir_name).join(old_name);
+        let new_path = self.root_dir.join(dir_name).join(new_name);
+        anyhow::ensure!(old_path.exists(), "File not found: {}", old_name);
+        anyhow::ensure!(!new_path.exists(), "File already exists: {}", new_name);
+
+        fs::rename(&old_path, &new_path)
+            .with_context(|| format!("Failed to rename {} to {}", old_name, new_name))?;
+
+        tracing::info!(old = old_name, new = new_name, "File renamed");
+        Ok(new_name.to_string())
     }
 
     /// Delete an experiment directory and all its contents.
