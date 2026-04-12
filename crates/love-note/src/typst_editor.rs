@@ -79,7 +79,7 @@ impl TypstEditor {
         self.document.content = content.clone();
         self.document.updated_at = chrono::Utc::now();
 
-        // Save to redb
+        // Save to redb (documents table)
         match self.storage.save_document(&self.document) {
             Ok(()) => tracing::debug!(doc_id = %self.document.id, "Document saved to redb"),
             Err(e) => tracing::error!(error = %e, "Failed to save to redb"),
@@ -88,9 +88,25 @@ impl TypstEditor {
         // Save to workspace .typ file
         if let Some(ref exp) = self.current_experiment {
             match self.workspace.write_experiment(exp, &content) {
-                Ok(()) => tracing::info!(experiment = %exp, "Saved to .typ file"),
+                Ok(()) => tracing::debug!(experiment = %exp, "Saved to .typ file"),
                 Err(e) => tracing::error!(error = %e, "Failed to save .typ file"),
             }
+        }
+
+        // Create revision (hash chain)
+        match self.storage.create_revision(
+            self.document.id,
+            content,
+            self.document.frontmatter.clone(),
+            "local_user".to_string(),
+            "Manual save (Ctrl+S)".to_string(),
+        ) {
+            Ok(rev) => tracing::info!(
+                seq = rev.sequence,
+                doc_id = %self.document.id,
+                "Revision created"
+            ),
+            Err(e) => tracing::error!(error = %e, "Failed to create revision"),
         }
     }
 }
