@@ -144,42 +144,42 @@
 ## Phase 4: ハッシュチェーン・リビジョン
 
 ### 4.1 Revision データモデル
-- [ ] `src/storage/revision.rs` を作成
-- [ ] `Revision` 構造体: hash, prev_hash, sequence, doc_id, content, frontmatter, author, timestamp, tsa_token, change_summary
-- [ ] `ChainStatus` enum: Valid, Tampered { seq }, BrokenChain { seq }
-- [ ] Serialize/Deserialize を derive
+- [x] `src/storage/revision.rs` を作成
+- [x] `Revision` 構造体: hash, prev_hash, sequence, doc_id, content, frontmatter, author, timestamp, tsa_token, change_summary
+- [x] `ChainStatus` enum: Valid, Tampered { seq }, BrokenChain { seq }
+- [x] Serialize/Deserialize を derive
 
 ### 4.2 ハッシュ計算
-- [ ] `Cargo.toml` に `sha2` 追加（typst が依存していなければ）
-- [ ] `compute_hash(rev: &Revision) -> [u8; 32]` 関数
-- [ ] prev_hash + doc_id + sequence + content + author + timestamp を連結して SHA-256
-- [ ] テスト: 同一入力で同一ハッシュ
-- [ ] テスト: 1バイトでも変わればハッシュが変わる
+- [x] `Cargo.toml` に `sha2` 追加
+- [x] `compute_hash(rev: &Revision) -> [u8; 32]` 関数
+- [x] prev_hash + doc_id + sequence + content + author + timestamp を連結して SHA-256
+- [x] テスト: 同一入力で同一ハッシュ
+- [x] テスト: 1バイトでも変わればハッシュが変わる
 
 ### 4.3 リビジョン Storage
-- [ ] `redb_store.rs` に `REVISIONS_TABLE`, `REVISION_INDEX_TABLE` 追加
-- [ ] `create_revision(doc_id, content, author) -> Revision` — prev_hash をチェーンの末尾から取得
-- [ ] `load_revision(hash: [u8; 32]) -> Option<Revision>`
-- [ ] `list_revisions(doc_id: Uuid) -> Vec<Revision>` — sequence 順
-- [ ] `get_latest_revision(doc_id: Uuid) -> Option<Revision>`
+- [x] `redb_store.rs` に `REVISIONS_TABLE`, `REVISION_INDEX_TABLE` 追加
+- [x] `create_revision(doc_id, content, author) -> Revision` — prev_hash をチェーンの末尾から取得
+- [x] `load_revision(hash: [u8; 32]) -> Option<Revision>`
+- [x] `list_revisions(doc_id: Uuid) -> Vec<Revision>` — sequence 順
+- [x] `get_latest_revision(doc_id: Uuid) -> Option<Revision>`
 
 ### 4.4 チェーン検証
-- [ ] `verify_chain(doc_id: Uuid) -> ChainStatus` 関数
-- [ ] 全リビジョンを sequence 順に走査 → 各 hash を再計算 → prev_hash の連続性を検証
-- [ ] テスト: 10件のリビジョンチェーン → Valid
-- [ ] テスト: 中間リビジョンの content を改ざん → Tampered { seq: N }
-- [ ] テスト: prev_hash を不正な値に変更 → BrokenChain { seq: N }
+- [x] `verify_chain(doc_id: Uuid) -> ChainStatus` 関数
+- [x] 全リビジョンを sequence 順に走査 → 各 hash を再計算 → prev_hash の連続性を検証
+- [x] テスト: 10件のリビジョンチェーン → Valid
+- [x] テスト: 中間リビジョンの content を改ざん → Tampered { seq: N }
+- [x] テスト: prev_hash を不正な値に変更 → BrokenChain { seq: N }
 
 ### 4.5 リビジョン作成トリガー
-- [ ] `typst_editor.rs`: Ctrl+S でリビジョン作成
+- [x] `typst_editor.rs`: Ctrl+S でリビジョン作成
 - [ ] 5分間非アクティブでリビジョン作成（タイマー）
 - [ ] アプリ終了時にリビジョン作成（未保存の変更があれば）
-- [ ] `tracing::info!("Revision created", seq = rev.sequence)` ログ
+- [x] `tracing::info!("Revision created", seq = rev.sequence)` ログ
 - [ ] 検証: Ctrl+S 数回 → `storage-inspector` でリビジョン一覧確認
 
 ### 4.6 storage-inspector のリビジョン対応
-- [ ] storage-inspector にリビジョン一覧表示を追加
-- [ ] ハッシュチェーン検証結果を表示
+- [x] storage-inspector にリビジョン一覧表示を追加
+- [x] ハッシュチェーン検証結果を表示
 - [ ] 検証: `cargo run --bin storage-inspector -- --verify` でチェーン検証
 
 ---
