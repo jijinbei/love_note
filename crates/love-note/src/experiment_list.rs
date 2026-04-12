@@ -138,27 +138,51 @@ impl ExperimentList {
 
     /// Start inline rename for a file.
     fn start_file_rename(&mut self, exp_slug: &str, filename: &str, window: &mut Window, cx: &mut Context<Self>) {
+        // Show only the stem (without extension) in the input
+        let stem = std::path::Path::new(filename)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or(filename)
+            .to_string();
+
         let input = cx.new(|cx| {
             let mut state = InputState::new(window, cx)
                 .placeholder("New filename...");
-            state.set_value(filename.to_string(), window, cx);
+            state.set_value(stem, window, cx);
             state
         });
         self.renaming_file = Some((exp_slug.to_string(), filename.to_string()));
         self.rename_file_input = Some(input);
     }
 
-    /// Commit the file rename.
+    /// Commit the file rename. Preserves the original extension.
     fn commit_file_rename(&mut self, cx: &mut Context<Self>) {
         let Some((exp_slug, old_name)) = self.renaming_file.take() else { return };
         let Some(input) = self.rename_file_input.take() else { return };
 
-        let new_name = input.read(cx).value().to_string();
-        if new_name.trim().is_empty() || new_name.trim() == old_name {
+        let new_stem = input.read(cx).value().to_string();
+        let new_stem = new_stem.trim();
+        if new_stem.is_empty() {
             return;
         }
 
-        match self.workspace.rename_file(&exp_slug, &old_name, new_name.trim()) {
+        // Preserve the original extension
+        let ext = std::path::Path::new(&old_name)
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+
+        let new_name = if ext.is_empty() {
+            new_stem.to_string()
+        } else {
+            format!("{}.{}", new_stem, ext)
+        };
+
+        if new_name == old_name {
+            return;
+        }
+
+        match self.workspace.rename_file(&exp_slug, &old_name, &new_name) {
             Ok(new) => tracing::info!(old = %old_name, new = %new, "File renamed"),
             Err(e) => tracing::error!(error = %e, "Failed to rename file"),
         }
