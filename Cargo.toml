@@ -31,3 +31,5 @@ typst-kit = { version = "0.14", features = ["embed-fonts"] }
 comemo = "0.4"
 image = "0.25"
 sha2 = "0.10"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"

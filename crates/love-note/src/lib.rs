@@ -1,3 +1,4 @@
+pub mod crypto;
 pub mod experiment_list;
 pub mod preview;
 pub mod storage;
