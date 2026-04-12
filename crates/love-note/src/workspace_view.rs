@@ -253,8 +253,46 @@ impl Render for WorkspaceView {
                             .child(self.preview.clone()),
                     ),
             )
-            .child(
+            .child({
                 // Status bar
+                let is_dirty = self.editor.read(cx).is_dirty(cx);
+                let experiment_name = self.editor.read(cx)
+                    .current_experiment()
+                    .map(|s| s.to_string())
+                    .unwrap_or_default();
+
+                let save_indicator = if is_dirty {
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_1()
+                        .child(
+                            div()
+                                .w(px(8.0))
+                                .h(px(8.0))
+                                .rounded_full()
+                                .bg(rgb(0xeeaa44)),
+                        )
+                        .child("Unsaved changes")
+                        .text_color(rgb(0xeeaa44))
+                        .into_any_element()
+                } else {
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_1()
+                        .child(
+                            div()
+                                .w(px(8.0))
+                                .h(px(8.0))
+                                .rounded_full()
+                                .bg(rgb(0x44aa66)),
+                        )
+                        .child("Saved")
+                        .text_color(rgb(0x44aa66))
+                        .into_any_element()
+                };
+
                 div()
                     .h(px(28.0))
                     .w_full()
@@ -268,9 +306,25 @@ impl Render for WorkspaceView {
                     .text_size(px(12.0))
                     .text_color(rgb(0x888888))
                     .child(
-                        div().child(self.status_message.clone()),
+                        // Left: save indicator + experiment name
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_3()
+                            .child(save_indicator)
+                            .child(
+                                div()
+                                    .text_color(rgb(0x888888))
+                                    .child(experiment_name),
+                            )
+                            .child(
+                                div()
+                                    .text_color(rgb(0x666666))
+                                    .child(self.status_message.clone()),
+                            ),
                     )
                     .child(
+                        // Right: Export PDF button
                         div()
                             .id("export-pdf-btn")
                             .px_2()
@@ -282,7 +336,7 @@ impl Render for WorkspaceView {
                             .on_click(cx.listener(|this, _event, _window, cx| {
                                 this.export_current_pdf(cx);
                             })),
-                    ),
-            )
+                    )
+            })
     }
 }

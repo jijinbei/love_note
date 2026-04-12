@@ -15,6 +15,8 @@ pub struct TypstEditor {
     current_experiment: Option<String>,
     /// Content to apply on next render (when we don't have Window access)
     pending_content: Option<String>,
+    /// Content at the time of last save (to detect unsaved changes)
+    last_saved_content: String,
 }
 
 impl TypstEditor {
@@ -29,6 +31,7 @@ impl TypstEditor {
             .expect("Failed to load document");
 
         let content = document.content.clone();
+        let last_saved = content.clone();
         let input = cx.new(|cx| {
             let mut state = InputState::new(window, cx)
                 .multi_line(true)
@@ -53,6 +56,7 @@ impl TypstEditor {
             workspace,
             current_experiment: None,
             pending_content: None,
+            last_saved_content: last_saved,
         }
     }
 
@@ -61,11 +65,18 @@ impl TypstEditor {
         self.input.read(cx).value().to_string()
     }
 
+    /// Whether the editor has unsaved changes.
+    pub fn is_dirty(&self, cx: &App) -> bool {
+        let current = self.input.read(cx).value();
+        current.as_ref() != self.last_saved_content.as_str()
+    }
+
     /// Set the editor content directly (without Window access).
     /// Content will be applied on the next render cycle.
     pub fn set_content(&mut self, content: &str) {
         self.document.content = content.to_string();
         self.pending_content = Some(content.to_string());
+        self.last_saved_content = content.to_string();
     }
 
     /// Get the current experiment slug.
@@ -83,6 +94,7 @@ impl TypstEditor {
         let content = self.input.read(cx).value().to_string();
         self.document.content = content.clone();
         self.document.updated_at = chrono::Utc::now();
+        self.last_saved_content = content.clone();
 
         // Save to redb (documents table)
         match self.storage.save_document(&self.document) {
@@ -113,6 +125,8 @@ impl TypstEditor {
             ),
             Err(e) => tracing::error!(error = %e, "Failed to create revision"),
         }
+
+        cx.notify();
     }
 }
 
