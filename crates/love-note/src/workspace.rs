@@ -144,6 +144,52 @@ impl Workspace {
         fs::write(&main_typ, content)
             .with_context(|| format!("Failed to write {}", main_typ.display()))
     }
+
+    /// Delete an experiment directory and all its contents.
+    pub fn delete_experiment(&self, dir_name: &str) -> Result<()> {
+        let dir_path = self.root_dir.join(dir_name);
+        if dir_path.exists() {
+            fs::remove_dir_all(&dir_path)
+                .with_context(|| format!("Failed to delete {}", dir_path.display()))?;
+            tracing::info!(path = %dir_path.display(), "Experiment deleted");
+        }
+        Ok(())
+    }
+
+    /// Rename an experiment directory.
+    /// Keeps the date prefix and changes only the slug part.
+    /// Returns the new directory name.
+    pub fn rename_experiment(&self, old_dir_name: &str, new_name: &str) -> Result<String> {
+        let old_path = self.root_dir.join(old_dir_name);
+        anyhow::ensure!(old_path.exists(), "Experiment not found: {}", old_dir_name);
+
+        // Preserve the date prefix (first 10 characters + underscore)
+        let date_prefix = if old_dir_name.len() >= 11 {
+            &old_dir_name[..11]
+        } else {
+            ""
+        };
+
+        let new_slug = to_slug(new_name);
+        let new_dir_name = if date_prefix.is_empty() {
+            new_slug
+        } else {
+            format!("{}{}", date_prefix, new_slug)
+        };
+
+        if new_dir_name == old_dir_name {
+            return Ok(new_dir_name);
+        }
+
+        let new_path = self.root_dir.join(&new_dir_name);
+        anyhow::ensure!(!new_path.exists(), "Directory already exists: {}", new_dir_name);
+
+        fs::rename(&old_path, &new_path)
+            .with_context(|| format!("Failed to rename {} to {}", old_path.display(), new_path.display()))?;
+
+        tracing::info!(old = old_dir_name, new = %new_dir_name, "Experiment renamed");
+        Ok(new_dir_name)
+    }
 }
 
 /// Convert a name to a URL-safe slug.

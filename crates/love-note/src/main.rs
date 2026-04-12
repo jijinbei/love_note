@@ -20,6 +20,7 @@ fn main() {
         .run(|cx: &mut App| {
             gpui_component::init(cx);
             love_note::typst_editor::init(cx);
+            love_note::experiment_list::init(cx);
             Theme::change(ThemeMode::Dark, None, cx);
 
             let storage = Arc::new(
