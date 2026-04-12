@@ -226,6 +226,7 @@ impl Render for WorkspaceView {
                     .flex_1()
                     .flex()
                     .flex_row()
+                    .overflow_hidden()
                     .child(
                         div()
                             .w(px(200.0))
@@ -295,6 +296,7 @@ impl Render for WorkspaceView {
 
                 div()
                     .h(px(28.0))
+                    .flex_shrink_0()
                     .w_full()
                     .px_4()
                     .flex()
