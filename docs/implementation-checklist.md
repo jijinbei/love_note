@@ -20,55 +20,55 @@
 - [x] 検証: `cargo build` が通る
 
 ### 0.2 tracing 導入
-- [ ] `Cargo.toml`（ワークスペース）に `tracing`, `tracing-subscriber` を追加
-- [ ] `crates/love-note/Cargo.toml` に tracing 依存を追加
-- [ ] `main.rs` で `tracing_subscriber::init()` を `Application::new()` の前に呼ぶ
-- [ ] 検証: `RUST_LOG=love_note=debug cargo run` でログ出力確認
+- [x] `Cargo.toml`（ワークスペース）に `tracing`, `tracing-subscriber` を追加
+- [x] `crates/love-note/Cargo.toml` に tracing 依存を追加
+- [x] `main.rs` で `tracing_subscriber::init()` を `Application::new()` の前に呼ぶ
+- [x] 検証: `RUST_LOG=love_note=debug cargo run` でログ出力確認
 
 ### 0.3 新ドキュメントモデル + Storage
-- [ ] `src/storage/document.rs` を新規作成 — `TypstDocument` 構造体（id, title, content, frontmatter, locked, locked_by, created_at, updated_at）
-- [ ] `src/storage/mod.rs` に re-export 追加
-- [ ] `src/storage/redb_store.rs` を書き直し — TypstDocument 用の CRUD メソッド
-- [ ] `Storage::open_at(path: PathBuf)` メソッド追加（テスト用に任意パスを指定可能）
-- [ ] 既存の `Storage::open()` を `open_at` のラッパーに
+- [x] `src/storage/document.rs` を新規作成 — `TypstDocument` 構造体（id, title, content, frontmatter, locked, locked_by, created_at, updated_at）
+- [x] `src/storage/mod.rs` に re-export 追加
+- [x] `src/storage/redb_store.rs` を書き直し — TypstDocument 用の CRUD メソッド
+- [x] `Storage::open_at(path: PathBuf)` メソッド追加（テスト用に任意パスを指定可能）
+- [x] 既存の `Storage::open()` を `open_at` のラッパーに
 
 ### 0.4 Storage テスト
-- [ ] `Cargo.toml`（love-note）に `tempfile` を dev-dependency として追加
-- [ ] `crates/love-note/tests/storage_tests.rs` を作成
-- [ ] テスト: ドキュメント作成 → 保存 → ロードで内容一致
-- [ ] テスト: ドキュメント一覧取得で件数一致
-- [ ] テスト: ドキュメント削除後にロードで None
-- [ ] テスト: 存在しない ID のロードで None
-- [ ] テスト: 複数ドキュメントの保存・一覧
-- [ ] 検証: `cargo test` 全件パス
+- [x] `Cargo.toml`（love-note）に `tempfile` を dev-dependency として追加
+- [x] `crates/love-note/tests/storage_tests.rs` を作成
+- [x] テスト: ドキュメント作成 → 保存 → ロードで内容一致
+- [x] テスト: ドキュメント一覧取得で件数一致
+- [x] テスト: ドキュメント削除後にロードで None
+- [x] テスト: 存在しない ID のロードで None
+- [x] テスト: 複数ドキュメントの保存・一覧
+- [x] 検証: `cargo test` 全件パス
 
 ### 0.5 storage-inspector バイナリ
-- [ ] `crates/love-note/src/bin/storage_inspector.rs` を作成
-- [ ] コマンドライン引数でDBパスを指定可能に（デフォルトは通常パス）
-- [ ] 全ドキュメントの ID, タイトル, content の先頭50文字, 更新日時を表示
-- [ ] 検証: `cargo run --bin storage-inspector` でDB内容がダンプされる
+- [x] `crates/love-note/src/bin/storage_inspector.rs` を作成
+- [x] コマンドライン引数でDBパスを指定可能に（デフォルトは通常パス）
+- [x] 全ドキュメントの ID, タイトル, content の先頭50文字, 更新日時を表示
+- [x] 検証: `cargo run --bin storage-inspector` でDB内容がダンプされる
 
 ---
 
 ## Phase 1: Typst ソースエディタ（左ペイン）
 
 ### 1.1 TypstEditor コンポーネント
-- [ ] `src/typst_editor.rs` を作成
-- [ ] `TypstEditor` 構造体: document (TypstDocument), input (Entity<InputState>), storage (Arc<Storage>)
-- [ ] `impl Render for TypstEditor` — 単一の InputState をフルサイズで表示
-- [ ] モノスペースフォント設定
-- [ ] TypstDocument の content を InputState に反映
-- [ ] `src/lib.rs` に `pub mod typst_editor` 追加
+- [x] `src/typst_editor.rs` を作成
+- [x] `TypstEditor` 構造体: document (TypstDocument), input (Entity<InputState>), storage (Arc<Storage>)
+- [x] `impl Render for TypstEditor` — 単一の InputState をフルサイズで表示
+- [x] モノスペースフォント設定
+- [x] TypstDocument の content を InputState に反映
+- [x] `src/lib.rs` に `pub mod typst_editor` 追加
 
 ### 1.2 保存機能
-- [ ] Ctrl+S キーバインディング → `save_document()` メソッド呼び出し
-- [ ] `save_document()`: InputState のテキストを TypstDocument.content に反映 → redb 保存
-- [ ] 保存時に `tracing::info!("Document saved", doc_id = %id)` ログ
+- [x] Ctrl+S キーバインディング → `save_document()` メソッド呼び出し
+- [x] `save_document()`: InputState のテキストを TypstDocument.content に反映 → redb 保存
+- [x] 保存時に `tracing::info!("Document saved", doc_id = %id)` ログ
 - [ ] アプリ終了時（フォーカス喪失時）の自動保存
 
 ### 1.3 main.rs の接続
-- [ ] `main.rs` で `TypstEditor` を使用
-- [ ] 起動時: TypstDocument が存在すればロード、なければデフォルト作成
+- [x] `main.rs` で `TypstEditor` を使用
+- [x] 起動時: TypstDocument が存在すればロード、なければデフォルト作成
 - [ ] 検証: `cargo run` → テキスト入力 → 再起動 → 内容が永続化されている
 
 ---
@@ -76,40 +76,40 @@
 ## Phase 2: Typst プレビュー（右ペイン）
 
 ### 2.1 依存追加
-- [ ] `Cargo.toml`（ワークスペース）に `typst`, `typst-render`, `typst-pdf`, `comemo` 追加
-- [ ] `crates/love-note/Cargo.toml` に依存追加
-- [ ] `cargo build` が通ることを確認
+- [x] `Cargo.toml`（ワークスペース）に `typst`, `typst-render`, `typst-pdf`, `comemo` 追加
+- [x] `crates/love-note/Cargo.toml` に依存追加
+- [x] `cargo build` が通ることを確認
 
 ### 2.2 LoveNoteWorld（typst::World 実装）
-- [ ] `src/typst_world.rs` を作成
-- [ ] `LoveNoteWorld` 構造体: source, fonts, book
-- [ ] `impl typst::World for LoveNoteWorld` — `main()`, `library()`, `book()`, `font()` を実装
-- [ ] `source()` — 現時点ではメインソースのみ（#import 未対応）
-- [ ] `file()` — 現時点では FileError::NotFound を返す
-- [ ] システムフォントのロード
-- [ ] テスト: `= Hello\n\nWorld` をコンパイルして typst::Document が得られる
-- [ ] 検証: `cargo test` パス
+- [x] `src/typst_world.rs` を作成
+- [x] `LoveNoteWorld` 構造体: source, fonts, book
+- [x] `impl typst::World for LoveNoteWorld` — `main()`, `library()`, `book()`, `font()` を実装
+- [x] `source()` — 現時点ではメインソースのみ（#import 未対応）
+- [x] `file()` — 現時点では FileError::NotFound を返す
+- [x] システムフォントのロード
+- [x] テスト: `= Hello\n\nWorld` をコンパイルして typst::Document が得られる
+- [x] 検証: `cargo test` パス
 
 ### 2.3 Preview コンポーネント
-- [ ] `src/preview.rs` を作成
-- [ ] `Preview` 構造体: pages (レンダリング済み画像データ)
-- [ ] `typst_render` でページをピクセルバッファにレンダリング
-- [ ] GPUI の `img()` または `canvas()` で表示
-- [ ] スクロール可能なコンテナで複数ページ対応
-- [ ] コンパイルエラー時はエラーメッセージをテキスト表示
+- [x] `src/preview.rs` を作成
+- [x] `Preview` 構造体: pages (レンダリング済み画像データ)
+- [x] `typst_render` でページをピクセルバッファにレンダリング
+- [x] GPUI の `img()` または `canvas()` で表示
+- [x] スクロール可能なコンテナで複数ページ対応
+- [x] コンパイルエラー時はエラーメッセージをテキスト表示
 
 ### 2.4 2ペインレイアウト
-- [ ] `src/workspace_view.rs` を作成
-- [ ] `WorkspaceView` 構造体: editor (Entity<TypstEditor>), preview (Entity<Preview>)
-- [ ] 左右分割レイアウト（flex_row, 50:50）
+- [x] `src/workspace_view.rs` を作成
+- [x] `WorkspaceView` 構造体: editor (Entity<TypstEditor>), preview (Entity<Preview>)
+- [x] 左右分割レイアウト（flex_row, 50:50）
 - [ ] エディタのテキスト変更 → 100ms デバウンス → コンパイル → プレビュー更新
-- [ ] `main.rs` を `WorkspaceView` に切り替え
+- [x] `main.rs` を `WorkspaceView` に切り替え
 - [ ] 検証: `cargo run` → Typst 入力 → 右ペインにプレビュー表示
 
 ### 2.5 エラー表示
-- [ ] Typst コンパイルエラーをプレビューペインに表示
-- [ ] エラー時は直前の成功プレビューを保持 + エラーメッセージをオーバーレイ
-- [ ] `tracing::warn!` でコンパイルエラーをログ
+- [x] Typst コンパイルエラーをプレビューペインに表示
+- [x] エラー時は直前の成功プレビューを保持 + エラーメッセージをオーバーレイ
+- [x] `tracing::warn!` でコンパイルエラーをログ
 - [ ] 検証: 不正な Typst 構文を入力 → エラーが表示され、前回のプレビューが残る
 
 ---
