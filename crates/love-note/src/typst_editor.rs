@@ -17,10 +17,13 @@ impl TypstEditor {
             .get_or_create_default()
             .expect("Failed to load document");
 
+        let content = document.content.clone();
         let input = cx.new(|cx| {
-            let mut state = InputState::new(window, cx);
-            state.set_value(document.content.clone(), window, cx);
-            state.set_placeholder("Type Typst source here...", window, cx);
+            let mut state = InputState::new(window, cx)
+                .multi_line(true)
+                .soft_wrap(true)
+                .placeholder("Type Typst source here...");
+            state.set_value(content, window, cx);
             state
         });
 
@@ -37,13 +40,6 @@ impl TypstEditor {
             input,
             storage,
         }
-    }
-
-    /// Get the current content of the editor.
-    pub fn content(&self) -> String {
-        // Note: this is called from outside, so we just return the document content
-        // For live preview, the caller should use observe() to get notified of changes
-        self.document.content.clone()
     }
 
     /// Get the current text from the input state.
@@ -76,11 +72,11 @@ impl Render for TypstEditor {
             .child(
                 div()
                     .size_full()
-                    .p_4()
                     .child(
                         Input::new(&self.input)
                             .cleanable(false)
-                            .appearance(false),
+                            .appearance(false)
+                            .h_full(),
                     ),
             )
     }
