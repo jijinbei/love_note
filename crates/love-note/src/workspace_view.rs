@@ -48,26 +48,37 @@ impl Render for WorkspaceView {
             .flex()
             .flex_col()
             .child(
+                // Main content: editor + preview side by side
                 div()
                     .flex_1()
                     .flex()
                     .flex_row()
                     .child(
+                        // Left pane: editor (50%)
                         div()
-                            .flex_1()
+                            .w(relative(0.5))
+                            .h_full()
+                            .min_w(px(200.0))
                             .border_r_1()
                             .border_color(rgb(0x333333))
+                            .overflow_hidden()
                             .child(self.editor.clone()),
                     )
                     .child(
+                        // Right pane: preview (50%)
                         div()
-                            .flex_1()
+                            .w(relative(0.5))
+                            .h_full()
+                            .min_w(px(200.0))
+                            .overflow_hidden()
                             .child(self.preview.clone()),
                     ),
             )
             .child(
+                // Status bar
                 div()
                     .h(px(28.0))
+                    .w_full()
                     .px_4()
                     .flex()
                     .items_center()

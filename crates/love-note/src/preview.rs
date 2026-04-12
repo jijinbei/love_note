@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use gpui::*;
-use gpui_component::scroll::ScrollableElement;
 
 use crate::typst_world::LoveNoteWorld;
 
@@ -11,6 +10,10 @@ pub struct Preview {
     rendered: Option<Arc<RenderImage>>,
     /// Error message from the last failed compilation.
     error_message: Option<String>,
+    /// Cached world (reuse fonts across compilations).
+    world: Option<LoveNoteWorld>,
+    /// Last compiled source (avoid redundant recompilations).
+    last_source: String,
 }
 
 impl Preview {
@@ -18,14 +21,27 @@ impl Preview {
         Self {
             rendered: None,
             error_message: None,
+            world: None,
+            last_source: String::new(),
         }
     }
 
     /// Compile the given source and update the preview.
+    /// Skips compilation if the source hasn't changed.
     pub fn update_from_source(&mut self, source: &str) {
-        // Create a temporary world for compilation
-        let world = LoveNoteWorld::new(source);
-        let result = typst::compile::<typst::layout::PagedDocument>(&world);
+        if source == self.last_source {
+            return;
+        }
+        self.last_source = source.to_string();
+
+        // Reuse world (fonts are expensive to load)
+        let world = self.world.get_or_insert_with(|| {
+            tracing::info!("Initializing Typst world (loading fonts)");
+            LoveNoteWorld::new(source)
+        });
+        world.set_source(source);
+
+        let result = typst::compile::<typst::layout::PagedDocument>(world);
 
         match result.output {
             Ok(document) => {
@@ -33,8 +49,6 @@ impl Preview {
                     let pixmap = typst_render::render(page, 2.0);
                     let width = pixmap.width();
                     let height = pixmap.height();
-
-                    // Convert RGBA premultiplied to RGBA straight
                     let data = pixmap.take();
 
                     if let Some(image_buffer) =
@@ -44,7 +58,7 @@ impl Preview {
                         let render_image = RenderImage::new(vec![frame]);
                         self.rendered = Some(Arc::new(render_image));
                         self.error_message = None;
-                        tracing::debug!("Preview rendered: {}x{}", width, height);
+                        tracing::debug!(width, height, "Preview rendered");
                     }
                 }
             }
@@ -56,7 +70,6 @@ impl Preview {
                     .join("\n");
                 tracing::warn!(errors = %msg, "Typst compilation failed");
                 self.error_message = Some(msg);
-                // Keep previous rendered image (don't clear it)
             }
         }
     }
@@ -67,7 +80,6 @@ impl Render for Preview {
         let content = if let Some(ref image) = self.rendered {
             div()
                 .size_full()
-                .overflow_y_scrollbar()
                 .p_4()
                 .bg(rgb(0xffffff))
                 .child(
