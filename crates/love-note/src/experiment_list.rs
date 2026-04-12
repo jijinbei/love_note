@@ -31,6 +31,10 @@ pub struct ExperimentList {
     context_menu_slug: Option<String>,
     /// File that was right-clicked (experiment_slug, filename).
     context_menu_file: Option<(String, String)>,
+    /// File being renamed: (experiment_slug, old_filename).
+    renaming_file: Option<(String, String)>,
+    /// Input state for file rename.
+    rename_file_input: Option<Entity<InputState>>,
 }
 
 impl ExperimentList {
@@ -44,6 +48,8 @@ impl ExperimentList {
             rename_input: None,
             context_menu_slug: None,
             context_menu_file: None,
+            renaming_file: None,
+            rename_file_input: None,
         }
     }
 
@@ -126,6 +132,36 @@ impl ExperimentList {
     fn cancel_rename(&mut self) {
         self.renaming_slug = None;
         self.rename_input = None;
+        self.renaming_file = None;
+        self.rename_file_input = None;
+    }
+
+    /// Start inline rename for a file.
+    fn start_file_rename(&mut self, exp_slug: &str, filename: &str, window: &mut Window, cx: &mut Context<Self>) {
+        let input = cx.new(|cx| {
+            let mut state = InputState::new(window, cx)
+                .placeholder("New filename...");
+            state.set_value(filename.to_string(), window, cx);
+            state
+        });
+        self.renaming_file = Some((exp_slug.to_string(), filename.to_string()));
+        self.rename_file_input = Some(input);
+    }
+
+    /// Commit the file rename.
+    fn commit_file_rename(&mut self, cx: &mut Context<Self>) {
+        let Some((exp_slug, old_name)) = self.renaming_file.take() else { return };
+        let Some(input) = self.rename_file_input.take() else { return };
+
+        let new_name = input.read(cx).value().to_string();
+        if new_name.trim().is_empty() || new_name.trim() == old_name {
+            return;
+        }
+
+        match self.workspace.rename_file(&exp_slug, &old_name, new_name.trim()) {
+            Ok(new) => tracing::info!(old = %old_name, new = %new, "File renamed"),
+            Err(e) => tracing::error!(error = %e, "Failed to rename file"),
+        }
     }
 }
 
@@ -238,6 +274,32 @@ impl Render for ExperimentList {
                         let file_slug = slug.clone();
                         let file_name = file.filename.clone();
 
+                        let is_file_renaming = self.renaming_file.as_ref()
+                            .map(|(s, f)| s == &slug && f == &file.filename)
+                            .unwrap_or(false);
+
+                        let name_element: AnyElement = if is_file_renaming {
+                            if let Some(ref input) = self.rename_file_input {
+                                div()
+                                    .flex_1()
+                                    .child(
+                                        gpui_component::input::Input::new(input)
+                                            .cleanable(false)
+                                            .appearance(true),
+                                    )
+                                    .into_any_element()
+                            } else {
+                                div().flex_1().child(file.filename.clone()).into_any_element()
+                            }
+                        } else {
+                            div()
+                                .flex_1()
+                                .text_ellipsis()
+                                .overflow_hidden()
+                                .child(file.filename.clone())
+                                .into_any_element()
+                        };
+
                         let file_row = div()
                             .id(ElementId::Name(format!("file-{}", file.filename).into()))
                             .text_xs()
@@ -249,13 +311,7 @@ impl Render for ExperimentList {
                             .rounded_sm()
                             .hover(|s| s.bg(rgb(0x2a2a3a)))
                             .child(icon)
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .text_ellipsis()
-                                    .overflow_hidden()
-                                    .child(file.filename.clone()),
-                            )
+                            .child(name_element)
                             .child(
                                 div()
                                     .text_color(rgb(0x555555))
@@ -268,7 +324,8 @@ impl Render for ExperimentList {
                                 }),
                             )
                             .context_menu(move |menu, _window, _cx| {
-                                menu.menu("Delete", DeleteFile.boxed_clone())
+                                menu.menu("Rename", StartFileRename.boxed_clone())
+                                    .menu("Delete", DeleteFile.boxed_clone())
                             });
 
                         file_list = file_list.child(file_row);
@@ -292,7 +349,11 @@ impl Render for ExperimentList {
                 }
             }))
             .on_action(cx.listener(|this, _action: &ConfirmRename, _window, cx| {
-                this.commit_rename(cx);
+                if this.renaming_file.is_some() {
+                    this.commit_file_rename(cx);
+                } else {
+                    this.commit_rename(cx);
+                }
                 cx.notify();
             }))
             .on_action(cx.listener(|this, _action: &CancelRename, _window, cx| {
@@ -305,6 +366,12 @@ impl Render for ExperimentList {
                         Ok(()) => tracing::info!(file = %filename, "File deleted"),
                         Err(e) => tracing::error!(error = %e, "Failed to delete file"),
                     }
+                    cx.notify();
+                }
+            }))
+            .on_action(cx.listener(|this, _action: &StartFileRename, window, cx| {
+                if let Some((ref exp_slug, ref filename)) = this.context_menu_file.clone() {
+                    this.start_file_rename(exp_slug, filename, window, cx);
                     cx.notify();
                 }
             }))
@@ -350,7 +417,7 @@ impl Render for ExperimentList {
     }
 }
 
-actions!(experiment_list, [StartRename, ConfirmRename, CancelRename, DeleteFile]);
+actions!(experiment_list, [StartRename, ConfirmRename, CancelRename, DeleteFile, StartFileRename]);
 
 pub fn init(cx: &mut App) {
     cx.bind_keys([
