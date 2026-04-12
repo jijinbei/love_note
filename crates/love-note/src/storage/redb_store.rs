@@ -4,9 +4,13 @@ use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use std::path::PathBuf;
 use uuid::Uuid;
 
+use super::revision::{self, Revision, ChainStatus};
 use super::TypstDocument;
 
 const DOCUMENTS_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("typst_documents");
+const REVISIONS_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("revisions");
+// Key: (doc_id bytes [16] + sequence u64 LE [8]) = 24 bytes → value: hash [32]
+const REVISION_INDEX_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("revision_index");
 
 /// Storage manager using redb
 pub struct Storage {
@@ -30,10 +34,12 @@ impl Storage {
         let db = Database::create(&db_path)
             .context("Failed to open database")?;
 
-        // Initialize table
+        // Initialize tables
         {
             let write_txn = db.begin_write()?;
             let _ = write_txn.open_table(DOCUMENTS_TABLE)?;
+            let _ = write_txn.open_table(REVISIONS_TABLE)?;
+            let _ = write_txn.open_table(REVISION_INDEX_TABLE)?;
             write_txn.commit()?;
         }
 
@@ -41,14 +47,14 @@ impl Storage {
         Ok(Self { db })
     }
 
-    /// Get the default database file path
     fn default_db_path() -> Result<PathBuf> {
         let proj_dirs = ProjectDirs::from("com", "lovenote", "LoveNote")
             .context("Failed to determine project directories")?;
         Ok(proj_dirs.data_dir().join("documents.redb"))
     }
 
-    /// Save a document
+    // === Document CRUD ===
+
     pub fn save_document(&self, doc: &TypstDocument) -> Result<()> {
         let write_txn = self.db.begin_write()?;
         {
@@ -62,7 +68,6 @@ impl Storage {
         Ok(())
     }
 
-    /// Load a document by ID
     pub fn load_document(&self, doc_id: Uuid) -> Result<Option<TypstDocument>> {
         let read_txn = self.db.begin_read()?;
         let table = read_txn.open_table(DOCUMENTS_TABLE)?;
@@ -76,7 +81,6 @@ impl Storage {
         }
     }
 
-    /// List all documents (id, title)
     pub fn list_documents(&self) -> Result<Vec<(Uuid, String)>> {
         let read_txn = self.db.begin_read()?;
         let table = read_txn.open_table(DOCUMENTS_TABLE)?;
@@ -90,7 +94,6 @@ impl Storage {
         Ok(docs)
     }
 
-    /// Delete a document by ID
     pub fn delete_document(&self, doc_id: Uuid) -> Result<bool> {
         let write_txn = self.db.begin_write()?;
         let removed = {
@@ -103,7 +106,6 @@ impl Storage {
         Ok(removed)
     }
 
-    /// Get or create a default document
     pub fn get_or_create_default(&self) -> Result<TypstDocument> {
         let docs = self.list_documents()?;
         if let Some((id, _)) = docs.first() {
@@ -117,4 +119,106 @@ impl Storage {
         tracing::info!(doc_id = %doc.id, "Created default document");
         Ok(doc)
     }
+
+    // === Revision CRUD ===
+
+    /// Save a revision and update the index.
+    pub fn save_revision(&self, rev: &Revision) -> Result<()> {
+        let write_txn = self.db.begin_write()?;
+        {
+            let mut rev_table = write_txn.open_table(REVISIONS_TABLE)?;
+            let value = serde_json::to_vec(rev)?;
+            rev_table.insert(rev.hash.as_slice(), value.as_slice())?;
+
+            let mut idx_table = write_txn.open_table(REVISION_INDEX_TABLE)?;
+            let idx_key = make_index_key(rev.doc_id, rev.sequence);
+            idx_table.insert(idx_key.as_slice(), rev.hash.as_slice())?;
+        }
+        write_txn.commit()?;
+        tracing::debug!(seq = rev.sequence, doc_id = %rev.doc_id, "Revision saved");
+        Ok(())
+    }
+
+    /// Create a new revision linked to the latest revision for this document.
+    pub fn create_revision(
+        &self,
+        doc_id: Uuid,
+        content: String,
+        frontmatter: serde_json::Value,
+        author: String,
+        change_summary: String,
+    ) -> Result<Revision> {
+        let latest = self.get_latest_revision(doc_id)?;
+        let rev = revision::create_revision(
+            doc_id,
+            content,
+            frontmatter,
+            author,
+            change_summary,
+            latest.as_ref(),
+        );
+        self.save_revision(&rev)?;
+        tracing::info!(seq = rev.sequence, doc_id = %doc_id, "Revision created");
+        Ok(rev)
+    }
+
+    /// Load a revision by its hash.
+    pub fn load_revision(&self, hash: &[u8; 32]) -> Result<Option<Revision>> {
+        let read_txn = self.db.begin_read()?;
+        let table = read_txn.open_table(REVISIONS_TABLE)?;
+
+        if let Some(guard) = table.get(hash.as_slice())? {
+            let rev: Revision = serde_json::from_slice(guard.value())?;
+            Ok(Some(rev))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// List all revisions for a document, sorted by sequence.
+    pub fn list_revisions(&self, doc_id: Uuid) -> Result<Vec<Revision>> {
+        let read_txn = self.db.begin_read()?;
+        let idx_table = read_txn.open_table(REVISION_INDEX_TABLE)?;
+        let rev_table = read_txn.open_table(REVISIONS_TABLE)?;
+
+        let prefix = doc_id.as_bytes().to_vec();
+        let mut revisions = Vec::new();
+
+        for result in idx_table.iter()? {
+            let (key_guard, value_guard) = result?;
+            let key: &[u8] = key_guard.value();
+
+            // Check if this key belongs to our doc_id (first 16 bytes)
+            if key.len() == 24 && key[..16] == prefix[..] {
+                let hash: &[u8] = value_guard.value();
+                if let Some(guard) = rev_table.get(hash)? {
+                    let rev: Revision = serde_json::from_slice(guard.value())?;
+                    revisions.push(rev);
+                }
+            }
+        }
+
+        revisions.sort_by_key(|r| r.sequence);
+        Ok(revisions)
+    }
+
+    /// Get the latest revision for a document.
+    pub fn get_latest_revision(&self, doc_id: Uuid) -> Result<Option<Revision>> {
+        let revisions = self.list_revisions(doc_id)?;
+        Ok(revisions.into_iter().last())
+    }
+
+    /// Verify the hash chain for a document.
+    pub fn verify_chain(&self, doc_id: Uuid) -> Result<ChainStatus> {
+        let revisions = self.list_revisions(doc_id)?;
+        Ok(revision::verify_chain(&revisions))
+    }
+}
+
+/// Build the index key: doc_id (16 bytes) + sequence (8 bytes LE)
+fn make_index_key(doc_id: Uuid, sequence: u64) -> Vec<u8> {
+    let mut key = Vec::with_capacity(24);
+    key.extend_from_slice(doc_id.as_bytes());
+    key.extend_from_slice(&sequence.to_le_bytes());
+    key
 }
