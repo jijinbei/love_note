@@ -13,7 +13,6 @@ pub struct WorkspaceView {
     sidebar: Entity<ExperimentList>,
     editor: Entity<TypstEditor>,
     preview: Entity<Preview>,
-    workspace: Arc<Workspace>,
 }
 
 impl WorkspaceView {
@@ -44,7 +43,6 @@ impl WorkspaceView {
         // Wire up: "New" button creates an experiment and loads it
         let editor_handle = editor.clone();
         let ws = workspace.clone();
-        let sidebar_handle = sidebar.clone();
         sidebar.update(cx, |list, _cx| {
             list.set_on_new(Box::new(move |window, cx| {
                 match ws.create_experiment("New Experiment") {
@@ -56,11 +54,6 @@ impl WorkspaceView {
                             .to_string();
                         editor_handle.update(cx, |editor, cx| {
                             editor.load_experiment(&slug, window, cx);
-                        });
-                        sidebar_handle.update(cx, |list, cx| {
-                            list.refresh();
-                            list.set_selected(&slug);
-                            cx.notify();
                         });
                         tracing::info!(slug, "New experiment created");
                     }
@@ -109,7 +102,6 @@ impl WorkspaceView {
             sidebar,
             editor,
             preview,
-            workspace,
         }
     }
 }

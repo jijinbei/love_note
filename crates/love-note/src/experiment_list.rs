@@ -146,6 +146,10 @@ impl Render for ExperimentList {
                                     cb(window, cx);
                                 }
                                 this.refresh();
+                                // Select the newest experiment (first in list)
+                                if let Some(first) = this.experiments.first() {
+                                    this.selected_slug = Some(first.slug.clone());
+                                }
                                 cx.notify();
                             })),
                     ),
