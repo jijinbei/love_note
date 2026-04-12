@@ -34,8 +34,10 @@ impl TypstEditor {
         let last_saved = content.clone();
         let input = cx.new(|cx| {
             let mut state = InputState::new(window, cx)
-                .multi_line(true)
+                .code_editor("typst")
+                .line_number(true)
                 .soft_wrap(true)
+                .searchable(true)
                 .placeholder("Type Typst source here...");
             state.set_value(content, window, cx);
             state
@@ -148,14 +150,10 @@ impl Render for TypstEditor {
                 this.save_document(window, cx);
             }))
             .child(
-                div()
-                    .size_full()
-                    .child(
-                        Input::new(&self.input)
-                            .cleanable(false)
-                            .appearance(false)
-                            .h_full(),
-                    ),
+                Input::new(&self.input)
+                    .cleanable(false)
+                    .appearance(false)
+                    .h_full(),
             )
     }
 }
