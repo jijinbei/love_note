@@ -4,15 +4,24 @@ use gpui::*;
 use gpui_component::input::{Input, InputState};
 
 use crate::storage::{Storage, TypstDocument};
+use crate::workspace::Workspace;
 
 pub struct TypstEditor {
     document: TypstDocument,
     input: Entity<InputState>,
     storage: Arc<Storage>,
+    workspace: Arc<Workspace>,
+    /// Current experiment directory name (e.g., "2026-04-13_pcr-experiment")
+    current_experiment: Option<String>,
 }
 
 impl TypstEditor {
-    pub fn new(storage: Arc<Storage>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        storage: Arc<Storage>,
+        workspace: Arc<Workspace>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let document = storage
             .get_or_create_default()
             .expect("Failed to load document");
@@ -39,6 +48,8 @@ impl TypstEditor {
             document,
             input,
             storage,
+            workspace,
+            current_experiment: None,
         }
     }
 
@@ -47,14 +58,47 @@ impl TypstEditor {
         self.input.read(cx).value().to_string()
     }
 
+    /// Load an experiment's main.typ into the editor.
+    pub fn load_experiment(
+        &mut self,
+        slug: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        match self.workspace.read_experiment(slug) {
+            Ok(content) => {
+                self.document.content = content.clone();
+                self.document.title = slug.to_string();
+                self.current_experiment = Some(slug.to_string());
+                self.input.update(cx, |state, cx| {
+                    state.set_value(content, window, cx);
+                });
+                tracing::info!(experiment = slug, "Experiment loaded");
+                cx.notify();
+            }
+            Err(e) => {
+                tracing::error!(error = %e, experiment = slug, "Failed to load experiment");
+            }
+        }
+    }
+
     pub fn save_document(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
         let content = self.input.read(cx).value().to_string();
-        self.document.content = content;
+        self.document.content = content.clone();
         self.document.updated_at = chrono::Utc::now();
 
+        // Save to redb
         match self.storage.save_document(&self.document) {
-            Ok(()) => tracing::info!(doc_id = %self.document.id, "Document saved"),
-            Err(e) => tracing::error!(error = %e, "Failed to save document"),
+            Ok(()) => tracing::debug!(doc_id = %self.document.id, "Document saved to redb"),
+            Err(e) => tracing::error!(error = %e, "Failed to save to redb"),
+        }
+
+        // Save to workspace .typ file
+        if let Some(ref exp) = self.current_experiment {
+            match self.workspace.write_experiment(exp, &content) {
+                Ok(()) => tracing::info!(experiment = %exp, "Saved to .typ file"),
+                Err(e) => tracing::error!(error = %e, "Failed to save .typ file"),
+            }
         }
     }
 }

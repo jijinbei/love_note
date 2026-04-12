@@ -5,7 +5,7 @@ use gpui_component::{
     theme::{Theme, ThemeMode},
     Root,
 };
-use love_note::{Storage, WorkspaceView};
+use love_note::{Storage, Workspace, WorkspaceView};
 use tracing_subscriber::EnvFilter;
 
 fn main() {
@@ -25,6 +25,9 @@ fn main() {
             let storage = Arc::new(
                 Storage::open().expect("Failed to open database"),
             );
+            let workspace = Arc::new(
+                Workspace::open().expect("Failed to open workspace"),
+            );
 
             let bounds = Bounds::centered(None, size(px(1200.0), px(800.0)), cx);
             cx.open_window(
@@ -37,7 +40,9 @@ fn main() {
                     ..Default::default()
                 },
                 |window, cx| {
-                    let view = cx.new(|cx| WorkspaceView::new(storage, window, cx));
+                    let view = cx.new(|cx| {
+                        WorkspaceView::new(storage, workspace, window, cx)
+                    });
                     cx.new(|cx| Root::new(view, window, cx))
                 },
             )

@@ -2,20 +2,74 @@ use std::sync::Arc;
 
 use gpui::*;
 
+use crate::experiment_list::ExperimentList;
 use crate::preview::Preview;
 use crate::storage::Storage;
 use crate::typst_editor::TypstEditor;
+use crate::workspace::Workspace;
 
-/// Top-level two-pane layout: editor (left) + preview (right).
+/// Top-level three-pane layout: sidebar | editor | preview.
 pub struct WorkspaceView {
+    sidebar: Entity<ExperimentList>,
     editor: Entity<TypstEditor>,
     preview: Entity<Preview>,
+    workspace: Arc<Workspace>,
 }
 
 impl WorkspaceView {
-    pub fn new(storage: Arc<Storage>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let editor = cx.new(|cx| TypstEditor::new(storage, window, cx));
+    pub fn new(
+        storage: Arc<Storage>,
+        workspace: Arc<Workspace>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let editor = cx.new(|cx| {
+            TypstEditor::new(storage, workspace.clone(), window, cx)
+        });
         let preview = cx.new(|_cx| Preview::new());
+
+        // Create sidebar
+        let sidebar = cx.new(|_cx| ExperimentList::new(workspace.clone()));
+
+        // Wire up: selecting an experiment loads it in the editor
+        let editor_handle = editor.clone();
+        sidebar.update(cx, |list, _cx| {
+            list.set_on_select(Box::new(move |info, window, cx| {
+                editor_handle.update(cx, |editor, cx| {
+                    editor.load_experiment(&info.slug, window, cx);
+                });
+            }));
+        });
+
+        // Wire up: "New" button creates an experiment and loads it
+        let editor_handle = editor.clone();
+        let ws = workspace.clone();
+        let sidebar_handle = sidebar.clone();
+        sidebar.update(cx, |list, _cx| {
+            list.set_on_new(Box::new(move |window, cx| {
+                match ws.create_experiment("New Experiment") {
+                    Ok(path) => {
+                        let slug = path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+                        editor_handle.update(cx, |editor, cx| {
+                            editor.load_experiment(&slug, window, cx);
+                        });
+                        sidebar_handle.update(cx, |list, cx| {
+                            list.refresh();
+                            list.set_selected(&slug);
+                            cx.notify();
+                        });
+                        tracing::info!(slug, "New experiment created");
+                    }
+                    Err(e) => {
+                        tracing::error!(error = %e, "Failed to create experiment");
+                    }
+                }
+            }));
+        });
 
         // Observe editor changes and update preview
         let preview_handle = preview.clone();
@@ -37,7 +91,26 @@ impl WorkspaceView {
             });
         }
 
-        Self { editor, preview }
+        // Load the first experiment if available
+        {
+            let experiments = workspace.list_experiments().unwrap_or_default();
+            if let Some(first) = experiments.first() {
+                let slug = first.slug.clone();
+                editor.update(cx, |editor, cx| {
+                    editor.load_experiment(&slug, window, cx);
+                });
+                sidebar.update(cx, |list, _cx| {
+                    list.set_selected(&slug);
+                });
+            }
+        }
+
+        Self {
+            sidebar,
+            editor,
+            preview,
+            workspace,
+        }
     }
 }
 
@@ -48,15 +121,24 @@ impl Render for WorkspaceView {
             .flex()
             .flex_col()
             .child(
-                // Main content: editor + preview side by side
+                // Main content: sidebar | editor | preview
                 div()
                     .flex_1()
                     .flex()
                     .flex_row()
                     .child(
-                        // Left pane: editor (50%)
+                        // Sidebar
                         div()
-                            .w(relative(0.5))
+                            .w(px(200.0))
+                            .h_full()
+                            .border_r_1()
+                            .border_color(rgb(0x333333))
+                            .child(self.sidebar.clone()),
+                    )
+                    .child(
+                        // Editor
+                        div()
+                            .flex_1()
                             .h_full()
                             .min_w(px(200.0))
                             .border_r_1()
@@ -65,9 +147,9 @@ impl Render for WorkspaceView {
                             .child(self.editor.clone()),
                     )
                     .child(
-                        // Right pane: preview (50%)
+                        // Preview
                         div()
-                            .w(relative(0.5))
+                            .flex_1()
                             .h_full()
                             .min_w(px(200.0))
                             .overflow_hidden()
