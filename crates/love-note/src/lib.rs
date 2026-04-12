@@ -7,6 +7,7 @@ pub mod plugin;
 pub mod preview;
 pub mod storage;
 pub mod typst_editor;
+pub mod typst_snippets;
 pub mod typst_world;
 pub mod workspace;
 pub mod workspace_view;

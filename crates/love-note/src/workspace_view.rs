@@ -149,18 +149,13 @@ impl WorkspaceView {
             return;
         };
 
-        let mut added_images = Vec::new();
+        let mut snippets = Vec::new();
 
         for path in paths {
             match self.workspace.add_file_to_experiment(&experiment, path) {
                 Ok(filename) => {
-                    let is_image = matches!(
-                        path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).as_deref(),
-                        Some("png" | "jpg" | "jpeg" | "gif" | "tiff" | "tif" | "bmp" | "webp" | "svg")
-                    );
-                    if is_image {
-                        added_images.push(filename);
-                    }
+                    let snippet = crate::typst_snippets::snippet_for_file(&filename);
+                    snippets.push(snippet);
                     tracing::info!(file = %path.display(), "File dropped into experiment");
                 }
                 Err(e) => {
@@ -169,14 +164,9 @@ impl WorkspaceView {
             }
         }
 
-        // Insert Typst code for images
-        if !added_images.is_empty() {
-            let typst_code: String = added_images
-                .iter()
-                .map(|f| crate::image_capture::pipeline::typst_figure_code(f, ""))
-                .collect::<Vec<_>>()
-                .join("\n");
-
+        // Insert Typst code for all dropped files
+        if !snippets.is_empty() {
+            let typst_code = snippets.join("\n");
             self.editor.update(cx, |editor, _cx| {
                 let current = editor.input_text(_cx);
                 let new_content = format!("{}\n{}", current, typst_code);
