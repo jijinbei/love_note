@@ -24,3 +24,8 @@ chrono = { version = "0.4", features = ["serde"] }
 directories = "6.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+typst = "0.14"
+typst-render = "0.14"
+typst-pdf = "0.14"
+typst-kit = "0.14"
+comemo = "0.4"
