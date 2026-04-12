@@ -34,3 +34,5 @@ sha2 = "0.10"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 rand = "0.8"
 notify = "7"
+rhai = "1"
+toml = "0.8"
