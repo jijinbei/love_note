@@ -5,7 +5,7 @@ use gpui_component::{
     theme::{Theme, ThemeMode},
     Root,
 };
-use love_note::{Storage, TypstEditor};
+use love_note::{Storage, WorkspaceView};
 use tracing_subscriber::EnvFilter;
 
 fn main() {
@@ -37,7 +37,7 @@ fn main() {
                     ..Default::default()
                 },
                 |window, cx| {
-                    let view = cx.new(|cx| TypstEditor::new(storage, window, cx));
+                    let view = cx.new(|cx| WorkspaceView::new(storage, window, cx));
                     cx.new(|cx| Root::new(view, window, cx))
                 },
             )

@@ -24,6 +24,7 @@ typst-render.workspace = true
 typst-pdf.workspace = true
 typst-kit.workspace = true
 comemo.workspace = true
+image.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

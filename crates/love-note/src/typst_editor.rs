@@ -26,11 +26,29 @@ impl TypstEditor {
 
         tracing::info!(doc_id = %document.id, title = %document.title, "Document loaded");
 
+        // Notify observers when input changes (for preview updates)
+        cx.observe(&input, |_this, _input, cx| {
+            cx.notify();
+        })
+        .detach();
+
         Self {
             document,
             input,
             storage,
         }
+    }
+
+    /// Get the current content of the editor.
+    pub fn content(&self) -> String {
+        // Note: this is called from outside, so we just return the document content
+        // For live preview, the caller should use observe() to get notified of changes
+        self.document.content.clone()
+    }
+
+    /// Get the current text from the input state.
+    pub fn input_text(&self, cx: &App) -> String {
+        self.input.read(cx).value().to_string()
     }
 
     pub fn save_document(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
@@ -62,7 +80,7 @@ impl Render for TypstEditor {
                     .child(
                         Input::new(&self.input)
                             .cleanable(false)
-                            .appearance(false)
+                            .appearance(false),
                     ),
             )
     }
