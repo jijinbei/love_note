@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use gpui::*;
 use gpui_component::{
     theme::{Theme, ThemeMode},
     Root,
 };
+use love_note::{Storage, TypstEditor};
 use tracing_subscriber::EnvFilter;
 
 fn main() {
@@ -16,7 +19,12 @@ fn main() {
         .with_assets(gpui_component_assets::Assets)
         .run(|cx: &mut App| {
             gpui_component::init(cx);
+            love_note::typst_editor::init(cx);
             Theme::change(ThemeMode::Dark, None, cx);
+
+            let storage = Arc::new(
+                Storage::open().expect("Failed to open database"),
+            );
 
             let bounds = Bounds::centered(None, size(px(1200.0), px(800.0)), cx);
             cx.open_window(
@@ -29,7 +37,7 @@ fn main() {
                     ..Default::default()
                 },
                 |window, cx| {
-                    let view = cx.new(|_cx| EmptyView);
+                    let view = cx.new(|cx| TypstEditor::new(storage, window, cx));
                     cx.new(|cx| Root::new(view, window, cx))
                 },
             )
@@ -37,17 +45,4 @@ fn main() {
 
             tracing::info!("Window opened");
         });
-}
-
-struct EmptyView;
-
-impl Render for EmptyView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .size_full()
-            .flex()
-            .items_center()
-            .justify_center()
-            .child("Love Note — Typst ELN")
-    }
 }
