@@ -17,3 +17,5 @@ redb.workspace = true
 chrono.workspace = true
 directories.workspace = true
 anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

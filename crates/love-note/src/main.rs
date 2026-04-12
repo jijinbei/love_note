@@ -3,8 +3,15 @@ use gpui_component::{
     theme::{Theme, ThemeMode},
     Root,
 };
+use tracing_subscriber::EnvFilter;
 
 fn main() {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
+    tracing::info!("Love Note starting");
+
     Application::new()
         .with_assets(gpui_component_assets::Assets)
         .run(|cx: &mut App| {
@@ -27,6 +34,8 @@ fn main() {
                 },
             )
             .unwrap();
+
+            tracing::info!("Window opened");
         });
 }
 
