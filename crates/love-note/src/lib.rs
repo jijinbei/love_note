@@ -1,5 +1,6 @@
 pub mod crypto;
 pub mod experiment_list;
+pub mod file_watcher;
 pub mod preview;
 pub mod storage;
 pub mod typst_editor;

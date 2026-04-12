@@ -3983,6 +3983,7 @@ dependencies = [
  "gpui-component",
  "gpui-component-assets",
  "image",
+ "notify",
  "rand 0.8.5",
  "redb",
  "serde",
