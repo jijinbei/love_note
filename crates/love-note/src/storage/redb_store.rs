@@ -5,12 +5,13 @@ use std::path::PathBuf;
 use uuid::Uuid;
 
 use super::revision::{self, Revision, ChainStatus};
+use super::signature::SignatureRecord;
 use super::TypstDocument;
 
 const DOCUMENTS_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("typst_documents");
 const REVISIONS_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("revisions");
-// Key: (doc_id bytes [16] + sequence u64 LE [8]) = 24 bytes → value: hash [32]
 const REVISION_INDEX_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("revision_index");
+const SIGNATURES_TABLE: TableDefinition<&[u8], &[u8]> = TableDefinition::new("signatures");
 
 /// Storage manager using redb
 pub struct Storage {
@@ -40,6 +41,7 @@ impl Storage {
             let _ = write_txn.open_table(DOCUMENTS_TABLE)?;
             let _ = write_txn.open_table(REVISIONS_TABLE)?;
             let _ = write_txn.open_table(REVISION_INDEX_TABLE)?;
+            let _ = write_txn.open_table(SIGNATURES_TABLE)?;
             write_txn.commit()?;
         }
 
@@ -212,6 +214,38 @@ impl Storage {
     pub fn verify_chain(&self, doc_id: Uuid) -> Result<ChainStatus> {
         let revisions = self.list_revisions(doc_id)?;
         Ok(revision::verify_chain(&revisions))
+    }
+
+    // === Signature CRUD ===
+
+    /// Save a signature record (keyed by revision_hash).
+    pub fn save_signature(&self, record: &SignatureRecord) -> Result<()> {
+        let write_txn = self.db.begin_write()?;
+        {
+            let mut table = write_txn.open_table(SIGNATURES_TABLE)?;
+            let value = serde_json::to_vec(record)?;
+            table.insert(record.revision_hash.as_slice(), value.as_slice())?;
+        }
+        write_txn.commit()?;
+        tracing::info!(
+            meaning = %record.meaning,
+            signer = %record.signer,
+            "Signature saved"
+        );
+        Ok(())
+    }
+
+    /// Load a signature for a revision hash.
+    pub fn load_signature(&self, revision_hash: &[u8; 32]) -> Result<Option<SignatureRecord>> {
+        let read_txn = self.db.begin_read()?;
+        let table = read_txn.open_table(SIGNATURES_TABLE)?;
+
+        if let Some(guard) = table.get(revision_hash.as_slice())? {
+            let record: SignatureRecord = serde_json::from_slice(guard.value())?;
+            Ok(Some(record))
+        } else {
+            Ok(None)
+        }
     }
 }
 
