@@ -117,26 +117,26 @@
 ## Phase 3: ワークスペース構造
 
 ### 3.1 ワークスペースマネージャ
-- [ ] `src/workspace.rs` を作成
-- [ ] `Workspace` 構造体: root_dir (PathBuf)
-- [ ] `create_experiment(name: &str) -> PathBuf` — `{日付}_{スラッグ}/` ディレクトリ作成 + `main.typ` 生成
-- [ ] スラッグ生成: ASCII 英数字 + ハイフンのみ
-- [ ] `list_experiments() -> Vec<ExperimentInfo>` — ディレクトリスキャン
-- [ ] `ExperimentInfo` 構造体: path, name, date, last_modified
-- [ ] テスト: 実験作成 → ディレクトリと main.typ が存在する
-- [ ] テスト: 複数実験の一覧取得
+- [x] `src/workspace.rs` を作成
+- [x] `Workspace` 構造体: root_dir (PathBuf)
+- [x] `create_experiment(name: &str) -> PathBuf` — `{日付}_{スラッグ}/` ディレクトリ作成 + `main.typ` 生成
+- [x] スラッグ生成: ASCII 英数字 + ハイフンのみ
+- [x] `list_experiments() -> Vec<ExperimentInfo>` — ディレクトリスキャン
+- [x] `ExperimentInfo` 構造体: path, name, date, last_modified
+- [x] テスト: 実験作成 → ディレクトリと main.typ が存在する
+- [x] テスト: 複数実験の一覧取得
 
 ### 3.2 TypstDocument とワークスペースの接続
-- [ ] TypstDocument の保存時に workspace/ の .typ ファイルも同時更新
-- [ ] 起動時に workspace/ から実験一覧をロード
-- [ ] redb と .typ ファイルの両方を正本の一部として管理
+- [x] TypstDocument の保存時に workspace/ の .typ ファイルも同時更新
+- [x] 起動時に workspace/ から実験一覧をロード
+- [x] redb と .typ ファイルの両方を正本の一部として管理
 
 ### 3.3 実験一覧サイドバー
-- [ ] `src/experiment_list.rs` を作成
-- [ ] `ExperimentList` コンポーネント: 実験名と日付の一覧表示
-- [ ] クリックで実験を開く（エディタ + プレビューの内容を切り替え）
-- [ ] 「新しい実験」ボタン → 名前入力 → ディレクトリ作成
-- [ ] `WorkspaceView` にサイドバーを統合（3カラム: サイドバー | エディタ | プレビュー）
+- [x] `src/experiment_list.rs` を作成
+- [x] `ExperimentList` コンポーネント: 実験名と日付の一覧表示
+- [x] クリックで実験を開く（エディタ + プレビューの内容を切り替え）
+- [x] 「新しい実験」ボタン → 名前入力 → ディレクトリ作成
+- [x] `WorkspaceView` にサイドバーを統合（3カラム: サイドバー | エディタ | プレビュー）
 - [ ] 検証: 新規実験作成 → ファイルシステムに反映 → 一覧に表示
 
 ---
