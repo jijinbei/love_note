@@ -103,23 +103,22 @@ fn snippet_generic(filename: &str) -> String {
     format!("// Attached: {filename}\n")
 }
 
-/// Convert a filename to a safe Typst variable name.
+/// Generate a short variable name based on file extension.
+/// e.g., "results.csv" -> "csv_data", "config.json" -> "json_data"
 fn safe_var_name(filename: &str) -> String {
-    let stem = Path::new(filename)
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("data");
+    let ext = Path::new(filename)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase())
+        .unwrap_or_default();
 
-    let var: String = stem
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' })
-        .collect();
-
-    // Ensure it starts with a letter
-    if var.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(true) {
-        format!("data_{}", var)
-    } else {
-        var
+    match ext.as_str() {
+        "csv" | "tsv" => "csv_data".to_string(),
+        "json" => "json_data".to_string(),
+        "yaml" | "yml" => "yaml_data".to_string(),
+        "xml" => "xml_data".to_string(),
+        "txt" | "md" => "text_data".to_string(),
+        _ => "data".to_string(),
     }
 }
 
@@ -139,14 +138,14 @@ mod tests {
         let s = snippet_for_file("results.csv");
         assert!(s.contains("csv(\"results.csv\")"));
         assert!(s.contains("table("));
-        assert!(s.contains("let results"));
+        assert!(s.contains("let csv_data"));
     }
 
     #[test]
     fn json_snippet() {
         let s = snippet_for_file("config.json");
         assert!(s.contains("json(\"config.json\")"));
-        assert!(s.contains("let config"));
+        assert!(s.contains("let json_data"));
     }
 
     #[test]
@@ -169,8 +168,9 @@ mod tests {
 
     #[test]
     fn safe_var_name_from_filename() {
-        assert_eq!(safe_var_name("my-data.csv"), "my_data");
-        assert_eq!(safe_var_name("123.csv"), "data_123");
-        assert_eq!(safe_var_name("results (final).csv"), "results__final_");
+        assert_eq!(safe_var_name("my-data.csv"), "csv_data");
+        assert_eq!(safe_var_name("config.json"), "json_data");
+        assert_eq!(safe_var_name("params.yaml"), "yaml_data");
+        assert_eq!(safe_var_name("unknown.bin"), "data");
     }
 }
