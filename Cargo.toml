@@ -27,5 +27,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 typst = "0.14"
 typst-render = "0.14"
 typst-pdf = "0.14"
-typst-kit = "0.14"
+typst-kit = { version = "0.14", features = ["embed-fonts"] }
 comemo = "0.4"
