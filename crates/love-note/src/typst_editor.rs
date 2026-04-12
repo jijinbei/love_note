@@ -68,6 +68,11 @@ impl TypstEditor {
         self.pending_content = Some(content.to_string());
     }
 
+    /// Get the current experiment slug.
+    pub fn current_experiment(&self) -> Option<&str> {
+        self.current_experiment.as_deref()
+    }
+
     /// Set the current experiment slug.
     pub fn set_current_experiment(&mut self, slug: String) {
         self.document.title = slug.clone();

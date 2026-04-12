@@ -3,6 +3,7 @@ use std::sync::Arc;
 use gpui::*;
 
 use crate::experiment_list::ExperimentList;
+use crate::export;
 use crate::preview::Preview;
 use crate::storage::Storage;
 use crate::typst_editor::TypstEditor;
@@ -13,6 +14,8 @@ pub struct WorkspaceView {
     sidebar: Entity<ExperimentList>,
     editor: Entity<TypstEditor>,
     preview: Entity<Preview>,
+    workspace: Arc<Workspace>,
+    status_message: String,
 }
 
 impl WorkspaceView {
@@ -91,7 +94,40 @@ impl WorkspaceView {
             sidebar,
             editor,
             preview,
+            workspace,
+            status_message: "Ready".to_string(),
         }
+    }
+}
+
+impl WorkspaceView {
+    fn export_current_pdf(&mut self, cx: &mut Context<Self>) {
+        let content = self.editor.read(cx).input_text(cx);
+        let experiment = self.editor.read(cx).current_experiment().map(|s| s.to_string());
+
+        if content.trim().is_empty() {
+            self.status_message = "Nothing to export".to_string();
+            cx.notify();
+            return;
+        }
+
+        let output_dir = self.workspace.root_dir().join("../exports");
+        let filename = experiment
+            .as_deref()
+            .unwrap_or("untitled");
+        let output_path = output_dir.join(format!("{}.pdf", filename));
+
+        match export::export_pdf(&content, &output_path) {
+            Ok(path) => {
+                self.status_message = format!("PDF exported: {}", path.display());
+                tracing::info!(path = %path.display(), "PDF exported");
+            }
+            Err(e) => {
+                self.status_message = format!("Export failed: {}", e);
+                tracing::error!(error = %e, "PDF export failed");
+            }
+        }
+        cx.notify();
     }
 }
 
@@ -225,12 +261,28 @@ impl Render for WorkspaceView {
                     .px_4()
                     .flex()
                     .items_center()
+                    .justify_between()
                     .bg(rgb(0x1e1e2e))
                     .border_t_1()
                     .border_color(rgb(0x333333))
                     .text_size(px(12.0))
                     .text_color(rgb(0x888888))
-                    .child("Love Note — Typst ELN"),
+                    .child(
+                        div().child(self.status_message.clone()),
+                    )
+                    .child(
+                        div()
+                            .id("export-pdf-btn")
+                            .px_2()
+                            .rounded_sm()
+                            .cursor_pointer()
+                            .text_color(rgb(0x88aacc))
+                            .hover(|s| s.bg(rgb(0x2a2a3a)).text_color(rgb(0xaaccee)))
+                            .child("Export PDF")
+                            .on_click(cx.listener(|this, _event, _window, cx| {
+                                this.export_current_pdf(cx);
+                            })),
+                    ),
             )
     }
 }

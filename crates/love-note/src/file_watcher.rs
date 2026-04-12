@@ -1,7 +1,7 @@
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
-use std::time::Duration;
+
 
 /// Events from the file watcher, filtered to what Love Note cares about.
 #[derive(Debug, Clone)]
@@ -119,6 +119,7 @@ pub fn check_external_changes(
 mod tests {
     use super::*;
     use std::fs;
+    use std::time::Duration;
     use tempfile::tempdir;
 
     #[test]
