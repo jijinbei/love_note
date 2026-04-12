@@ -154,7 +154,9 @@ impl WorkspaceView {
         for path in paths {
             match self.workspace.add_file_to_experiment(&experiment, path) {
                 Ok(filename) => {
-                    let snippet = crate::typst_snippets::snippet_for_file(&filename);
+                    // Pass the actual file path in the experiment dir for content analysis
+                    let file_path = self.workspace.root_dir().join(&experiment).join(&filename);
+                    let snippet = crate::typst_snippets::snippet_for_file(&filename, Some(&file_path));
                     snippets.push(snippet);
                     tracing::info!(file = %path.display(), "File dropped into experiment");
                 }
