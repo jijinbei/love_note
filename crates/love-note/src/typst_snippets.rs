@@ -47,10 +47,7 @@ fn snippet_csv(filename: &str) -> String {
 
 #table(
   columns: {var}.first().len(),
-  // Header row (bold)
-  ..{var}.first().map(h => [*#h*]),
-  // Data rows
-  ..{var}.slice(1).flatten().map(c => [#c]),
+  ..{var}.flatten(),
 )
 "#
     )
