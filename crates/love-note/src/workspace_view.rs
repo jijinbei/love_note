@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use gpui::*;
+use gpui::ExternalPaths;
 
 use crate::experiment_list::ExperimentList;
 use crate::export;
@@ -129,6 +130,59 @@ impl WorkspaceView {
         }
         cx.notify();
     }
+
+    fn handle_file_drop(&mut self, paths: &[std::path::PathBuf], cx: &mut Context<Self>) {
+        let Some(experiment) = self.editor.read(cx).current_experiment().map(|s| s.to_string()) else {
+            self.status_message = "No experiment selected".to_string();
+            cx.notify();
+            return;
+        };
+
+        let mut added_images = Vec::new();
+
+        for path in paths {
+            match self.workspace.add_file_to_experiment(&experiment, path) {
+                Ok(filename) => {
+                    let is_image = matches!(
+                        path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).as_deref(),
+                        Some("png" | "jpg" | "jpeg" | "gif" | "tiff" | "tif" | "bmp" | "webp" | "svg")
+                    );
+                    if is_image {
+                        added_images.push(filename);
+                    }
+                    tracing::info!(file = %path.display(), "File dropped into experiment");
+                }
+                Err(e) => {
+                    tracing::error!(error = %e, file = %path.display(), "Failed to add dropped file");
+                }
+            }
+        }
+
+        // Insert Typst code for images
+        if !added_images.is_empty() {
+            let typst_code: String = added_images
+                .iter()
+                .map(|f| crate::image_capture::pipeline::typst_figure_code(f, ""))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            self.editor.update(cx, |editor, _cx| {
+                let current = editor.input_text(_cx);
+                let new_content = format!("{}\n{}", current, typst_code);
+                editor.set_content(&new_content);
+            });
+        }
+
+        self.status_message = format!("{} file(s) added", paths.len());
+
+        // Refresh sidebar to show new files
+        self.sidebar.update(cx, |list, cx| {
+            list.refresh();
+            cx.notify();
+        });
+
+        cx.notify();
+    }
 }
 
 impl Render for WorkspaceView {
@@ -137,6 +191,9 @@ impl Render for WorkspaceView {
             .size_full()
             .flex()
             .flex_col()
+            .on_drop(cx.listener(|this, paths: &ExternalPaths, _window, cx| {
+                this.handle_file_drop(paths.paths(), cx);
+            }))
             .child(
                 // Title bar with close button
                 div()

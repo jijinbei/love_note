@@ -13,6 +13,28 @@ pub struct ExperimentInfo {
     pub last_modified: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+/// Information about a file in an experiment directory.
+#[derive(Debug, Clone)]
+pub struct ExperimentFile {
+    pub path: PathBuf,
+    pub filename: String,
+    pub size: u64,
+    pub is_image: bool,
+}
+
+impl ExperimentFile {
+    /// Format file size for display.
+    pub fn size_display(&self) -> String {
+        if self.size < 1024 {
+            format!("{} B", self.size)
+        } else if self.size < 1024 * 1024 {
+            format!("{:.1} KB", self.size as f64 / 1024.0)
+        } else {
+            format!("{:.1} MB", self.size as f64 / (1024.0 * 1024.0))
+        }
+    }
+}
+
 /// Manages the workspace directory containing experiment folders.
 pub struct Workspace {
     root_dir: PathBuf,
@@ -143,6 +165,91 @@ impl Workspace {
         let main_typ = self.root_dir.join(dir_name).join("main.typ");
         fs::write(&main_typ, content)
             .with_context(|| format!("Failed to write {}", main_typ.display()))
+    }
+
+    /// List files in an experiment directory (excluding main.typ).
+    pub fn list_experiment_files(&self, dir_name: &str) -> Result<Vec<ExperimentFile>> {
+        let dir_path = self.root_dir.join(dir_name);
+        let mut files = Vec::new();
+
+        if !dir_path.exists() {
+            return Ok(files);
+        }
+
+        for entry in fs::read_dir(&dir_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if !path.is_file() {
+                continue;
+            }
+
+            let filename = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_string();
+
+            // Skip main.typ (it's the notebook itself)
+            if filename == "main.typ" {
+                continue;
+            }
+
+            let size = path.metadata().map(|m| m.len()).unwrap_or(0);
+            let is_image = matches!(
+                path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).as_deref(),
+                Some("png" | "jpg" | "jpeg" | "gif" | "tiff" | "tif" | "bmp" | "webp" | "svg")
+            );
+
+            files.push(ExperimentFile {
+                path,
+                filename,
+                size,
+                is_image,
+            });
+        }
+
+        files.sort_by(|a, b| a.filename.cmp(&b.filename));
+        Ok(files)
+    }
+
+    /// Copy a file into an experiment directory.
+    /// Returns the filename in the experiment directory.
+    pub fn add_file_to_experiment(&self, dir_name: &str, source: &Path) -> Result<String> {
+        let filename = source
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| anyhow::anyhow!("Invalid filename"))?
+            .to_string();
+
+        let dest = self.root_dir.join(dir_name).join(&filename);
+
+        // If file already exists, add a suffix
+        let dest = if dest.exists() {
+            let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("file");
+            let ext = source.extension().and_then(|e| e.to_str()).unwrap_or("");
+            let mut counter = 2;
+            loop {
+                let candidate = if ext.is_empty() {
+                    self.root_dir.join(dir_name).join(format!("{}-{}", stem, counter))
+                } else {
+                    self.root_dir.join(dir_name).join(format!("{}-{}.{}", stem, counter, ext))
+                };
+                if !candidate.exists() {
+                    break candidate;
+                }
+                counter += 1;
+            }
+        } else {
+            dest
+        };
+
+        fs::copy(source, &dest)
+            .with_context(|| format!("Failed to copy {} to {}", source.display(), dest.display()))?;
+
+        let final_name = dest.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+        tracing::info!(file = %final_name, experiment = dir_name, "File added to experiment");
+        Ok(final_name)
     }
 
     /// Delete an experiment directory and all its contents.

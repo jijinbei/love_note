@@ -216,6 +216,47 @@ impl Render for ExperimentList {
                     });
                 list = list.child(row_with_menu);
             }
+
+            // Show files for the selected experiment
+            if is_selected {
+                let files = self.workspace
+                    .list_experiment_files(&slug)
+                    .unwrap_or_default();
+
+                if !files.is_empty() {
+                    let mut file_list = div()
+                        .pl_6()
+                        .flex()
+                        .flex_col()
+                        .gap_px();
+
+                    for file in &files {
+                        let icon = if file.is_image { "\u{1f5bc}" } else { "\u{1f4c4}" };
+                        file_list = file_list.child(
+                            div()
+                                .text_xs()
+                                .text_color(rgb(0x777799))
+                                .flex()
+                                .items_center()
+                                .gap_1()
+                                .child(icon)
+                                .child(
+                                    div()
+                                        .text_ellipsis()
+                                        .overflow_hidden()
+                                        .child(file.filename.clone()),
+                                )
+                                .child(
+                                    div()
+                                        .text_color(rgb(0x555555))
+                                        .child(file.size_display()),
+                                ),
+                        );
+                    }
+
+                    list = list.child(file_list);
+                }
+            }
         }
 
         div()
