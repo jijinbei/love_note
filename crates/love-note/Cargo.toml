@@ -32,6 +32,7 @@ rand.workspace = true
 notify.workspace = true
 rhai.workspace = true
 toml.workspace = true
+typstyle-core.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

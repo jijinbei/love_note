@@ -4000,6 +4000,7 @@ dependencies = [
  "typst-kit",
  "typst-pdf",
  "typst-render",
+ "typstyle-core",
  "uuid",
 ]
 
@@ -5200,6 +5201,16 @@ name = "precomputed-hash"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
+
+[[package]]
+name = "prettyless"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "749d63085aa461d80b3233e48781bf9e9dca8147fbc98f577e0697c6827dc418"
+dependencies = [
+ "typed-arena",
+ "unicode-width",
+]
 
 [[package]]
 name = "prettyplease"
@@ -7754,6 +7765,22 @@ dependencies = [
  "siphasher",
  "thin-vec",
  "unicode-math-class",
+]
+
+[[package]]
+name = "typstyle-core"
+version = "0.14.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c989b67950153600ea08e19d82c7f4d13a4754793e05f46e080a0049421c2e78"
+dependencies = [
+ "ecow",
+ "itertools 0.14.0",
+ "prettyless",
+ "rustc-hash 2.1.1",
+ "smallvec",
+ "thiserror 2.0.18",
+ "typst-syntax",
+ "unicode-width",
 ]
 
 [[package]]

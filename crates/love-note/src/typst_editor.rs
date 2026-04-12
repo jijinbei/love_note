@@ -92,8 +92,27 @@ impl TypstEditor {
         self.current_experiment = Some(slug);
     }
 
-    pub fn save_document(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        let content = self.input.read(cx).value().to_string();
+    pub fn save_document(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let mut content = self.input.read(cx).value().to_string();
+
+        // Format with typstyle before saving
+        let formatter = typstyle_core::Typstyle::default();
+        match formatter.format_text(&content).render() {
+            Ok(formatted) => {
+                if formatted != content {
+                    content = formatted;
+                    // Update the editor with formatted content
+                    self.input.update(cx, |state, cx| {
+                        state.set_value(content.clone(), window, cx);
+                    });
+                    tracing::debug!("Typst source formatted");
+                }
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "Typst formatting skipped (syntax errors)");
+            }
+        }
+
         self.document.content = content.clone();
         self.document.updated_at = chrono::Utc::now();
         self.last_saved_content = content.clone();
