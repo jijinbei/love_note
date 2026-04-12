@@ -3984,6 +3984,7 @@ dependencies = [
  "gpui-component",
  "gpui-component-assets",
  "image",
+ "kamadak-exif",
  "notify",
  "rand 0.8.5",
  "redb",

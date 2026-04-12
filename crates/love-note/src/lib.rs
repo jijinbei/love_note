@@ -1,6 +1,7 @@
 pub mod crypto;
 pub mod experiment_list;
 pub mod file_watcher;
+pub mod image_capture;
 pub mod plugin;
 pub mod preview;
 pub mod storage;

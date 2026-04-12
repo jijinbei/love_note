@@ -25,6 +25,7 @@ typst-pdf.workspace = true
 typst-kit.workspace = true
 comemo.workspace = true
 image.workspace = true
+kamadak-exif.workspace = true
 sha2.workspace = true
 ed25519-dalek.workspace = true
 rand.workspace = true
