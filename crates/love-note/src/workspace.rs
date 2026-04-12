@@ -45,7 +45,21 @@ impl Workspace {
     pub fn create_experiment(&self, name: &str) -> Result<PathBuf> {
         let date = Local::now().format("%Y-%m-%d").to_string();
         let slug = to_slug(name);
-        let dir_name = format!("{}_{}", date, slug);
+        let base_name = format!("{}_{}", date, slug);
+
+        // Find a unique directory name by appending a suffix if needed
+        let dir_name = if !self.root_dir.join(&base_name).exists() {
+            base_name
+        } else {
+            let mut counter = 2;
+            loop {
+                let candidate = format!("{}-{}", base_name, counter);
+                if !self.root_dir.join(&candidate).exists() {
+                    break candidate;
+                }
+                counter += 1;
+            }
+        };
         let dir_path = self.root_dir.join(&dir_name);
 
         fs::create_dir_all(&dir_path)

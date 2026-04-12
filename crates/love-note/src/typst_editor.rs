@@ -13,6 +13,8 @@ pub struct TypstEditor {
     workspace: Arc<Workspace>,
     /// Current experiment directory name (e.g., "2026-04-13_pcr-experiment")
     current_experiment: Option<String>,
+    /// Content to apply on next render (when we don't have Window access)
+    pending_content: Option<String>,
 }
 
 impl TypstEditor {
@@ -50,6 +52,7 @@ impl TypstEditor {
             storage,
             workspace,
             current_experiment: None,
+            pending_content: None,
         }
     }
 
@@ -58,28 +61,17 @@ impl TypstEditor {
         self.input.read(cx).value().to_string()
     }
 
-    /// Load an experiment's main.typ into the editor.
-    pub fn load_experiment(
-        &mut self,
-        slug: &str,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        match self.workspace.read_experiment(slug) {
-            Ok(content) => {
-                self.document.content = content.clone();
-                self.document.title = slug.to_string();
-                self.current_experiment = Some(slug.to_string());
-                self.input.update(cx, |state, cx| {
-                    state.set_value(content, window, cx);
-                });
-                tracing::info!(experiment = slug, "Experiment loaded");
-                cx.notify();
-            }
-            Err(e) => {
-                tracing::error!(error = %e, experiment = slug, "Failed to load experiment");
-            }
-        }
+    /// Set the editor content directly (without Window access).
+    /// Content will be applied on the next render cycle.
+    pub fn set_content(&mut self, content: &str) {
+        self.document.content = content.to_string();
+        self.pending_content = Some(content.to_string());
+    }
+
+    /// Set the current experiment slug.
+    pub fn set_current_experiment(&mut self, slug: String) {
+        self.document.title = slug.clone();
+        self.current_experiment = Some(slug);
     }
 
     pub fn save_document(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
@@ -104,7 +96,14 @@ impl TypstEditor {
 }
 
 impl Render for TypstEditor {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Apply pending content if any
+        if let Some(content) = self.pending_content.take() {
+            self.input.update(cx, |state, cx| {
+                state.set_value(content, window, cx);
+            });
+        }
+
         div()
             .size_full()
             .flex()

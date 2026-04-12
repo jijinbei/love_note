@@ -26,43 +26,30 @@ impl WorkspaceView {
             TypstEditor::new(storage, workspace.clone(), window, cx)
         });
         let preview = cx.new(|_cx| Preview::new());
-
-        // Create sidebar
         let sidebar = cx.new(|_cx| ExperimentList::new(workspace.clone()));
 
-        // Wire up: selecting an experiment loads it in the editor
-        let editor_handle = editor.clone();
-        sidebar.update(cx, |list, _cx| {
-            list.set_on_select(Box::new(move |info, window, cx| {
-                editor_handle.update(cx, |editor, cx| {
-                    editor.load_experiment(&info.slug, window, cx);
-                });
-            }));
-        });
-
-        // Wire up: "New" button creates an experiment and loads it
+        // When sidebar changes (selection or new experiment), load the selected experiment
         let editor_handle = editor.clone();
         let ws = workspace.clone();
-        sidebar.update(cx, |list, _cx| {
-            list.set_on_new(Box::new(move |window, cx| {
-                match ws.create_experiment("New Experiment") {
-                    Ok(path) => {
-                        let slug = path
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("unknown")
-                            .to_string();
-                        editor_handle.update(cx, |editor, cx| {
-                            editor.load_experiment(&slug, window, cx);
+        let last_slug: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);
+        cx.observe(&sidebar, move |_this, sidebar, cx| {
+            let selected = sidebar.read(cx).selected_slug().cloned();
+            if let Some(ref slug) = selected {
+                // Only load if the selection actually changed
+                let mut last = last_slug.borrow_mut();
+                if last.as_deref() != Some(slug) {
+                    *last = Some(slug.clone());
+                    if let Ok(content) = ws.read_experiment(slug) {
+                        let slug_owned = slug.clone();
+                        editor_handle.update(cx, |editor, _cx| {
+                            editor.set_content(&content);
+                            editor.set_current_experiment(slug_owned);
                         });
-                        tracing::info!(slug, "New experiment created");
-                    }
-                    Err(e) => {
-                        tracing::error!(error = %e, "Failed to create experiment");
                     }
                 }
-            }));
-        });
+            }
+        })
+        .detach();
 
         // Observe editor changes and update preview
         let preview_handle = preview.clone();
@@ -89,9 +76,12 @@ impl WorkspaceView {
             let experiments = workspace.list_experiments().unwrap_or_default();
             if let Some(first) = experiments.first() {
                 let slug = first.slug.clone();
-                editor.update(cx, |editor, cx| {
-                    editor.load_experiment(&slug, window, cx);
-                });
+                if let Ok(content) = workspace.read_experiment(&slug) {
+                    editor.update(cx, |editor, _cx| {
+                        editor.set_content(&content);
+                        editor.set_current_experiment(slug.clone());
+                    });
+                }
                 sidebar.update(cx, |list, _cx| {
                     list.set_selected(&slug);
                 });
@@ -113,13 +103,11 @@ impl Render for WorkspaceView {
             .flex()
             .flex_col()
             .child(
-                // Main content: sidebar | editor | preview
                 div()
                     .flex_1()
                     .flex()
                     .flex_row()
                     .child(
-                        // Sidebar
                         div()
                             .w(px(200.0))
                             .h_full()
@@ -128,7 +116,6 @@ impl Render for WorkspaceView {
                             .child(self.sidebar.clone()),
                     )
                     .child(
-                        // Editor
                         div()
                             .flex_1()
                             .h_full()
@@ -139,7 +126,6 @@ impl Render for WorkspaceView {
                             .child(self.editor.clone()),
                     )
                     .child(
-                        // Preview
                         div()
                             .flex_1()
                             .h_full()
@@ -149,7 +135,6 @@ impl Render for WorkspaceView {
                     ),
             )
             .child(
-                // Status bar
                 div()
                     .h(px(28.0))
                     .w_full()

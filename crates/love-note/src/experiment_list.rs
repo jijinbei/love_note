@@ -4,17 +4,22 @@ use gpui::*;
 
 use crate::workspace::{ExperimentInfo, Workspace};
 
-/// Callback when an experiment is selected.
-pub type OnSelect = Box<dyn Fn(&ExperimentInfo, &mut Window, &mut App) + 'static>;
-/// Callback when "New Experiment" is clicked.
-pub type OnNew = Box<dyn Fn(&mut Window, &mut App) + 'static>;
+/// Event emitted when an experiment is selected.
+pub struct ExperimentSelected {
+    pub info: ExperimentInfo,
+}
+
+impl EventEmitter<ExperimentSelected> for ExperimentList {}
+
+/// Event emitted when a new experiment is requested.
+pub struct NewExperimentRequested;
+
+impl EventEmitter<NewExperimentRequested> for ExperimentList {}
 
 /// Sidebar listing experiments in the workspace.
 pub struct ExperimentList {
     experiments: Vec<ExperimentInfo>,
     workspace: Arc<Workspace>,
-    on_select: Option<OnSelect>,
-    on_new: Option<OnNew>,
     selected_slug: Option<String>,
 }
 
@@ -24,18 +29,12 @@ impl ExperimentList {
         Self {
             experiments,
             workspace,
-            on_select: None,
-            on_new: None,
             selected_slug: None,
         }
     }
 
-    pub fn set_on_select(&mut self, cb: OnSelect) {
-        self.on_select = cb.into();
-    }
-
-    pub fn set_on_new(&mut self, cb: OnNew) {
-        self.on_new = cb.into();
+    pub fn selected_slug(&self) -> Option<&String> {
+        self.selected_slug.as_ref()
     }
 
     pub fn set_selected(&mut self, slug: &str) {
@@ -44,6 +43,27 @@ impl ExperimentList {
 
     pub fn refresh(&mut self) {
         self.experiments = self.workspace.list_experiments().unwrap_or_default();
+    }
+
+    /// Create a new experiment, refresh, select it, and return the slug.
+    pub fn create_and_select(&mut self, name: &str) -> Option<String> {
+        match self.workspace.create_experiment(name) {
+            Ok(path) => {
+                let slug = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                self.refresh();
+                self.selected_slug = Some(slug.clone());
+                tracing::info!(slug = %slug, "New experiment created");
+                Some(slug)
+            }
+            Err(e) => {
+                tracing::error!(error = %e, "Failed to create experiment");
+                None
+            }
+        }
     }
 }
 
@@ -99,11 +119,9 @@ impl Render for ExperimentList {
                 row = row.hover(|s| s.bg(rgb(0x2a2a3a)));
             }
 
-            row = row.on_click(cx.listener(move |this, _event, window, cx| {
+            row = row.on_click(cx.listener(move |this, _event, _window, cx| {
                 this.selected_slug = Some(info.slug.clone());
-                if let Some(cb) = &this.on_select {
-                    cb(&info, window, cx);
-                }
+                cx.emit(ExperimentSelected { info: info.clone() });
                 cx.notify();
             }));
 
@@ -141,15 +159,9 @@ impl Render for ExperimentList {
                             .text_color(rgb(0x88cc88))
                             .hover(|s| s.bg(rgb(0x2a2a3a)))
                             .child("+ New")
-                            .on_click(cx.listener(|this, _event, window, cx| {
-                                if let Some(cb) = &this.on_new {
-                                    cb(window, cx);
-                                }
-                                this.refresh();
-                                // Select the newest experiment (first in list)
-                                if let Some(first) = this.experiments.first() {
-                                    this.selected_slug = Some(first.slug.clone());
-                                }
+                            .on_click(cx.listener(|this, _event, _window, cx| {
+                                this.create_and_select("New Experiment");
+                                cx.emit(NewExperimentRequested);
                                 cx.notify();
                             })),
                     ),
