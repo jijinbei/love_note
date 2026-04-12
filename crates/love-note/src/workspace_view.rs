@@ -8,7 +8,7 @@ use crate::storage::Storage;
 use crate::typst_editor::TypstEditor;
 use crate::workspace::Workspace;
 
-/// Top-level three-pane layout: sidebar | editor | preview.
+/// Top-level three-pane layout: title bar | sidebar | editor | preview | status bar.
 pub struct WorkspaceView {
     sidebar: Entity<ExperimentList>,
     editor: Entity<TypstEditor>,
@@ -35,7 +35,6 @@ impl WorkspaceView {
         cx.observe(&sidebar, move |_this, sidebar, cx| {
             let selected = sidebar.read(cx).selected_slug().cloned();
             if let Some(ref slug) = selected {
-                // Only load if the selection actually changed
                 let mut last = last_slug.borrow_mut();
                 if last.as_deref() != Some(slug) {
                     *last = Some(slug.clone());
@@ -97,12 +96,50 @@ impl WorkspaceView {
 }
 
 impl Render for WorkspaceView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .size_full()
             .flex()
             .flex_col()
             .child(
+                // Title bar with close button
+                div()
+                    .h(px(32.0))
+                    .w_full()
+                    .px_4()
+                    .flex()
+                    .items_center()
+                    .justify_between()
+                    .bg(rgb(0x181825))
+                    .border_b_1()
+                    .border_color(rgb(0x333333))
+                    .child(
+                        div()
+                            .text_sm()
+                            .text_color(rgb(0xaaaaaa))
+                            .child("Love Note"),
+                    )
+                    .child(
+                        div()
+                            .id("close-btn")
+                            .w(px(28.0))
+                            .h(px(20.0))
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .rounded_sm()
+                            .cursor_pointer()
+                            .text_sm()
+                            .text_color(rgb(0x888888))
+                            .hover(|s| s.bg(rgb(0xcc4444)).text_color(rgb(0xffffff)))
+                            .child("x")
+                            .on_click(cx.listener(|_this, _event, _window, cx| {
+                                cx.quit();
+                            })),
+                    ),
+            )
+            .child(
+                // Main content: sidebar | editor | preview
                 div()
                     .flex_1()
                     .flex()
@@ -135,6 +172,7 @@ impl Render for WorkspaceView {
                     ),
             )
             .child(
+                // Status bar
                 div()
                     .h(px(28.0))
                     .w_full()
